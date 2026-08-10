@@ -1,0 +1,9 @@
+# Pinned to the combination validated by the Fetch.ai deployment docs
+# (innovation-lab-examples/deploy-agent-on-av/docs.md).
+uagents==0.23.6
+uagents-core==0.4.0
+openai>=1.40.0
+python-dotenv>=1.0.0
+
+# Test-only
+pytest>=8.0.0
