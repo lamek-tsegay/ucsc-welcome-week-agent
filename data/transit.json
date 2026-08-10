@@ -1,0 +1,79 @@
+{
+  "_meta": {
+    "description": "Approximate bus/shuttle routes used by the navigation agent to offer a no-climb alternative to walking uphill.",
+    "provenance": "Hand-curated approximation of how campus transit is laid out. NOT an official schedule.",
+    "verified": false,
+    "verified_note": "Route names, stop orders, and travel times here are UNVERIFIED approximations. Frequencies and operating hours are deliberately omitted rather than guessed. The navigation agent must label transit suggestions as unverified and point users to the official source.",
+    "official_source": "https://scmtd.com",
+    "campus_source": "https://taps.ucsc.edu",
+    "last_reviewed": "2026-08-09"
+  },
+  "routes": [
+    {
+      "id": "campus_loop_up",
+      "name": "Campus Loop (uphill direction)",
+      "kind": "campus_shuttle",
+      "note": "Free with a student ID. Direction of travel matters — the loop is one-way, so the ride back is a different route.",
+      "stops": [
+        { "landmark_id": "main_entrance", "minutes_from_previous": 0 },
+        { "landmark_id": "lower_quarry", "minutes_from_previous": 3 },
+        { "landmark_id": "quarry_plaza", "minutes_from_previous": 3 },
+        { "landmark_id": "science_hill", "minutes_from_previous": 4 },
+        { "landmark_id": "core_west_parking", "minutes_from_previous": 2 },
+        { "landmark_id": "crown_college", "minutes_from_previous": 3 },
+        { "landmark_id": "merrill_college", "minutes_from_previous": 2 },
+        { "landmark_id": "college_nine", "minutes_from_previous": 2 },
+        { "landmark_id": "john_r_lewis_college", "minutes_from_previous": 2 }
+      ]
+    },
+    {
+      "id": "campus_loop_west",
+      "name": "Campus Loop (west side)",
+      "kind": "campus_shuttle",
+      "note": "Serves the west-side colleges. Free with a student ID.",
+      "stops": [
+        { "landmark_id": "quarry_plaza", "minutes_from_previous": 0 },
+        { "landmark_id": "kresge_college", "minutes_from_previous": 5 },
+        { "landmark_id": "porter_college", "minutes_from_previous": 3 },
+        { "landmark_id": "rachel_carson_college", "minutes_from_previous": 3 },
+        { "landmark_id": "oakes_college", "minutes_from_previous": 2 },
+        { "landmark_id": "west_entrance", "minutes_from_previous": 3 }
+      ]
+    },
+    {
+      "id": "campus_loop_east",
+      "name": "Campus Loop (east side)",
+      "kind": "campus_shuttle",
+      "note": "Serves the east-side colleges and the recreation complex.",
+      "stops": [
+        { "landmark_id": "quarry_plaza", "minutes_from_previous": 0 },
+        { "landmark_id": "cowell_college", "minutes_from_previous": 3 },
+        { "landmark_id": "stevenson_college", "minutes_from_previous": 2 },
+        { "landmark_id": "opers", "minutes_from_previous": 3 },
+        { "landmark_id": "east_remote_parking", "minutes_from_previous": 4 }
+      ]
+    },
+    {
+      "id": "metro_downtown",
+      "name": "Metro route to Downtown Santa Cruz",
+      "kind": "metro",
+      "note": "Santa Cruz Metro runs several routes between campus and downtown. Route numbers and frequencies change — check scmtd.com. Fares may be covered by your student ID.",
+      "stops": [
+        { "landmark_id": "quarry_plaza", "minutes_from_previous": 0 },
+        { "landmark_id": "lower_quarry", "minutes_from_previous": 3 },
+        { "landmark_id": "main_entrance", "minutes_from_previous": 3 },
+        { "landmark_id": "metro_center_downtown", "minutes_from_previous": 12 }
+      ]
+    },
+    {
+      "id": "metro_boardwalk",
+      "name": "Downtown to the Beach Boardwalk",
+      "kind": "metro",
+      "note": "Short hop from the downtown Metro Center. Walking it is also reasonable (~16 min).",
+      "stops": [
+        { "landmark_id": "metro_center_downtown", "minutes_from_previous": 0 },
+        { "landmark_id": "boardwalk", "minutes_from_previous": 7 }
+      ]
+    }
+  ]
+}

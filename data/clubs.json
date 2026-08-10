@@ -1,0 +1,1443 @@
+{
+ "_meta": {
+  "description": "Representative UCSC student organization entries for the clubs & societies agent.",
+  "verified": false,
+  "verified_note": "Two-tier contract, mirroring events.json: verified=true means the organization's EXISTENCE was confirmed against the official UCSC page in `source` on `source_checked` — it does NOT confirm current registration status, activity level, contact, or meetings. verified=false entries are representative examples: UCSC's Registered Student Organization directory is JS-rendered and updated weekly through fall, so it cannot be confirmed from a static read. The Baskin Engineering student-organizations page IS static and official, which is why engineering orgs are confirmable.",
+  "contact_policy": "contact and meeting_info are deliberately null everywhere. Inventing an email address or a meeting time for a student organization would send students to the wrong place, so the agent directs them to the official directory instead of guessing.",
+  "official_directory": "https://getinvolved.ucsc.edu/student-organizations/join/",
+  "official_contact": "soar@ucsc.edu",
+  "best_in_person_route": "Cornucopia (Tue Sept 22, East Upper Field) is where most organizations table in person.",
+  "replace_me": "Swap this file for a real SOAR/SOMeCA directory export when you have one; the agent reads it through common/loader.py and needs no changes.",
+  "last_reviewed": "2026-08-09",
+  "website_policy": "website is only ever the link the official source page itself lists — never searched for, never guessed. contact and meeting_info remain null everywhere; the club's own site is the authoritative place for those."
+ },
+ "categories": [
+  {
+   "id": "cultural_identity",
+   "label": "Cultural & Identity"
+  },
+  {
+   "id": "academic_professional",
+   "label": "Academic & Professional"
+  },
+  {
+   "id": "arts_performance",
+   "label": "Arts & Performance"
+  },
+  {
+   "id": "media_publication",
+   "label": "Media & Publications"
+  },
+  {
+   "id": "sports_recreation",
+   "label": "Sports & Recreation"
+  },
+  {
+   "id": "service_advocacy",
+   "label": "Service & Advocacy"
+  },
+  {
+   "id": "tech_engineering",
+   "label": "Technology & Engineering"
+  },
+  {
+   "id": "spiritual",
+   "label": "Spiritual & Religious"
+  },
+  {
+   "id": "greek",
+   "label": "Fraternity & Sorority Life"
+  },
+  {
+   "id": "special_interest",
+   "label": "Games, Hobbies & Special Interest"
+  }
+ ],
+ "clubs": [
+  {
+   "id": "c_black_student_union",
+   "name": "Black Student Union",
+   "category": "cultural_identity",
+   "description": "Community, advocacy, and cultural programming for Black students at UCSC.",
+   "tags": [
+    "cultural",
+    "community",
+    "advocacy",
+    "identity"
+   ],
+   "contact": null,
+   "meeting_info": null,
+   "verified": false,
+   "representative_example": true
+  },
+  {
+   "id": "c_mecha",
+   "name": "Chicanx/Latinx Student Alliance",
+   "category": "cultural_identity",
+   "description": "Cultural events, mentorship, and advocacy for Chicanx and Latinx students.",
+   "tags": [
+    "cultural",
+    "community",
+    "advocacy",
+    "identity"
+   ],
+   "contact": null,
+   "meeting_info": null,
+   "verified": false,
+   "representative_example": true
+  },
+  {
+   "id": "c_apisa",
+   "name": "Asian Pacific Islander Student Alliance",
+   "category": "cultural_identity",
+   "description": "Umbrella community for Asian and Pacific Islander students and affiliated cultural groups.",
+   "tags": [
+    "cultural",
+    "community",
+    "identity"
+   ],
+   "contact": null,
+   "meeting_info": null,
+   "verified": false,
+   "representative_example": true
+  },
+  {
+   "id": "c_aisa",
+   "name": "American Indian & Indigenous Student Alliance",
+   "category": "cultural_identity",
+   "description": "Community and cultural programming for Native and Indigenous students.",
+   "tags": [
+    "cultural",
+    "community",
+    "advocacy",
+    "identity"
+   ],
+   "contact": null,
+   "meeting_info": null,
+   "verified": false,
+   "representative_example": true
+  },
+  {
+   "id": "c_queer_student_union",
+   "name": "Queer Student Union",
+   "category": "cultural_identity",
+   "description": "Social and support community for LGBTQ+ students.",
+   "tags": [
+    "lgbtq",
+    "community",
+    "identity",
+    "social"
+   ],
+   "contact": null,
+   "meeting_info": null,
+   "verified": false,
+   "representative_example": true
+  },
+  {
+   "id": "c_intl_students",
+   "name": "International Students Association",
+   "category": "cultural_identity",
+   "description": "Support and social network for international students, including practical help settling in.",
+   "tags": [
+    "international",
+    "community",
+    "social",
+    "identity"
+   ],
+   "contact": null,
+   "meeting_info": null,
+   "verified": false,
+   "representative_example": true
+  },
+  {
+   "id": "c_middle_eastern",
+   "name": "Middle Eastern & North African Student Association",
+   "category": "cultural_identity",
+   "description": "Cultural events and community for MENA students.",
+   "tags": [
+    "cultural",
+    "community",
+    "identity"
+   ],
+   "contact": null,
+   "meeting_info": null,
+   "verified": false,
+   "representative_example": true
+  },
+  {
+   "id": "c_first_gen",
+   "name": "First-Generation Student Network",
+   "category": "cultural_identity",
+   "description": "Peer support and navigation help for first-generation college students.",
+   "tags": [
+    "community",
+    "academic",
+    "support",
+    "identity"
+   ],
+   "contact": null,
+   "meeting_info": null,
+   "verified": false,
+   "representative_example": true
+  },
+  {
+   "id": "c_premed",
+   "name": "Pre-Medical Student Association",
+   "category": "academic_professional",
+   "description": "MCAT prep, application workshops, and speakers for students heading to health professions.",
+   "tags": [
+    "academic",
+    "career",
+    "health",
+    "premed"
+   ],
+   "contact": null,
+   "meeting_info": null,
+   "verified": false,
+   "representative_example": true
+  },
+  {
+   "id": "c_prelaw",
+   "name": "Pre-Law Society",
+   "category": "academic_professional",
+   "description": "LSAT study groups, law school panels, and mock arguments.",
+   "tags": [
+    "academic",
+    "career",
+    "law",
+    "debate"
+   ],
+   "contact": null,
+   "meeting_info": null,
+   "verified": false,
+   "representative_example": true
+  },
+  {
+   "id": "c_econ_society",
+   "name": "Economics & Business Society",
+   "category": "academic_professional",
+   "description": "Case competitions, internship pipelines, and industry speakers.",
+   "tags": [
+    "academic",
+    "career",
+    "business",
+    "finance"
+   ],
+   "contact": null,
+   "meeting_info": null,
+   "verified": false,
+   "representative_example": true
+  },
+  {
+   "id": "c_psych_club",
+   "name": "Psychology Student Association",
+   "category": "academic_professional",
+   "description": "Research opportunities, grad school prep, and faculty talks in psychology.",
+   "tags": [
+    "academic",
+    "career",
+    "psychology",
+    "research"
+   ],
+   "contact": null,
+   "meeting_info": null,
+   "verified": false,
+   "representative_example": true
+  },
+  {
+   "id": "c_marine_bio",
+   "name": "Marine Biology Student Association",
+   "category": "academic_professional",
+   "description": "Tidepool trips, research talks, and connections to the coastal science labs.",
+   "tags": [
+    "academic",
+    "science",
+    "marine",
+    "outdoors",
+    "research"
+   ],
+   "contact": null,
+   "meeting_info": null,
+   "verified": false,
+   "representative_example": true
+  },
+  {
+   "id": "c_debate",
+   "name": "Debate Union",
+   "category": "academic_professional",
+   "description": "Competitive parliamentary debate and public speaking practice.",
+   "tags": [
+    "academic",
+    "debate",
+    "competition",
+    "public-speaking"
+   ],
+   "contact": null,
+   "meeting_info": null,
+   "verified": false,
+   "representative_example": true
+  },
+  {
+   "id": "c_a_cappella",
+   "name": "A Cappella Collective",
+   "category": "arts_performance",
+   "description": "Auditioned vocal groups performing at campus events throughout the year.",
+   "tags": [
+    "music",
+    "performance",
+    "singing",
+    "arts"
+   ],
+   "contact": null,
+   "meeting_info": null,
+   "verified": false,
+   "representative_example": true
+  },
+  {
+   "id": "c_dance_collective",
+   "name": "Dance Collective",
+   "category": "arts_performance",
+   "description": "Open-level dance across hip-hop, contemporary, and cultural styles, culminating in a showcase.",
+   "tags": [
+    "dance",
+    "performance",
+    "arts",
+    "fitness"
+   ],
+   "contact": null,
+   "meeting_info": null,
+   "verified": false,
+   "representative_example": true
+  },
+  {
+   "id": "c_improv",
+   "name": "Improv Troupe",
+   "category": "arts_performance",
+   "description": "Short-form and long-form improv comedy, with beginner workshops.",
+   "tags": [
+    "comedy",
+    "performance",
+    "theater",
+    "arts",
+    "social"
+   ],
+   "contact": null,
+   "meeting_info": null,
+   "verified": false,
+   "representative_example": true
+  },
+  {
+   "id": "c_student_theater",
+   "name": "Student Theater Guild",
+   "category": "arts_performance",
+   "description": "Student-written and student-directed productions, including tech and design roles.",
+   "tags": [
+    "theater",
+    "performance",
+    "arts"
+   ],
+   "contact": null,
+   "meeting_info": null,
+   "verified": false,
+   "representative_example": true
+  },
+  {
+   "id": "c_visual_arts",
+   "name": "Visual Arts Collective",
+   "category": "arts_performance",
+   "description": "Studio sessions, print-making, and end-of-quarter gallery shows.",
+   "tags": [
+    "art",
+    "visual-arts",
+    "arts",
+    "creative"
+   ],
+   "contact": null,
+   "meeting_info": null,
+   "verified": false,
+   "representative_example": true
+  },
+  {
+   "id": "c_student_paper",
+   "name": "Student Newspaper",
+   "category": "media_publication",
+   "description": "Campus news reporting, editing, photography, and layout. No experience required.",
+   "tags": [
+    "journalism",
+    "writing",
+    "media",
+    "photography"
+   ],
+   "contact": null,
+   "meeting_info": null,
+   "verified": false,
+   "representative_example": true
+  },
+  {
+   "id": "c_campus_radio",
+   "name": "Campus Radio",
+   "category": "media_publication",
+   "description": "Student-run radio: DJ shows, music programming, and live broadcasts.",
+   "tags": [
+    "radio",
+    "music",
+    "media",
+    "broadcasting"
+   ],
+   "contact": null,
+   "meeting_info": null,
+   "verified": false,
+   "representative_example": true
+  },
+  {
+   "id": "c_lit_magazine",
+   "name": "Literary Magazine",
+   "category": "media_publication",
+   "description": "Student poetry and prose publication, with open submissions and editorial staff.",
+   "tags": [
+    "writing",
+    "literature",
+    "media",
+    "creative"
+   ],
+   "contact": null,
+   "meeting_info": null,
+   "verified": false,
+   "representative_example": true
+  },
+  {
+   "id": "c_hiking",
+   "name": "Hiking & Backpacking Club",
+   "category": "sports_recreation",
+   "description": "Weekend hikes in the campus redwoods and the Santa Cruz Mountains, plus overnight backpacking trips.",
+   "tags": [
+    "hiking",
+    "outdoors",
+    "nature",
+    "fitness",
+    "social"
+   ],
+   "contact": null,
+   "meeting_info": null,
+   "verified": false,
+   "representative_example": true
+  },
+  {
+   "id": "c_surf",
+   "name": "Surf Club",
+   "category": "sports_recreation",
+   "description": "Dawn patrol sessions at local breaks. Beginner-friendly, board loans usually available.",
+   "tags": [
+    "surfing",
+    "outdoors",
+    "ocean",
+    "fitness",
+    "beach"
+   ],
+   "contact": null,
+   "meeting_info": null,
+   "verified": false,
+   "representative_example": true
+  },
+  {
+   "id": "c_climbing",
+   "name": "Rock Climbing Club",
+   "category": "sports_recreation",
+   "description": "Indoor sessions at the campus wall plus outdoor trips to nearby crags.",
+   "tags": [
+    "climbing",
+    "outdoors",
+    "fitness",
+    "sports"
+   ],
+   "contact": null,
+   "meeting_info": null,
+   "verified": false,
+   "representative_example": true
+  },
+  {
+   "id": "c_cycling",
+   "name": "Cycling & Mountain Biking Club",
+   "category": "sports_recreation",
+   "description": "Group rides on the fire roads above campus and road rides along the coast.",
+   "tags": [
+    "cycling",
+    "outdoors",
+    "fitness",
+    "sports"
+   ],
+   "contact": null,
+   "meeting_info": null,
+   "verified": false,
+   "representative_example": true
+  },
+  {
+   "id": "c_ultimate",
+   "name": "Ultimate Frisbee",
+   "category": "sports_recreation",
+   "description": "Competitive and casual ultimate on the campus fields.",
+   "tags": [
+    "frisbee",
+    "sports",
+    "fitness",
+    "team",
+    "social"
+   ],
+   "contact": null,
+   "meeting_info": null,
+   "verified": false,
+   "representative_example": true
+  },
+  {
+   "id": "c_martial_arts",
+   "name": "Martial Arts Collective",
+   "category": "sports_recreation",
+   "description": "Several disciplines sharing mat time, from beginner classes to sparring.",
+   "tags": [
+    "martial-arts",
+    "fitness",
+    "sports"
+   ],
+   "contact": null,
+   "meeting_info": null,
+   "verified": false,
+   "representative_example": true
+  },
+  {
+   "id": "c_food_justice",
+   "name": "Food Justice & Basic Needs Coalition",
+   "category": "service_advocacy",
+   "description": "Runs food-security programming and connects students to basic-needs resources.",
+   "tags": [
+    "service",
+    "advocacy",
+    "food",
+    "community"
+   ],
+   "contact": null,
+   "meeting_info": null,
+   "verified": false,
+   "representative_example": true
+  },
+  {
+   "id": "c_climate_action",
+   "name": "Climate Action Network",
+   "category": "service_advocacy",
+   "description": "Campus sustainability campaigns, restoration work days, and policy advocacy.",
+   "tags": [
+    "environment",
+    "advocacy",
+    "sustainability",
+    "outdoors",
+    "service"
+   ],
+   "contact": null,
+   "meeting_info": null,
+   "verified": false,
+   "representative_example": true
+  },
+  {
+   "id": "c_tutoring_outreach",
+   "name": "Community Tutoring Outreach",
+   "category": "service_advocacy",
+   "description": "Volunteer tutoring and mentoring in Santa Cruz K-12 schools.",
+   "tags": [
+    "service",
+    "education",
+    "volunteering",
+    "community"
+   ],
+   "contact": null,
+   "meeting_info": null,
+   "verified": false,
+   "representative_example": true
+  },
+  {
+   "id": "c_mental_health_peers",
+   "name": "Mental Health Peer Educators",
+   "category": "service_advocacy",
+   "description": "Peer-led wellness workshops and destigmatisation campaigns.",
+   "tags": [
+    "wellness",
+    "service",
+    "health",
+    "advocacy",
+    "community"
+   ],
+   "contact": null,
+   "meeting_info": null,
+   "verified": false,
+   "representative_example": true
+  },
+  {
+   "id": "c_student_gov",
+   "name": "Student Government Association",
+   "category": "service_advocacy",
+   "description": "Elected student representation, budget allocation, and campus policy advocacy.",
+   "tags": [
+    "advocacy",
+    "leadership",
+    "politics",
+    "service"
+   ],
+   "contact": null,
+   "meeting_info": null,
+   "verified": false,
+   "representative_example": true
+  },
+  {
+   "id": "c_interfaith",
+   "name": "Interfaith Student Council",
+   "category": "spiritual",
+   "description": "Cross-tradition dialogue and shared service projects among faith communities.",
+   "tags": [
+    "spiritual",
+    "community",
+    "dialogue",
+    "service"
+   ],
+   "contact": null,
+   "meeting_info": null,
+   "verified": false,
+   "representative_example": true
+  },
+  {
+   "id": "c_meditation",
+   "name": "Meditation & Mindfulness Circle",
+   "category": "spiritual",
+   "description": "Weekly sitting practice, open to all traditions and to none.",
+   "tags": [
+    "spiritual",
+    "wellness",
+    "meditation",
+    "mindfulness"
+   ],
+   "contact": null,
+   "meeting_info": null,
+   "verified": false,
+   "representative_example": true
+  },
+  {
+   "id": "c_fraternity_council",
+   "name": "Interfraternity Council",
+   "category": "greek",
+   "description": "Governing body for fraternities; the entry point for recruitment information.",
+   "tags": [
+    "greek",
+    "social",
+    "leadership"
+   ],
+   "contact": null,
+   "meeting_info": null,
+   "verified": false,
+   "representative_example": true
+  },
+  {
+   "id": "c_panhellenic",
+   "name": "Panhellenic Council",
+   "category": "greek",
+   "description": "Governing body for sororities; coordinates recruitment.",
+   "tags": [
+    "greek",
+    "social",
+    "leadership"
+   ],
+   "contact": null,
+   "meeting_info": null,
+   "verified": false,
+   "representative_example": true
+  },
+  {
+   "id": "c_anime",
+   "name": "Anime & Manga Club",
+   "category": "special_interest",
+   "description": "Weekly screenings, manga library, and an annual cosplay event.",
+   "tags": [
+    "anime",
+    "manga",
+    "games",
+    "social",
+    "screening"
+   ],
+   "contact": null,
+   "meeting_info": null,
+   "verified": false,
+   "representative_example": true
+  },
+  {
+   "id": "c_tabletop",
+   "name": "Tabletop & Board Game Guild",
+   "category": "special_interest",
+   "description": "Board games, TTRPG campaigns, and a lending library of games.",
+   "tags": [
+    "games",
+    "tabletop",
+    "ttrpg",
+    "social",
+    "board-games"
+   ],
+   "contact": null,
+   "meeting_info": null,
+   "verified": false,
+   "representative_example": true
+  },
+  {
+   "id": "c_esports",
+   "name": "Esports Association",
+   "category": "special_interest",
+   "description": "Competitive rosters and casual play across several titles.",
+   "tags": [
+    "games",
+    "esports",
+    "gaming",
+    "competition",
+    "social"
+   ],
+   "contact": null,
+   "meeting_info": null,
+   "verified": false,
+   "representative_example": true
+  },
+  {
+   "id": "c_cooking",
+   "name": "Cooking & Food Culture Club",
+   "category": "special_interest",
+   "description": "Cook-alongs, potlucks, and trips to the farmers market.",
+   "tags": [
+    "food",
+    "cooking",
+    "social",
+    "cultural"
+   ],
+   "contact": null,
+   "meeting_info": null,
+   "verified": false,
+   "representative_example": true
+  },
+  {
+   "id": "be_acm",
+   "name": "Association for Computing Machinery",
+   "category": "tech_engineering",
+   "description": "UCSC chapter of the ACM, the international computing society.",
+   "tags": [
+    "tech",
+    "programming",
+    "computer-science",
+    "career",
+    "community"
+   ],
+   "aliases": [
+    "ACM"
+   ],
+   "contact": null,
+   "meeting_info": null,
+   "verified": true,
+   "source": "https://undergrad.engineering.ucsc.edu/student-organizations/",
+   "source_checked": "2026-08-09",
+   "website": "https://ucscacm.vercel.app/"
+  },
+  {
+   "id": "be_acm_w",
+   "name": "Association for Computing Machinery – Women",
+   "category": "tech_engineering",
+   "description": "ACM's community supporting women in computing, UCSC chapter.",
+   "tags": [
+    "tech",
+    "programming",
+    "identity",
+    "community",
+    "career"
+   ],
+   "aliases": [
+    "ACM-W",
+    "acmw"
+   ],
+   "contact": null,
+   "meeting_info": null,
+   "verified": true,
+   "source": "https://undergrad.engineering.ucsc.edu/student-organizations/",
+   "source_checked": "2026-08-09",
+   "website": "https://acmwclub.engineering.ucsc.edu/"
+  },
+  {
+   "id": "be_autoslug",
+   "name": "Autoslug",
+   "category": "tech_engineering",
+   "description": "Autonomous-vehicle engineering team.",
+   "tags": [
+    "tech",
+    "engineering",
+    "robotics",
+    "building"
+   ],
+   "aliases": [],
+   "contact": null,
+   "meeting_info": null,
+   "verified": true,
+   "source": "https://undergrad.engineering.ucsc.edu/student-organizations/",
+   "source_checked": "2026-08-09",
+   "website": "https://autoslug.xyz/"
+  },
+  {
+   "id": "be_bsgd",
+   "name": "Baby Slug Game Development Club",
+   "category": "tech_engineering",
+   "description": "Game development club.",
+   "tags": [
+    "tech",
+    "games",
+    "game-dev",
+    "programming",
+    "creative"
+   ],
+   "aliases": [
+    "BSGD"
+   ],
+   "contact": null,
+   "meeting_info": null,
+   "verified": true,
+   "source": "https://undergrad.engineering.ucsc.edu/student-organizations/",
+   "source_checked": "2026-08-09",
+   "website": null
+  },
+  {
+   "id": "be_banana_bots",
+   "name": "Banana Bots",
+   "category": "tech_engineering",
+   "description": "Robotics team.",
+   "tags": [
+    "tech",
+    "robotics",
+    "engineering",
+    "building",
+    "competition"
+   ],
+   "aliases": [],
+   "contact": null,
+   "meeting_info": null,
+   "verified": true,
+   "source": "https://undergrad.engineering.ucsc.edu/student-organizations/",
+   "source_checked": "2026-08-09",
+   "website": "https://bananabotsclub.engineering.ucsc.edu/"
+  },
+  {
+   "id": "be_baskin_day",
+   "name": "Baskin Day",
+   "category": "tech_engineering",
+   "description": "Organizes the annual Baskin Engineering showcase day.",
+   "tags": [
+    "engineering",
+    "community",
+    "social"
+   ],
+   "aliases": [],
+   "contact": null,
+   "meeting_info": null,
+   "verified": true,
+   "source": "https://undergrad.engineering.ucsc.edu/student-organizations/",
+   "source_checked": "2026-08-09",
+   "website": "https://baskinday.soe.ucsc.edu/"
+  },
+  {
+   "id": "be_bioinformatics",
+   "name": "Bioinformatics Club",
+   "category": "tech_engineering",
+   "description": "Bioinformatics interest group.",
+   "tags": [
+    "tech",
+    "science",
+    "research",
+    "biology",
+    "programming"
+   ],
+   "aliases": [],
+   "contact": null,
+   "meeting_info": null,
+   "verified": true,
+   "source": "https://undergrad.engineering.ucsc.edu/student-organizations/",
+   "source_checked": "2026-08-09",
+   "website": "https://ucscbioinformatics.wixsite.com/bioinformaticsclub"
+  },
+  {
+   "id": "be_creative_tech",
+   "name": "Creative Tech Design",
+   "category": "tech_engineering",
+   "description": "Creative technology and design group.",
+   "tags": [
+    "tech",
+    "creative",
+    "design",
+    "art"
+   ],
+   "aliases": [],
+   "contact": null,
+   "meeting_info": null,
+   "verified": true,
+   "source": "https://undergrad.engineering.ucsc.edu/student-organizations/",
+   "source_checked": "2026-08-09",
+   "website": "https://creativetechdesign.soe.ucsc.edu/"
+  },
+  {
+   "id": "be_formula_slug",
+   "name": "Formula Slug",
+   "category": "tech_engineering",
+   "description": "Student team that builds a formula-style electric race car.",
+   "tags": [
+    "tech",
+    "engineering",
+    "building",
+    "racing",
+    "competition"
+   ],
+   "aliases": [],
+   "contact": null,
+   "meeting_info": null,
+   "verified": true,
+   "source": "https://undergrad.engineering.ucsc.edu/student-organizations/",
+   "source_checked": "2026-08-09",
+   "website": "https://formulaslug.com/"
+  },
+  {
+   "id": "be_gadget_gurus",
+   "name": "Gadget Gurus",
+   "category": "tech_engineering",
+   "description": "Hardware and gadget-building group.",
+   "tags": [
+    "tech",
+    "hardware",
+    "building",
+    "engineering"
+   ],
+   "aliases": [],
+   "contact": null,
+   "meeting_info": null,
+   "verified": true,
+   "source": "https://undergrad.engineering.ucsc.edu/student-organizations/",
+   "source_checked": "2026-08-09",
+   "website": null
+  },
+  {
+   "id": "be_gdac",
+   "name": "Game Design & Arts Collaboration",
+   "category": "tech_engineering",
+   "description": "Collaboration hub for game design and arts projects.",
+   "tags": [
+    "tech",
+    "games",
+    "game-dev",
+    "art",
+    "creative",
+    "community"
+   ],
+   "aliases": [
+    "GDA"
+   ],
+   "contact": null,
+   "meeting_info": null,
+   "verified": true,
+   "source": "https://undergrad.engineering.ucsc.edu/student-organizations/",
+   "source_checked": "2026-08-09",
+   "website": "https://gdacollab.com/"
+  },
+  {
+   "id": "be_girls_who_code",
+   "name": "Girls Who Code",
+   "category": "tech_engineering",
+   "description": "UCSC loop of the national Girls Who Code network.",
+   "tags": [
+    "tech",
+    "programming",
+    "identity",
+    "community"
+   ],
+   "aliases": [
+    "GWC"
+   ],
+   "contact": null,
+   "meeting_info": null,
+   "verified": true,
+   "source": "https://undergrad.engineering.ucsc.edu/student-organizations/",
+   "source_checked": "2026-08-09",
+   "website": "https://gwcclub.engineering.ucsc.edu/"
+  },
+  {
+   "id": "be_gdsc",
+   "name": "Google Developer Student Club at UCSC",
+   "category": "tech_engineering",
+   "description": "Google-supported developer community on campus.",
+   "tags": [
+    "tech",
+    "programming",
+    "career",
+    "community"
+   ],
+   "aliases": [
+    "GDSC",
+    "google developer"
+   ],
+   "contact": null,
+   "meeting_info": null,
+   "verified": true,
+   "source": "https://undergrad.engineering.ucsc.edu/student-organizations/",
+   "source_checked": "2026-08-09",
+   "website": "https://gdg.community.dev/gdg-on-campus-university-of-california-santa-cruz-santa-cruz-united-states/"
+  },
+  {
+   "id": "be_igem",
+   "name": "iGEM",
+   "category": "tech_engineering",
+   "description": "Synthetic-biology competition team (International Genetically Engineered Machine).",
+   "tags": [
+    "science",
+    "research",
+    "biology",
+    "engineering",
+    "competition"
+   ],
+   "aliases": [],
+   "contact": null,
+   "meeting_info": null,
+   "verified": true,
+   "source": "https://undergrad.engineering.ucsc.edu/student-organizations/",
+   "source_checked": "2026-08-09",
+   "website": "https://engineering.ucsc.edu/igem"
+  },
+  {
+   "id": "be_igc",
+   "name": "Independent Gamedev Coalition",
+   "category": "tech_engineering",
+   "description": "Independent game development coalition.",
+   "tags": [
+    "tech",
+    "games",
+    "game-dev",
+    "creative"
+   ],
+   "aliases": [
+    "IGC"
+   ],
+   "contact": null,
+   "meeting_info": null,
+   "verified": true,
+   "source": "https://undergrad.engineering.ucsc.edu/student-organizations/",
+   "source_checked": "2026-08-09",
+   "website": null
+  },
+  {
+   "id": "be_isma",
+   "name": "Information Systems Management Association",
+   "category": "tech_engineering",
+   "description": "Information systems and management association.",
+   "tags": [
+    "tech",
+    "business",
+    "career",
+    "community"
+   ],
+   "aliases": [
+    "ISMA"
+   ],
+   "contact": null,
+   "meeting_info": null,
+   "verified": true,
+   "source": "https://undergrad.engineering.ucsc.edu/student-organizations/",
+   "source_checked": "2026-08-09",
+   "website": null
+  },
+  {
+   "id": "be_nsbe",
+   "name": "National Society of Black Engineers",
+   "category": "tech_engineering",
+   "description": "UCSC chapter of the National Society of Black Engineers.",
+   "tags": [
+    "engineering",
+    "identity",
+    "community",
+    "career"
+   ],
+   "aliases": [
+    "NSBE"
+   ],
+   "contact": null,
+   "meeting_info": null,
+   "verified": true,
+   "source": "https://undergrad.engineering.ucsc.edu/student-organizations/",
+   "source_checked": "2026-08-09",
+   "website": "https://nsbe.engineering.ucsc.edu/"
+  },
+  {
+   "id": "be_neurotech",
+   "name": "NeurotechSC",
+   "category": "tech_engineering",
+   "description": "Neurotechnology project and research group.",
+   "tags": [
+    "tech",
+    "science",
+    "research",
+    "neuroscience",
+    "engineering"
+   ],
+   "aliases": [],
+   "contact": null,
+   "meeting_info": null,
+   "verified": true,
+   "source": "https://undergrad.engineering.ucsc.edu/student-organizations/",
+   "source_checked": "2026-08-09",
+   "website": "https://neurotech.ucsc.edu/"
+  },
+  {
+   "id": "be_scai",
+   "name": "Santa Cruz Artificial Intelligence Club",
+   "category": "tech_engineering",
+   "description": "Artificial intelligence interest and project club.",
+   "tags": [
+    "tech",
+    "ai",
+    "programming",
+    "research"
+   ],
+   "aliases": [
+    "SCAI",
+    "AI club"
+   ],
+   "contact": null,
+   "meeting_info": null,
+   "verified": true,
+   "source": "https://undergrad.engineering.ucsc.edu/student-organizations/",
+   "source_checked": "2026-08-09",
+   "website": "https://santacruzai.net/"
+  },
+  {
+   "id": "be_comp_prog",
+   "name": "Slug Competitive Programming Club",
+   "category": "tech_engineering",
+   "description": "Competitive programming practice and contests.",
+   "tags": [
+    "tech",
+    "programming",
+    "competition"
+   ],
+   "aliases": [],
+   "contact": null,
+   "meeting_info": null,
+   "verified": true,
+   "source": "https://undergrad.engineering.ucsc.edu/student-organizations/",
+   "source_checked": "2026-08-09",
+   "website": null
+  },
+  {
+   "id": "be_slug_gaming",
+   "name": "Slug Gaming",
+   "category": "tech_engineering",
+   "description": "Gaming community.",
+   "tags": [
+    "games",
+    "gaming",
+    "social",
+    "community"
+   ],
+   "aliases": [],
+   "contact": null,
+   "meeting_info": null,
+   "verified": true,
+   "source": "https://undergrad.engineering.ucsc.edu/student-organizations/",
+   "source_checked": "2026-08-09",
+   "website": "https://sluggaming.club/"
+  },
+  {
+   "id": "be_slug_linux",
+   "name": "Slug Linux User Group",
+   "category": "tech_engineering",
+   "description": "Linux and open-source user group.",
+   "tags": [
+    "tech",
+    "programming",
+    "linux",
+    "community"
+   ],
+   "aliases": [
+    "SLUG"
+   ],
+   "contact": null,
+   "meeting_info": null,
+   "verified": true,
+   "source": "https://undergrad.engineering.ucsc.edu/student-organizations/",
+   "source_checked": "2026-08-09",
+   "website": "https://sluglinuxusergroup.github.io/"
+  },
+  {
+   "id": "be_slug_security",
+   "name": "Slug Security",
+   "category": "tech_engineering",
+   "description": "Cybersecurity club.",
+   "tags": [
+    "tech",
+    "security",
+    "programming",
+    "competition"
+   ],
+   "aliases": [
+    "slugsec",
+    "cybersecurity"
+   ],
+   "contact": null,
+   "meeting_info": null,
+   "verified": true,
+   "source": "https://undergrad.engineering.ucsc.edu/student-organizations/",
+   "source_checked": "2026-08-09",
+   "website": "https://slugsec.ucsc.edu/"
+  },
+  {
+   "id": "be_slugsat",
+   "name": "SlugSat",
+   "category": "tech_engineering",
+   "description": "Student satellite engineering team.",
+   "tags": [
+    "tech",
+    "engineering",
+    "space",
+    "building",
+    "research"
+   ],
+   "aliases": [],
+   "contact": null,
+   "meeting_info": null,
+   "verified": true,
+   "source": "https://undergrad.engineering.ucsc.edu/student-organizations/",
+   "source_checked": "2026-08-09",
+   "website": "https://slugsatclub.engineering.ucsc.edu/"
+  },
+  {
+   "id": "be_slugbotics",
+   "name": "Slugbotics",
+   "category": "tech_engineering",
+   "description": "Robotics team.",
+   "tags": [
+    "tech",
+    "robotics",
+    "engineering",
+    "building",
+    "competition"
+   ],
+   "aliases": [],
+   "contact": null,
+   "meeting_info": null,
+   "verified": true,
+   "source": "https://undergrad.engineering.ucsc.edu/student-organizations/",
+   "source_checked": "2026-08-09",
+   "website": "https://slugbotics.com/"
+  },
+  {
+   "id": "be_sacnas",
+   "name": "Society for the Advancement of Chicanos and Native Americans in Science",
+   "category": "tech_engineering",
+   "description": "UCSC chapter of SACNAS, supporting Chicano/Hispanic and Native American scientists.",
+   "tags": [
+    "science",
+    "identity",
+    "community",
+    "research",
+    "career"
+   ],
+   "aliases": [
+    "SACNAS"
+   ],
+   "contact": null,
+   "meeting_info": null,
+   "verified": true,
+   "source": "https://undergrad.engineering.ucsc.edu/student-organizations/",
+   "source_checked": "2026-08-09",
+   "website": "https://www.facebook.com/ucscsacnas/"
+  },
+  {
+   "id": "be_sase",
+   "name": "Society of Asian Scientists and Engineers",
+   "category": "tech_engineering",
+   "description": "UCSC chapter of the Society of Asian Scientists and Engineers.",
+   "tags": [
+    "engineering",
+    "science",
+    "identity",
+    "community",
+    "career"
+   ],
+   "aliases": [
+    "SASE"
+   ],
+   "contact": null,
+   "meeting_info": null,
+   "verified": true,
+   "source": "https://undergrad.engineering.ucsc.edu/student-organizations/",
+   "source_checked": "2026-08-09",
+   "website": null
+  },
+  {
+   "id": "be_shpe",
+   "name": "Society of Hispanic Professional Engineers",
+   "category": "tech_engineering",
+   "description": "UCSC chapter of the Society of Hispanic Professional Engineers.",
+   "tags": [
+    "engineering",
+    "identity",
+    "community",
+    "career"
+   ],
+   "aliases": [
+    "SHPE"
+   ],
+   "contact": null,
+   "meeting_info": null,
+   "verified": true,
+   "source": "https://undergrad.engineering.ucsc.edu/student-organizations/",
+   "source_checked": "2026-08-09",
+   "website": "https://shpe.engineering.ucsc.edu/"
+  },
+  {
+   "id": "be_swe",
+   "name": "Society of Women Engineers",
+   "category": "tech_engineering",
+   "description": "UCSC section of the Society of Women Engineers.",
+   "tags": [
+    "engineering",
+    "identity",
+    "community",
+    "career"
+   ],
+   "aliases": [
+    "SWE",
+    "SWESLUGS"
+   ],
+   "contact": null,
+   "meeting_info": null,
+   "verified": true,
+   "source": "https://undergrad.engineering.ucsc.edu/student-organizations/",
+   "source_checked": "2026-08-09",
+   "website": "https://sweclub.engineering.ucsc.edu/"
+  },
+  {
+   "id": "be_tau_beta_pi",
+   "name": "Tau Beta Pi",
+   "category": "tech_engineering",
+   "description": "Engineering honor society.",
+   "tags": [
+    "engineering",
+    "academic",
+    "honor-society",
+    "career"
+   ],
+   "aliases": [
+    "TBP"
+   ],
+   "contact": null,
+   "meeting_info": null,
+   "verified": true,
+   "source": "https://undergrad.engineering.ucsc.edu/student-organizations/",
+   "source_checked": "2026-08-09",
+   "website": "https://www.tbp.org/home.cfm"
+  },
+  {
+   "id": "be_amateur_radio",
+   "name": "UCSC Amateur Radio Club",
+   "category": "tech_engineering",
+   "description": "Amateur (ham) radio club.",
+   "tags": [
+    "tech",
+    "radio",
+    "hardware",
+    "community"
+   ],
+   "aliases": [
+    "ham radio"
+   ],
+   "contact": null,
+   "meeting_info": null,
+   "verified": true,
+   "source": "https://undergrad.engineering.ucsc.edu/student-organizations/",
+   "source_checked": "2026-08-09",
+   "website": "https://amateurradioclub.engineering.ucsc.edu/"
+  },
+  {
+   "id": "be_blueprint",
+   "name": "UCSC Blueprint",
+   "category": "tech_engineering",
+   "description": "Builds software for nonprofits and community organizations.",
+   "tags": [
+    "tech",
+    "programming",
+    "service",
+    "community"
+   ],
+   "aliases": [],
+   "contact": null,
+   "meeting_info": null,
+   "verified": true,
+   "source": "https://undergrad.engineering.ucsc.edu/student-organizations/",
+   "source_checked": "2026-08-09",
+   "website": "https://www.ucscblueprint.com/"
+  },
+  {
+   "id": "be_cnsa",
+   "name": "UCSC Computer Networking Student Association",
+   "category": "tech_engineering",
+   "description": "Computer networking student association.",
+   "tags": [
+    "tech",
+    "networking",
+    "programming",
+    "career"
+   ],
+   "aliases": [
+    "CNSA"
+   ],
+   "contact": null,
+   "meeting_info": null,
+   "verified": true,
+   "source": "https://undergrad.engineering.ucsc.edu/student-organizations/",
+   "source_checked": "2026-08-09",
+   "website": "https://cnsaclub.engineering.ucsc.edu/"
+  },
+  {
+   "id": "be_rocket_team",
+   "name": "UCSC Rocket Team",
+   "category": "tech_engineering",
+   "description": "Student rocketry engineering team.",
+   "tags": [
+    "tech",
+    "engineering",
+    "space",
+    "building",
+    "competition"
+   ],
+   "aliases": [
+    "rocketry"
+   ],
+   "contact": null,
+   "meeting_info": null,
+   "verified": true,
+   "source": "https://undergrad.engineering.ucsc.edu/student-organizations/",
+   "source_checked": "2026-08-09",
+   "website": "https://ucscrocketry.org/"
+  },
+  {
+   "id": "be_wise",
+   "name": "Women in Science and Engineering",
+   "category": "tech_engineering",
+   "description": "Women in Science and Engineering community.",
+   "tags": [
+    "science",
+    "engineering",
+    "identity",
+    "community"
+   ],
+   "aliases": [
+    "WiSE"
+   ],
+   "contact": null,
+   "meeting_info": null,
+   "verified": true,
+   "source": "https://undergrad.engineering.ucsc.edu/student-organizations/",
+   "source_checked": "2026-08-09",
+   "website": "http://wiseucsc.wixsite.com/wise"
+  }
+ ]
+}

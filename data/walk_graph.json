@@ -1,0 +1,534 @@
+{
+  "_meta": {
+    "description": "Undirected walking graph over data/landmarks.json, used by the navigation agent's router.",
+    "provenance": "Hand-curated estimates. NOT official campus path data.",
+    "minutes_are_estimates": true,
+    "minutes_note": "Walking minutes assume an unhurried pace on the described route. They are estimates and the agent must present them as such.",
+    "elev_change_note": "elev_change_ft is signed in the from -> to direction. The router negates it when traversing an edge to -> from.",
+    "flags_vocabulary": {
+      "steep": "Sustained climb or descent that most people notice. Excluded when a user asks to avoid hills.",
+      "stairs": "Includes stairs; not step-free. Excluded for accessible routing.",
+      "unlit": "Poorly lit after dark; deprioritised for night routing.",
+      "paved": "Road-graded and step-free; preferred for accessible routing.",
+      "offcampus": "Leaves campus. Long walk; transit is usually the right answer.",
+      "bus_strongly_recommended": "Walking this is technically possible but a bad idea."
+    },
+    "last_reviewed": "2026-08-09"
+  },
+  "edges": [
+    {
+      "from": "main_entrance",
+      "to": "lower_quarry",
+      "minutes": 8,
+      "elev_change_ft": 140,
+      "flags": [
+        "steep",
+        "unlit"
+      ],
+      "via": "the main campus road between the entrance kiosk and the quarry"
+    },
+    {
+      "from": "lower_quarry",
+      "to": "quarry_plaza",
+      "minutes": 6,
+      "elev_change_ft": 145,
+      "flags": [
+        "steep",
+        "unlit"
+      ],
+      "via": "the path alongside the quarry"
+    },
+    {
+      "from": "quarry_plaza",
+      "to": "bay_tree_bookstore",
+      "minutes": 1,
+      "elev_change_ft": 0,
+      "flags": [],
+      "via": "across the plaza"
+    },
+    {
+      "from": "quarry_plaza",
+      "to": "quarry_amphitheater",
+      "minutes": 3,
+      "elev_change_ft": -30,
+      "flags": [
+        "stairs"
+      ],
+      "via": "the stone steps between the plaza and the amphitheater"
+    },
+    {
+      "from": "quarry_plaza",
+      "to": "mchenry_library",
+      "minutes": 4,
+      "elev_change_ft": 20,
+      "flags": [],
+      "via": "the walkway between the plaza and the library"
+    },
+    {
+      "from": "quarry_plaza",
+      "to": "hahn_student_services",
+      "minutes": 3,
+      "elev_change_ft": -5,
+      "flags": [],
+      "via": "the walkway between the plaza and Hahn"
+    },
+    {
+      "from": "hahn_student_services",
+      "to": "kerr_hall",
+      "minutes": 2,
+      "elev_change_ft": -5,
+      "flags": [],
+      "via": "the connecting walkway"
+    },
+    {
+      "from": "hahn_student_services",
+      "to": "social_sciences_1",
+      "minutes": 3,
+      "elev_change_ft": -10,
+      "flags": [],
+      "via": "the path between Hahn and the social sciences cluster"
+    },
+    {
+      "from": "social_sciences_1",
+      "to": "social_sciences_2",
+      "minutes": 2,
+      "elev_change_ft": 0,
+      "flags": [],
+      "via": "the courtyard between the two buildings"
+    },
+    {
+      "from": "mchenry_library",
+      "to": "humanities_building",
+      "minutes": 3,
+      "elev_change_ft": -10,
+      "flags": [],
+      "via": "the walkway beside the library"
+    },
+    {
+      "from": "humanities_building",
+      "to": "social_sciences_1",
+      "minutes": 4,
+      "elev_change_ft": -25,
+      "flags": [],
+      "via": "the path between Humanities and the social sciences cluster"
+    },
+    {
+      "from": "mchenry_library",
+      "to": "west_field",
+      "minutes": 4,
+      "elev_change_ft": -50,
+      "flags": [
+        "unlit"
+      ],
+      "via": "the path between the library and the west fields"
+    },
+    {
+      "from": "quarry_plaza",
+      "to": "cowell_college",
+      "minutes": 5,
+      "elev_change_ft": -10,
+      "flags": [],
+      "via": "the walkway between the plaza and Cowell"
+    },
+    {
+      "from": "cowell_college",
+      "to": "cowell_stevenson_dining",
+      "minutes": 2,
+      "elev_change_ft": -2,
+      "flags": [],
+      "via": "the Cowell courtyard"
+    },
+    {
+      "from": "cowell_college",
+      "to": "stevenson_college",
+      "minutes": 3,
+      "elev_change_ft": -5,
+      "flags": [],
+      "via": "the shared path between the two colleges"
+    },
+    {
+      "from": "stevenson_college",
+      "to": "stevenson_event_center",
+      "minutes": 1,
+      "elev_change_ft": 0,
+      "flags": [],
+      "via": "across the Stevenson quad"
+    },
+    {
+      "from": "cowell_college",
+      "to": "cowell_health_center",
+      "minutes": 3,
+      "elev_change_ft": -15,
+      "flags": [],
+      "via": "the path between Cowell and the clinic"
+    },
+    {
+      "from": "stevenson_college",
+      "to": "opers",
+      "minutes": 5,
+      "elev_change_ft": -25,
+      "flags": [],
+      "via": "the path between Stevenson and the recreation complex"
+    },
+    {
+      "from": "opers",
+      "to": "east_field",
+      "minutes": 2,
+      "elev_change_ft": -10,
+      "flags": [],
+      "via": "past the field house"
+    },
+    {
+      "from": "east_field",
+      "to": "east_upper_field",
+      "minutes": 3,
+      "elev_change_ft": 25,
+      "flags": [],
+      "via": "the short rise between the two fields"
+    },
+    {
+      "from": "east_field",
+      "to": "east_remote_parking",
+      "minutes": 6,
+      "elev_change_ft": -40,
+      "flags": [
+        "unlit"
+      ],
+      "via": "the path between East Field and the remote lot"
+    },
+    {
+      "from": "quarry_plaza",
+      "to": "science_hill",
+      "minutes": 9,
+      "elev_change_ft": 185,
+      "flags": [
+        "steep"
+      ],
+      "via": "the direct hillside footpath — short and steep"
+    },
+    {
+      "from": "quarry_plaza",
+      "to": "core_west_parking",
+      "minutes": 11,
+      "elev_change_ft": 165,
+      "flags": [
+        "paved"
+      ],
+      "via": "the road-graded route past the parking structure — longer, but step-free and a gentler grade"
+    },
+    {
+      "from": "core_west_parking",
+      "to": "science_hill",
+      "minutes": 5,
+      "elev_change_ft": 20,
+      "flags": [
+        "paved"
+      ],
+      "via": "the level walkway beside the structure"
+    },
+    {
+      "from": "mchenry_library",
+      "to": "science_hill",
+      "minutes": 8,
+      "elev_change_ft": 165,
+      "flags": [
+        "steep",
+        "unlit"
+      ],
+      "via": "the steep connector behind the library"
+    },
+    {
+      "from": "science_hill",
+      "to": "se_library",
+      "minutes": 2,
+      "elev_change_ft": 10,
+      "flags": [],
+      "via": "across the science plaza"
+    },
+    {
+      "from": "science_hill",
+      "to": "baskin_engineering",
+      "minutes": 3,
+      "elev_change_ft": 15,
+      "flags": [],
+      "via": "the walkway to the engineering buildings"
+    },
+    {
+      "from": "science_hill",
+      "to": "physical_sciences",
+      "minutes": 2,
+      "elev_change_ft": 0,
+      "flags": [],
+      "via": "across the science plaza"
+    },
+    {
+      "from": "science_hill",
+      "to": "thimann_labs",
+      "minutes": 3,
+      "elev_change_ft": -10,
+      "flags": [],
+      "via": "the path by the lecture halls"
+    },
+    {
+      "from": "science_hill",
+      "to": "sinsheimer_labs",
+      "minutes": 4,
+      "elev_change_ft": 20,
+      "flags": [],
+      "via": "the path by the biology buildings"
+    },
+    {
+      "from": "core_west_parking",
+      "to": "crown_college",
+      "minutes": 6,
+      "elev_change_ft": -35,
+      "flags": [
+        "paved"
+      ],
+      "via": "the road between the structure and the upper colleges"
+    },
+    {
+      "from": "science_hill",
+      "to": "crown_college",
+      "minutes": 5,
+      "elev_change_ft": -55,
+      "flags": [],
+      "via": "the path between Science Hill and Crown"
+    },
+    {
+      "from": "crown_college",
+      "to": "crown_merrill_dining",
+      "minutes": 2,
+      "elev_change_ft": -5,
+      "flags": [],
+      "via": "the Crown courtyard"
+    },
+    {
+      "from": "crown_college",
+      "to": "merrill_college",
+      "minutes": 4,
+      "elev_change_ft": -10,
+      "flags": [],
+      "via": "the shared path between Crown and Merrill"
+    },
+    {
+      "from": "merrill_college",
+      "to": "merrill_cultural_center",
+      "minutes": 1,
+      "elev_change_ft": 0,
+      "flags": [],
+      "via": "across the Merrill quad"
+    },
+    {
+      "from": "merrill_college",
+      "to": "college_nine",
+      "minutes": 4,
+      "elev_change_ft": 40,
+      "flags": [],
+      "via": "the path between Merrill and College Nine"
+    },
+    {
+      "from": "college_nine",
+      "to": "nine_lewis_dining",
+      "minutes": 2,
+      "elev_change_ft": -2,
+      "flags": [],
+      "via": "the shared courtyard"
+    },
+    {
+      "from": "college_nine",
+      "to": "nine_lewis_mpr",
+      "minutes": 2,
+      "elev_change_ft": 0,
+      "flags": [],
+      "via": "the shared courtyard"
+    },
+    {
+      "from": "college_nine",
+      "to": "john_r_lewis_college",
+      "minutes": 2,
+      "elev_change_ft": -5,
+      "flags": [],
+      "via": "the connecting walkway"
+    },
+    {
+      "from": "quarry_plaza",
+      "to": "kresge_college",
+      "minutes": 11,
+      "elev_change_ft": 30,
+      "flags": [
+        "unlit"
+      ],
+      "via": "the west path across the meadow"
+    },
+    {
+      "from": "kresge_college",
+      "to": "kresge_namaste_lounge",
+      "minutes": 1,
+      "elev_change_ft": 0,
+      "flags": [],
+      "via": "inside the Kresge complex"
+    },
+    {
+      "from": "kresge_college",
+      "to": "west_remote_parking",
+      "minutes": 8,
+      "elev_change_ft": -60,
+      "flags": [
+        "unlit"
+      ],
+      "via": "the path between Kresge and the west lot"
+    },
+    {
+      "from": "kresge_college",
+      "to": "porter_college",
+      "minutes": 7,
+      "elev_change_ft": -160,
+      "flags": [
+        "steep",
+        "stairs",
+        "unlit"
+      ],
+      "via": "the steep stepped path between Kresge and Porter"
+    },
+    {
+      "from": "porter_college",
+      "to": "porter_kresge_dining",
+      "minutes": 2,
+      "elev_change_ft": 5,
+      "flags": [],
+      "via": "the Porter courtyard"
+    },
+    {
+      "from": "porter_college",
+      "to": "music_center",
+      "minutes": 4,
+      "elev_change_ft": 5,
+      "flags": [],
+      "via": "the arts walkway"
+    },
+    {
+      "from": "music_center",
+      "to": "theater_arts",
+      "minutes": 3,
+      "elev_change_ft": -10,
+      "flags": [],
+      "via": "the path between the arts buildings"
+    },
+    {
+      "from": "theater_arts",
+      "to": "mainstage_theater",
+      "minutes": 1,
+      "elev_change_ft": 0,
+      "flags": [],
+      "via": "inside the theater complex"
+    },
+    {
+      "from": "porter_college",
+      "to": "rachel_carson_college",
+      "minutes": 6,
+      "elev_change_ft": -25,
+      "flags": [
+        "unlit"
+      ],
+      "via": "the west-side path between Porter and Rachel Carson"
+    },
+    {
+      "from": "rachel_carson_college",
+      "to": "oakes_college",
+      "minutes": 4,
+      "elev_change_ft": -15,
+      "flags": [],
+      "via": "the shared path between the two colleges"
+    },
+    {
+      "from": "oakes_college",
+      "to": "oakes_carson_dining",
+      "minutes": 2,
+      "elev_change_ft": 5,
+      "flags": [],
+      "via": "the Oakes courtyard"
+    },
+    {
+      "from": "oakes_college",
+      "to": "west_entrance",
+      "minutes": 7,
+      "elev_change_ft": 60,
+      "flags": [
+        "unlit"
+      ],
+      "via": "the path between Oakes and Empire Grade"
+    },
+    {
+      "from": "west_entrance",
+      "to": "arboretum",
+      "minutes": 6,
+      "elev_change_ft": -70,
+      "flags": [
+        "unlit"
+      ],
+      "via": "along Empire Grade"
+    },
+    {
+      "from": "arboretum",
+      "to": "farm_and_garden",
+      "minutes": 8,
+      "elev_change_ft": -35,
+      "flags": [
+        "unlit"
+      ],
+      "via": "the lower campus path"
+    },
+    {
+      "from": "farm_and_garden",
+      "to": "hay_barn",
+      "minutes": 5,
+      "elev_change_ft": -55,
+      "flags": [
+        "unlit"
+      ],
+      "via": "past the farm fields"
+    },
+    {
+      "from": "hay_barn",
+      "to": "barn_theater",
+      "minutes": 4,
+      "elev_change_ft": 5,
+      "flags": [
+        "unlit"
+      ],
+      "via": "the lower campus walkway"
+    },
+    {
+      "from": "barn_theater",
+      "to": "main_entrance",
+      "minutes": 5,
+      "elev_change_ft": -20,
+      "flags": [
+        "unlit"
+      ],
+      "via": "the path between the barn and the entrance"
+    },
+    {
+      "from": "main_entrance",
+      "to": "metro_center_downtown",
+      "minutes": 32,
+      "elev_change_ft": -230,
+      "flags": [
+        "offcampus",
+        "bus_strongly_recommended"
+      ],
+      "via": "High Street and Bay Street — a long haul; take the bus"
+    },
+    {
+      "from": "metro_center_downtown",
+      "to": "boardwalk",
+      "minutes": 16,
+      "elev_change_ft": -35,
+      "flags": [
+        "offcampus"
+      ],
+      "via": "Pacific Avenue and across the river"
+    }
+  ]
+}
