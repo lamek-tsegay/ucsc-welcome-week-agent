@@ -386,9 +386,17 @@ def test_unknown_vibe_returns_none():
     assert respond_to_vibe("goblin_mode") is None
 
 
-def test_vibe_results_keep_unofficial_labels():
-    message, _ = respond_to_vibe("creative")
-    assert "[unofficial]" in text_of(message)
+def test_vibe_results_keep_verification_badges():
+    """Labels moved from text bullets to per-item card badges — they must not
+    have been lost in the move."""
+    message, shown_ids = respond_to_vibe("creative")
+    assert shown_ids
+
+    badges = {
+        button["label"]
+        for button in _card_badges(payload_of(message))
+    }
+    assert "Unofficial" in badges
 
 
 def test_category_browse_by_id():
@@ -544,10 +552,18 @@ from agents.clubs.service import respond_to_shortlist
 
 def test_shortlist_lists_saved_clubs_with_cornucopia_pointer():
     message, shown_ids = respond_to_shortlist(["c_anime", "c_hiking"])
-    body = text_of(message)
     assert shown_ids == ["c_anime", "c_hiking"]
-    assert "Cornucopia" in body
-    assert "[unofficial]" in body  # labels survive into the shortlist
+    assert "Cornucopia" in text_of(message)
+
+    payload = payload_of(message)
+    # The starred organizations are on the card, each still labelled.
+    tappable = {
+        sel["club_id"]
+        for sel in selections_of(payload)
+        if "club_id" in sel and "action" not in sel
+    }
+    assert tappable == {"c_anime", "c_hiking"}
+    assert "Unofficial" in {badge["label"] for badge in _card_badges(payload)}
 
 
 def test_shortlist_empty_state():
@@ -737,6 +753,24 @@ from common.chat import strip_mention
 )
 def test_strip_mention(raw, expected):
     assert strip_mention(raw) == expected
+
+
+def _card_badges(payload: dict) -> list[dict]:
+    """Every badge node in a card payload, in document order."""
+    found: list[dict] = []
+
+    def walk(node) -> None:
+        if isinstance(node, dict):
+            if node.get("type") == "badge":
+                found.append(node)
+            for value in node.values():
+                walk(value)
+        elif isinstance(node, list):
+            for entry in node:
+                walk(entry)
+
+    walk(payload)
+    return found
 
 
 def _card_buttons(payload: dict) -> list[dict]:

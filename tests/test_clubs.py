@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import asyncio
+import json
 
 import pytest
 
@@ -178,9 +179,35 @@ def test_response_includes_card_and_disclaimer():
     assert "representative examples" in body
 
 
-def test_response_labels_every_entry_unofficial():
-    message, _ = asyncio.run(respond_to_query("show me cultural orgs"))
-    assert "unofficial" in _text(message).lower()
+def test_response_labels_every_entry_on_the_card():
+    """Listings render organizations on the card, so that is where the
+    verification badge has to be — the text bubble carries only the heading
+    and the caveats."""
+    message, shown_ids = asyncio.run(respond_to_query("show me cultural orgs"))
+    assert shown_ids
+
+    payload = json.loads(
+        next(
+            item for item in message.content if isinstance(item, MetadataContent)
+        ).metadata["card_payload"]
+    )
+    badges: list[str] = []
+
+    def walk(node):
+        if isinstance(node, dict):
+            if node.get("type") == "badge":
+                badges.append(node.get("label", ""))
+            for value in node.values():
+                walk(value)
+        elif isinstance(node, list):
+            for entry in node:
+                walk(entry)
+
+    walk(payload)
+    lookup = {club["id"]: club for club in clubs()}
+    for club_id in shown_ids:
+        expected = "Confirmed" if lookup[club_id]["verified"] else "Unofficial"
+        assert expected in badges, f"{club_id} missing its {expected} badge"
 
 
 def test_categories_query_lists_categories():

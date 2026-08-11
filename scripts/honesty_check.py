@@ -24,7 +24,9 @@ from agents.clubs.service import respond_to_selection as clubs_selection
 from agents.events.service import respond_to_query as events_query
 from agents.events.service import respond_to_selection as events_selection
 from common.loader import clubs, events, transit_meta
-from uagents_core.contrib.protocols.chat import TextContent
+import json
+
+from uagents_core.contrib.protocols.chat import MetadataContent, TextContent
 
 DURING = date(2026, 9, 22)
 
@@ -37,6 +39,56 @@ def check(condition: bool, message: str) -> None:
     checks += 1
     if not condition:
         failures.append(message)
+
+
+def card_items(message) -> list[dict]:
+    """Every list-card item in a message, as {heading, body, badges}.
+
+    Listings render their records on the card rather than in the text bubble,
+    so the labelling rules have to be checked where the student actually reads
+    them. Verifying only the text would let an unlabelled card pass.
+    """
+    payload = None
+    for item in message.content:
+        if isinstance(item, MetadataContent):
+            payload = json.loads(item.metadata["card_payload"])
+            break
+    if payload is None:
+        return []
+
+    found: list[dict] = []
+
+    def walk(node) -> None:
+        if isinstance(node, dict):
+            if node.get("type") == "list":
+                for entry in node.get("items", []):
+                    record = {"heading": "", "body": "", "badges": []}
+
+                    def collect(inner) -> None:
+                        if isinstance(inner, dict):
+                            kind = inner.get("type")
+                            if kind == "heading":
+                                record["heading"] = inner.get("value", "")
+                            elif kind == "text":
+                                record["body"] += inner.get("value", "")
+                            elif kind == "badge":
+                                record["badges"].append(inner.get("label", ""))
+                            for value in inner.values():
+                                collect(value)
+                        elif isinstance(inner, list):
+                            for value in inner:
+                                collect(value)
+
+                    collect(entry)
+                    found.append(record)
+            for value in node.values():
+                walk(value)
+        elif isinstance(node, list):
+            for entry in node:
+                walk(entry)
+
+    walk(payload)
+    return found
 
 
 def text_of(message) -> str:
@@ -123,20 +175,36 @@ def check_transit_data() -> None:
 
 
 async def check_rendered_events() -> None:
-    message, _ = await events_query("show me the whole week", today=DURING)
+    message, shown_ids = await events_query("show me the whole week", today=DURING)
     body = text_of(message)
-    check(
-        "unofficial" in body.lower(),
-        "events listing: placeholder entries are not labelled 'unofficial'.",
-    )
     check(
         "welcome.ucsc.edu" in body,
         "events listing: no pointer to the official schedule.",
     )
+
+    # Events render on the card, so each one carries its own verification badge
+    # and its own time — including the refusal to invent one.
+    by_id = {event["id"]: event for event in events()}
+    items = card_items(message)
     check(
-        "time not yet published" in body,
-        "events listing: unpublished times are not stated as unpublished.",
+        len(items) == len(shown_ids),
+        f"events listing: card shows {len(items)} events but the reply claims "
+        f"{len(shown_ids)}.",
     )
+    for event_id, item in zip(shown_ids, items):
+        event = by_id[event_id]
+        expected = "Confirmed" if event["verified"] else "Unofficial"
+        check(
+            expected in item["badges"],
+            f"events listing: {event_id} is missing its {expected!r} badge on "
+            f"the card (badges: {item['badges']}).",
+        )
+        if event["time"] is None:
+            check(
+                "time not yet published" in item["body"],
+                f"events listing: {event_id} has no published time but the "
+                "card does not say so.",
+            )
 
     for event in events():
         detail = text_of(events_selection(event["id"]))
@@ -159,12 +227,8 @@ async def check_rendered_events() -> None:
 
 
 async def check_rendered_clubs() -> None:
-    message, _ = await clubs_query("show me cultural orgs")
+    message, shown_ids = await clubs_query("show me cultural orgs")
     body = text_of(message)
-    check(
-        "unofficial" in body.lower(),
-        "clubs listing: entries are not labelled 'unofficial'.",
-    )
     check(
         "representative examples" in body,
         "clubs listing: missing the 'representative examples' caveat.",
@@ -173,6 +237,24 @@ async def check_rendered_clubs() -> None:
         "getinvolved.ucsc.edu" in body,
         "clubs listing: no pointer to the official directory.",
     )
+
+    # Organizations render on the card, so every one must carry its own
+    # verification badge there.
+    by_id = {club["id"]: club for club in clubs()}
+    items = card_items(message)
+    check(
+        len(items) == len(shown_ids),
+        f"clubs listing: card shows {len(items)} organizations but the reply "
+        f"claims {len(shown_ids)}.",
+    )
+    for club_id, item in zip(shown_ids, items):
+        club = by_id[club_id]
+        expected = "Confirmed" if club["verified"] else "Unofficial"
+        check(
+            expected in item["badges"],
+            f"clubs listing: {club_id} is missing its {expected!r} badge on "
+            f"the card (badges: {item['badges']}).",
+        )
 
     for club in clubs():
         detail = text_of(clubs_selection(club["id"]))

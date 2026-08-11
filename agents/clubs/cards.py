@@ -310,11 +310,12 @@ def list_message(
     heading: str,
     footer_buttons: list[MenuButton] | None = None,
 ) -> ChatMessage:
-    lines = [heading, ""]
-    lines.extend(_summary_line(item.club) for item in scored)
-    lines.append("")
-    lines.append(clubs_disclaimer())
-    preamble = "\n".join(lines)
+    # Only the heading and the caveat go in the text bubble. The card below
+    # already shows every organization with its name, description, category,
+    # and Confirmed/Unofficial badge, so listing them here too printed the
+    # whole result set twice. Verification labelling is not lost — it moves to
+    # the per-item badge, which the honesty gate checks there.
+    preamble = "\n".join([heading, "", clubs_disclaimer()])
 
     items = [
         CardItem(
@@ -530,15 +531,14 @@ def empty_shortlist_message() -> ChatMessage:
 
 def shortlist_message(chosen: list[dict]) -> ChatMessage:
     """The student's starred organizations — their Cornucopia hit-list."""
-    lines = ["**Your Cornucopia shortlist** ⭐", ""]
-    lines.extend(_summary_line(club) for club in chosen)
-    lines.append("")
-    lines.append(
+    lines = [
+        f"**Your Cornucopia shortlist** ⭐ — {len(chosen)} starred",
+        "",
         "Find them in person at **Cornucopia** — Tuesday Sept 22, East Upper "
-        "Field — or look them up in the official directory."
-    )
-    lines.append("")
-    lines.append(clubs_disclaimer())
+        "Field — or look them up in the official directory.",
+        "",
+        clubs_disclaimer(),
+    ]
 
     items = [
         CardItem(

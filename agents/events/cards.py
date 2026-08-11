@@ -224,15 +224,19 @@ def list_message(
     heading: str,
     date_note: str | None,
 ) -> ChatMessage:
-    """The list card plus a text bubble that stands on its own."""
+    """The list card, plus a text bubble carrying the heading and caveats.
+
+    The events themselves live only on the card, which shows each one's title,
+    day, time, venue, and Confirmed/Unofficial badge. Repeating them as text
+    printed the whole schedule twice. Time and verification labelling move to
+    the card items, where the honesty gate checks them.
+    """
     any_unverified = any(not item.event["verified"] for item in scored)
 
     lines: list[str] = []
     if date_note:
         lines.append(f"ℹ️ {date_note}\n")
     lines.append(heading)
-    lines.append("")
-    lines.extend(_summary_line(item.event) for item in scored)
     lines.append("")
     lines.append(events_disclaimer(any_unverified=any_unverified))
     preamble = "\n".join(lines)

@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import asyncio
+import json
 from datetime import date
 
 import pytest
@@ -258,8 +259,19 @@ def test_response_labels_placeholders():
 
 
 def test_response_states_time_not_published():
-    message, _ = asyncio.run(respond_to_query("what's on Monday", today=DURING))
-    assert "time not yet published" in _text(message)
+    """Events render on the card, so the refusal to invent a time lives in the
+    card item body rather than the text bubble."""
+    message, shown_ids = asyncio.run(
+        respond_to_query("what's on Monday", today=DURING)
+    )
+    assert shown_ids
+
+    payload = json.loads(
+        next(
+            item for item in message.content if isinstance(item, MetadataContent)
+        ).metadata["card_payload"]
+    )
+    assert "time not yet published" in json.dumps(payload)
 
 
 def test_out_of_window_query_is_explained():

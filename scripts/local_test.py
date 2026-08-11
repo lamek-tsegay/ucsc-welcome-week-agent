@@ -300,8 +300,9 @@ async def test_events() -> None:
     listing = replies[1]
     body = text_of(listing)
     check("Wednesday" in body, "events: listing omits the requested day")
+    # Events themselves render on the card, so their times are checked there.
     check(
-        "time not yet published" in body,
+        "time not yet published" in json.dumps(card_payload(listing)),
         "events: unpublished times not stated as unpublished",
     )
     check(
@@ -396,7 +397,11 @@ async def test_clubs() -> None:
 
     listing = replies[1]
     body = text_of(listing)
-    check("Hiking" in body, "clubs: listing omits the obvious match")
+    # Organizations render on the card, so the match is verified there.
+    check(
+        "Hiking" in json.dumps(card_payload(listing)),
+        "clubs: listing omits the obvious match",
+    )
     check(
         "representative examples" in body,
         "clubs: listing omits the representative-examples caveat",
