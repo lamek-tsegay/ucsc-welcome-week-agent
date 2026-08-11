@@ -472,6 +472,39 @@ def no_matches_message(query_text: str) -> ChatMessage:
     )
 
 
+def shortlist_toggled_message(
+    club: dict, *, saved: bool, total: int
+) -> ChatMessage:
+    """Confirmation after ⭐, with no card.
+
+    Re-rendering the detail card here made a one-tap acknowledgement as heavy
+    as a fresh answer, and repeated the card the student was already looking
+    at. A sentence and a nudge is the whole job.
+    """
+    if saved:
+        count = (
+            "that's your first one"
+            if total == 1
+            else f"that's {total} saved"
+        )
+        text = (
+            f"⭐ Added **{club['name']}** to your shortlist — {count}.\n\n"
+            "Want to see more clubs? Tell me what you're into, or say "
+            "*my shortlist* to review your picks."
+        )
+    else:
+        remaining = (
+            "your shortlist is empty now"
+            if total == 0
+            else f"{total} still saved"
+        )
+        text = (
+            f"Removed **{club['name']}** from your shortlist — {remaining}.\n\n"
+            "Want to see more clubs?"
+        )
+    return create_text_chat(text)
+
+
 def stale_selection_message() -> ChatMessage:
     return create_text_chat(
         "I've lost track of that organization — ask me again and tap from the "

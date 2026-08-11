@@ -985,3 +985,52 @@ def test_nonsense_still_matches_nothing():
     scored, total = select(build_query("quantum basket weaving underwater"))
     assert scored == []
     assert total == 0
+
+
+# --- starring is an acknowledgement, not a re-render --------------------------
+
+
+def test_shortlist_confirmation_carries_no_card():
+    """Tapping ⭐ used to re-send the whole detail card the student was already
+    looking at. A one-tap acknowledgement should cost one sentence."""
+    from agents.clubs.cards import shortlist_toggled_message
+    from agents.clubs.search import by_id
+
+    club = by_id("c_a_cappella")
+    message = shortlist_toggled_message(club, saved=True, total=1)
+
+    assert payload_of(message) is None, "a ⭐ confirmation must not carry a card"
+    body = text_of(message)
+    assert "A Cappella Collective" in body
+    assert "shortlist" in body.lower()
+    assert "?" in body, "the confirmation should invite the next step"
+
+
+def test_shortlist_confirmation_counts_and_unstars():
+    from agents.clubs.cards import shortlist_toggled_message
+    from agents.clubs.search import by_id
+
+    club = by_id("c_anime")
+    assert "first one" in text_of(shortlist_toggled_message(club, saved=True, total=1))
+    assert "3 saved" in text_of(shortlist_toggled_message(club, saved=True, total=3))
+
+    removed = text_of(shortlist_toggled_message(club, saved=False, total=0))
+    assert "Removed" in removed
+    assert "empty" in removed
+
+
+def test_plan_confirmation_carries_no_card():
+    from agents.events.cards import plan_toggled_message
+    from agents.events.recommend import by_id
+
+    message = plan_toggled_message(by_id("cornucopia"), saved=True, total=2)
+    assert payload_of(message) is None
+    body = text_of(message)
+    assert "Cornucopia" in body
+    assert "2 saved" in body
+
+
+# The end-to-end version of this (real handler, one reply, no card) lives in
+# scripts/local_test.py: constructing an Agent inside pytest schedules
+# publish_manifest() on a loop that a later asyncio.run() closes, which is why
+# handler-level checks belong in that harness rather than here.

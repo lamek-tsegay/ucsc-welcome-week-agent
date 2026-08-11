@@ -26,6 +26,7 @@ from uagents_core.contrib.protocols.chat import (
 
 from agents.clubs import cards
 from agents.clubs.cards import BACK_ACTION, CLUB_ID_FIELD
+from agents.clubs.search import by_id as club_by_id
 from agents.clubs.service import (
     WELCOME,
     bridge_to_navigation,
@@ -219,17 +220,21 @@ async def _handle_selection(
         club_id = selection.get(CLUB_ID_FIELD, "")
         if not club_id:
             return False
+        club = club_by_id(club_id)
+        if club is None:
+            return False
         now_saved = profile.toggle_saved(sender, "shortlist", club_id)
-        if now_saved:
-            note = (
-                "⭐ On your shortlist. Tap **⭐ My shortlist** any time — "
-                "it's your who-to-find list for Cornucopia."
-            )
-        else:
-            note = "Taken off your shortlist."
-        await _send(ctx, sender, create_text_chat(note))
-        message = respond_to_selection(club_id, saved=now_saved)
-        await _send(ctx, sender, message)
+        # A confirmation only — no card. The student is already looking at the
+        # detail they tapped from.
+        await _send(
+            ctx,
+            sender,
+            cards.shortlist_toggled_message(
+                club,
+                saved=now_saved,
+                total=len(profile.saved(sender, "shortlist")),
+            ),
+        )
         return True
 
     if action == "shortlist":

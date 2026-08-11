@@ -523,6 +523,28 @@ def directions_message(event: dict, origin_name: str, route_text: str) -> ChatMe
     return create_text_chat("\n".join(lines))
 
 
+def plan_toggled_message(event: dict, *, saved: bool, total: int) -> ChatMessage:
+    """Confirmation after ⭐, with no card — same reasoning as the clubs one."""
+    if saved:
+        count = (
+            "that's your first one" if total == 1 else f"that's {total} saved"
+        )
+        text = (
+            f"⭐ Added **{event['title']}** to your plan — {count}.\n\n"
+            "Want to add more? Say *plan my Tuesday* or *show me the whole "
+            "week*, or *my plan* to see your picks with walking times."
+        )
+    else:
+        remaining = (
+            "your plan is empty now" if total == 0 else f"{total} still saved"
+        )
+        text = (
+            f"Removed **{event['title']}** from your plan — {remaining}.\n\n"
+            "Want to look at more events?"
+        )
+    return create_text_chat(text)
+
+
 def no_matches_message(
     *, date_note: str | None, had_filters: bool
 ) -> ChatMessage:

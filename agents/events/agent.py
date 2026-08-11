@@ -37,7 +37,7 @@ from agents.events.service import (
     respond_to_query,
     respond_to_selection,
 )
-from agents.events.recommend import detect_college
+from agents.events.recommend import by_id as event_by_id, detect_college
 from common import profile
 from common.chat import (
     create_text_chat,
@@ -256,17 +256,21 @@ async def _handle_selection(
         return True
 
     if action == "save_event" and event_id:
+        event = event_by_id(event_id)
+        if event is None:
+            return False
         now_saved = profile.toggle_saved(sender, "plan", event_id)
-        if now_saved:
-            note = (
-                "⭐ Added to your plan. Tap **⭐ My plan** any time to see "
-                "your picks with walking times between them."
-            )
-        else:
-            note = "Removed from your plan."
-        await _send(ctx, sender, create_text_chat(note))
-        message = respond_to_selection(event_id, saved=now_saved)
-        await _send(ctx, sender, message)
+        # A confirmation only — no card. The student is already looking at the
+        # detail they tapped from.
+        await _send(
+            ctx,
+            sender,
+            cards.plan_toggled_message(
+                event,
+                saved=now_saved,
+                total=len(profile.saved(sender, "plan")),
+            ),
+        )
         return True
 
     if action == "my_plan":
