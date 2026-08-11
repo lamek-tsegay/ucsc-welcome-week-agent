@@ -291,7 +291,10 @@ def build_detail_payload(
 
     for block in blocks or []:
         column.append({"type": "divider"})
-        column.append({"type": "heading", "value": block.title, "level": 4})
+        # Level 3 deliberately: the element-tree renderer only accepts the
+        # levels the reference implementation uses, and a level it does not
+        # know makes the whole card fail to render rather than degrading.
+        column.append({"type": "heading", "value": block.title, "level": 3})
         column.extend(
             {"type": "text", "value": line, "style": "body"} for line in block.lines
         )
