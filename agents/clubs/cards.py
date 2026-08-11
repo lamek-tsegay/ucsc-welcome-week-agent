@@ -131,6 +131,32 @@ def _interest_buttons() -> list[MenuButton]:
     ]
 
 
+def _interest_card(
+    preamble: str, *, title: str, subtitle: str, include_categories: bool
+) -> ChatMessage:
+    """One interest per full-width row, with secondary actions below a rule."""
+    footer = []
+    if include_categories:
+        footer.append(
+            MenuButton(
+                "🗂️ Browse by category",
+                {"action": "quick", "q": "what categories are there"},
+            )
+        )
+    footer.append(MenuButton("📋 Show me all of them", {"action": "show_all"}))
+
+    payload = build_chip_payload(
+        title=title,
+        subtitle=subtitle,
+        body_lines=None,
+        chips=_interest_buttons(),
+        source=SOURCE,
+        footer_buttons=footer,
+        per_row=1,
+    )
+    return card_message(preamble, payload)
+
+
 def interests_message() -> ChatMessage:
     """The first reply to "tell me about clubs" — asks interests, not a dump.
 
@@ -139,47 +165,34 @@ def interests_message() -> ChatMessage:
     question, and the roster stays one tap away for the rare student who
     genuinely wants to read all of it.
     """
+    # The options live only on the card — listing them here too made the agent
+    # read as if it were saying everything twice. Clients that render no cards
+    # still have a way through: the free-text invitation below.
     preamble = (
         "Happy to help you find your people at UCSC! 🎓\n\n"
-        "**First — what are you into?** Tap whichever sounds most like you "
-        "and I'll show you the organizations that fit.\n\n"
-        + "\n".join(f"• {label} — {blurb}" for _, label, blurb, _ in VIBES)
-        + "\n\n_Or just tell me in your own words — *I like anime*, "
-        "*something outdoorsy*, *pre-med stuff* all work._"
+        "**First — what are you into?** Tap one below, or just tell me in your "
+        "own words — *I like anime*, *something outdoorsy*, *pre-med stuff* "
+        "all work."
     )
-    buttons = _interest_buttons()
-    buttons.append(
-        MenuButton("🗂️ Browse by category", {"action": "quick", "q": "what categories are there"})
-    )
-    buttons.append(MenuButton("📋 Show me all of them", {"action": "show_all"}))
-    return menu_message(
+    return _interest_card(
         preamble,
         title="What are you into? 🎓",
         subtitle="Tap one — I'll match you with organizations",
-        body_lines=None,
-        buttons=buttons,
-        source=SOURCE,
-        per_row=2,
+        include_categories=True,
     )
 
 
 def vibe_picker_message() -> ChatMessage:
     """The same question, reached deliberately via 🎯 Match my vibe."""
     preamble = (
-        "**What's your vibe?** Tap the one that sounds most like you and I'll "
-        "match you with organizations — no club names needed.\n\n"
-        + "\n".join(f"• {label} — {blurb}" for _, label, blurb, _ in VIBES)
+        "**What's your vibe?** Tap whichever sounds most like you — no club "
+        "names needed. You can also just describe yourself in your own words."
     )
-    buttons = _interest_buttons()
-    buttons.append(MenuButton("📋 Show me all of them", {"action": "show_all"}))
-    return menu_message(
+    return _interest_card(
         preamble,
         title="Match my vibe 🎯",
         subtitle="One tap — I'll do the matching",
-        body_lines=None,
-        buttons=buttons,
-        source=SOURCE,
-        per_row=2,
+        include_categories=False,
     )
 
 

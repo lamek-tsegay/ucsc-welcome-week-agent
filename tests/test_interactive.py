@@ -797,6 +797,44 @@ def test_generic_ask_leads_with_the_interests_question(opener):
     assert "show_all" in actions
 
 
+@pytest.mark.parametrize("builder_name", ["interests_message", "vibe_picker_message"])
+def test_interest_cards_do_not_repeat_their_buttons_as_text(builder_name):
+    """The card carries the options; the text bubble must not list them too.
+
+    Spelling every interest out above the card made the agent read as if it
+    were saying everything twice. Card-less clients stay served by the
+    free-text invitation, not by a duplicate list.
+    """
+    from agents.clubs import cards
+
+    message = getattr(cards, builder_name)()
+    body = text_of(message)
+
+    for _key, label, blurb, _tags in cards.VIBES:
+        name = label.split(" ", 1)[1]  # drop the emoji
+        assert name not in body, f"text bubble repeats the {name!r} button"
+        assert blurb not in body, f"text bubble repeats the {name!r} blurb"
+
+    # It still has to say what it wants and offer a way through without cards.
+    assert "?" in body
+    assert "own words" in body
+
+
+def test_interest_buttons_are_full_width():
+    """One interest per row — half-width buttons read as an afterthought."""
+    from agents.clubs import cards
+
+    payload = payload_of(cards.interests_message())
+    rows = [
+        child
+        for child in payload["root"]["children"]
+        if child.get("direction") == "row"
+    ]
+    # Six interest rows of one, then the secondary actions share a row.
+    interest_rows = rows[: len(cards.VIBES)]
+    assert all(len(row["children"]) == 1 for row in interest_rows)
+
+
 def test_tapping_an_interest_returns_matching_clubs():
     """Step 2: picking an interest yields organizations that fit it."""
     from agents.clubs.service import respond_to_vibe
