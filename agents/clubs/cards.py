@@ -468,34 +468,43 @@ def no_matches_message(query_text: str) -> ChatMessage:
 def shortlist_toggled_message(
     club: dict, *, saved: bool, total: int
 ) -> ChatMessage:
-    """Confirmation after ⭐, with no card.
+    """Confirmation after ⭐, carrying the interests card so browsing continues.
 
-    Re-rendering the detail card here made a one-tap acknowledgement as heavy
-    as a fresh answer, and repeated the card the student was already looking
-    at. A sentence and a nudge is the whole job.
+    Re-sending the *detail* card here would repeat what the student is already
+    looking at. Sending the interests picker instead turns the confirmation
+    into the next step: keep exploring, or go review what's saved.
     """
     if saved:
-        count = (
-            "that's your first one"
-            if total == 1
-            else f"that's {total} saved"
-        )
-        text = (
-            f"⭐ Added **{club['name']}** to your shortlist — {count}.\n\n"
-            "Want to see more clubs? Tell me what you're into, or say "
-            "*my shortlist* to review your picks."
-        )
+        count = "that's your first one" if total == 1 else f"that's {total} saved"
+        text = f"⭐ Added **{club['name']}** to your shortlist — {count}."
+        subtitle = "Keep going — tap another interest"
     else:
         remaining = (
-            "your shortlist is empty now"
-            if total == 0
-            else f"{total} still saved"
+            "your shortlist is empty now" if total == 0 else f"{total} still saved"
         )
-        text = (
-            f"Removed **{club['name']}** from your shortlist — {remaining}.\n\n"
-            "Want to see more clubs?"
-        )
-    return create_text_chat(text)
+        text = f"Removed **{club['name']}** from your shortlist — {remaining}."
+        subtitle = "Tap an interest to keep looking"
+
+    footer = [
+        MenuButton(
+            "⭐ Show me my shortlist", {"action": "shortlist"}, primary=True
+        ),
+        MenuButton(
+            "🗂️ Browse by category",
+            {"action": "quick", "q": "what categories are there"},
+        ),
+        MenuButton("📋 Show me all of them", {"action": "show_all"}),
+    ]
+    payload = build_chip_payload(
+        title="What are you into? 🎓",
+        subtitle=subtitle,
+        body_lines=None,
+        chips=_interest_buttons(),
+        source=SOURCE,
+        footer_buttons=footer,
+        per_row=1,
+    )
+    return card_message(text, payload)
 
 
 def stale_selection_message() -> ChatMessage:

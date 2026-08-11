@@ -519,25 +519,39 @@ def directions_message(event: dict, origin_name: str, route_text: str) -> ChatMe
 
 
 def plan_toggled_message(event: dict, *, saved: bool, total: int) -> ChatMessage:
-    """Confirmation after ⭐, with no card — same reasoning as the clubs one."""
+    """Confirmation after ⭐, carrying the next steps — same shape as clubs.
+
+    Re-sending the event's own detail card would repeat what the student is
+    looking at; offering where to go next turns the confirmation into progress.
+    """
     if saved:
-        count = (
-            "that's your first one" if total == 1 else f"that's {total} saved"
-        )
-        text = (
-            f"⭐ Added **{event['title']}** to your plan — {count}.\n\n"
-            "Want to add more? Say *plan my Tuesday* or *show me the whole "
-            "week*, or *my plan* to see your picks with walking times."
-        )
+        count = "that's your first one" if total == 1 else f"that's {total} saved"
+        text = f"⭐ Added **{event['title']}** to your plan — {count}."
+        subtitle = "Keep going — add more to your week"
     else:
         remaining = (
             "your plan is empty now" if total == 0 else f"{total} still saved"
         )
-        text = (
-            f"Removed **{event['title']}** from your plan — {remaining}.\n\n"
-            "Want to look at more events?"
-        )
-    return create_text_chat(text)
+        text = f"Removed **{event['title']}** from your plan — {remaining}."
+        subtitle = "Pick up where you left off"
+
+    buttons = [
+        MenuButton("⭐ Show me my plan", {"action": "my_plan"}, primary=True),
+        MenuButton(
+            "🗓️ Whole week", {"action": "quick", "q": "show me the whole week"}
+        ),
+        MenuButton("🧭 Plan a day", {"action": "plan_day"}),
+        MenuButton("🍕 Free food", {"action": "quick", "q": "free food this week"}),
+    ]
+    return menu_message(
+        text,
+        title="What's next? 🎪",
+        subtitle=subtitle,
+        body_lines=None,
+        buttons=buttons,
+        source=SOURCE,
+        per_row=2,
+    )
 
 
 def no_matches_message(

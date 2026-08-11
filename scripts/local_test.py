@@ -453,9 +453,9 @@ async def test_clubs_card_tap() -> None:
         "clubs tap: detail omits the not-a-roster caveat",
     )
 
-    # Starring is an acknowledgement, not a re-render: one short reply, no card.
-    # Re-sending the detail card here would repeat what the student is already
-    # looking at.
+    # Starring confirms in one line and offers the next step: the interests
+    # picker plus a direct route to the shortlist. It must not re-send the
+    # detail card the student is already looking at.
     await handle(
         ctx,
         USER,
@@ -469,12 +469,22 @@ async def test_clubs_card_tap() -> None:
     check(len(replies) == 3, f"clubs star: expected one reply, got {len(replies) - 2}")
     starred = replies[-1]
     check(
-        card_payload(starred) is None,
-        "clubs star: the confirmation must not carry a card",
-    )
-    check(
         "shortlist" in text_of(starred).lower(),
         "clubs star: confirmation does not mention the shortlist",
+    )
+
+    payload = json.dumps(card_payload(starred))
+    check(
+        '"action": "shortlist"' in payload,
+        "clubs star: no one-tap route to the shortlist",
+    )
+    check(
+        '"vibe"' in payload,
+        "clubs star: the interests picker did not come back",
+    )
+    check(
+        f'"club_id": "{club_id}"' not in payload,
+        "clubs star: re-sent the detail card instead of the next step",
     )
 
 

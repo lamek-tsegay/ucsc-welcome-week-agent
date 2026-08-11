@@ -992,20 +992,38 @@ def test_nonsense_still_matches_nothing():
 # --- starring is an acknowledgement, not a re-render --------------------------
 
 
-def test_shortlist_confirmation_carries_no_card():
-    """Tapping ⭐ used to re-send the whole detail card the student was already
-    looking at. A one-tap acknowledgement should cost one sentence."""
-    from agents.clubs.cards import shortlist_toggled_message
+def test_shortlist_confirmation_continues_the_flow():
+    """Tapping ⭐ confirms in one line and offers the next step.
+
+    It must not re-send the detail card the student is already looking at, but
+    it should carry the interests picker so browsing continues, plus a direct
+    route to the shortlist itself.
+    """
+    from agents.clubs.cards import VIBES, shortlist_toggled_message
     from agents.clubs.search import by_id
 
     club = by_id("c_a_cappella")
     message = shortlist_toggled_message(club, saved=True, total=1)
 
-    assert payload_of(message) is None, "a ⭐ confirmation must not carry a card"
     body = text_of(message)
     assert "A Cappella Collective" in body
     assert "shortlist" in body.lower()
-    assert "?" in body, "the confirmation should invite the next step"
+    assert len(body.splitlines()) <= 2, "the confirmation itself stays one line"
+
+    payload = payload_of(message)
+    assert payload is not None, "the confirmation should carry the next step"
+
+    selections = selections_of(payload)
+    # Every interest is one tap away again.
+    vibes = {sel.get("vibe") for sel in selections if "vibe" in sel}
+    assert vibes == {key for key, _, _, _ in VIBES}
+    # And the shortlist itself is directly reachable.
+    assert "shortlist" in {sel.get("action") for sel in selections}
+
+    # It must not be the club's own detail card coming back.
+    assert not [
+        sel for sel in selections if "club_id" in sel and "action" not in sel
+    ]
 
 
 def test_shortlist_confirmation_counts_and_unstars():
@@ -1021,15 +1039,19 @@ def test_shortlist_confirmation_counts_and_unstars():
     assert "empty" in removed
 
 
-def test_plan_confirmation_carries_no_card():
+def test_plan_confirmation_continues_the_flow():
     from agents.events.cards import plan_toggled_message
     from agents.events.recommend import by_id
 
     message = plan_toggled_message(by_id("cornucopia"), saved=True, total=2)
-    assert payload_of(message) is None
     body = text_of(message)
     assert "Cornucopia" in body
     assert "2 saved" in body
+
+    payload = payload_of(message)
+    assert payload is not None
+    actions = {sel.get("action") for sel in selections_of(payload)}
+    assert "my_plan" in actions, "the plan itself should be one tap away"
 
 
 # The end-to-end version of this (real handler, one reply, no card) lives in
