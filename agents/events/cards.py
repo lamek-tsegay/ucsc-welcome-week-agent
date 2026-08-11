@@ -7,6 +7,7 @@ from datetime import date
 from agents.events.recommend import ScoredEvent, weekday_name, window_dates
 from common.cards import (
     CardItem,
+    DetailBlock,
     DetailRow,
     MenuButton,
     build_detail_payload,
@@ -278,16 +279,33 @@ def detail_message(
         DetailRow("Who", _scope_text(event)),
     ]
 
+    blocks = []
+    pin = pin_line(event["location_id"]) if event.get("location_id") else None
+    if pin:
+        blocks.append(DetailBlock("Getting there", [pin, PIN_CAVEAT.strip("_")]))
+    if others:
+        blocks.append(
+            DetailBlock(
+                f"Also on {_day_label(event['date'])}",
+                [
+                    " · ".join(
+                        f"{marker(other['verified'])}{other['title']}"
+                        for other in others
+                    )
+                ],
+            )
+        )
+
     if verified:
-        footnote = f"Date confirmed from the official UCSC page: {OFFICIAL_EVENTS_URL}"
+        footnote = f"Date confirmed: {OFFICIAL_EVENTS_URL}"
         if not event.get("time"):
             footnote = (
-                "The official page lists this date but has not published a time. "
-                f"Check {OFFICIAL_EVENTS_URL} and your email closer to the day."
+                "Date confirmed on the official page, which has not published a "
+                f"time yet. Check {OFFICIAL_EVENTS_URL} closer to the day."
             )
     else:
         footnote = (
-            "⚠️ This is a placeholder example from this agent's seed data, not an "
+            "⚠️ Placeholder example from this agent's seed data, not an "
             f"announced event. Confirm at {OFFICIAL_EVENTS_URL}."
         )
 
@@ -315,46 +333,18 @@ def detail_message(
         body=event["description"],
         badges=[badge(verified)],
         rows=rows,
+        blocks=blocks,
         footnote=footnote,
-        back_label="Back to events",
+        back_label="Back",
         back_action=BACK_ACTION,
         source=SOURCE,
         extra_buttons=extra_buttons,
     )
 
-    lines = [f"**{event['title']}** — {_day_label(event['date'])}"]
-    if not verified:
-        lines.append(
-            "⚠️ *Placeholder example, not an announced event.* "
-            f"Confirm at {OFFICIAL_EVENTS_URL}."
-        )
-    lines.append("")
-    lines.append(event["description"])
-    lines.append("")
-    where = f"**Where:** {_location_text(event)}"
-    pin = pin_line(event["location_id"]) if event.get("location_id") else None
-    if pin:
-        where += f"  ·  {pin}"
-    lines.append(where)
-    lines.append(f"**Time:** {event_time(event.get('time'))}")
-    lines.append(f"**Who:** {_scope_text(event)}")
-
-    if event.get("location_id"):
-        lines.append("")
-        lines.append(
-            "Need walking directions? Tap **🗺️ Directions** below — or ask the "
-            "**UCSC Campus Navigation** agent."
-        )
-        lines.append(PIN_CAVEAT)
-
-    if others:
-        lines.append("")
-        lines.append(f"**Also on {_day_label(event['date'])}:**")
-        lines.extend(
-            f"• {marker(other['verified'])}{other['title']}" for other in others
-        )
-
-    return card_message("\n".join(lines), payload)
+    # The card carries the detail; the bubble is a one-line title.
+    return card_message(
+        f"**{event['title']}** — {_day_label(event['date'])}", payload
+    )
 
 
 def planner_message(

@@ -664,13 +664,14 @@ def test_event_detail_includes_venue_pin():
     from agents.events.recommend import by_id
 
     message = detail_message(by_id("cornucopia"), [])
-    body = text_of(message)
-    assert "google.com/maps/search" in body
-    assert "approximate" in body
+    rendered = text_of(message) + json.dumps(payload_of(message))
+    assert "google.com/maps/search" in rendered
+    assert "approximate" in rendered
 
     # No venue -> no pin, no pretend link.
     hidden = detail_message(by_id("choose_your_own_slugventure"), [])
-    assert "google.com/maps" not in text_of(hidden)
+    hidden_rendered = text_of(hidden) + json.dumps(payload_of(hidden))
+    assert "google.com/maps" not in hidden_rendered
 
 
 # --- cross-agent bridging -----------------------------------------------------

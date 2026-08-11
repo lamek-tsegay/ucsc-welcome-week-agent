@@ -287,20 +287,21 @@ def test_out_of_window_query_is_explained():
 
 
 def test_selection_detail_for_confirmed_event():
-    body = _text(respond_to_selection("cornucopia"))
-    assert "Cornucopia" in body
-    assert "East Upper Field" in body
+    message = respond_to_selection("cornucopia")
+    rendered = _text(message) + _card_text(message)
+    assert "Cornucopia" in rendered
+    assert "East Upper Field" in rendered
     # The confirmed event itself must carry no placeholder warning. Other events
-    # listed under "Also on this day" are legitimately labelled unofficial, so
-    # the check is scoped to the warning, not the word.
-    assert "Placeholder example" not in body
-    header = body.split("**Also on")[0]
-    assert "unofficial" not in header.lower()
+    # listed under "Also on <day>" are legitimately labelled unofficial, so
+    # the check is scoped to this event's own copy.
+    own_copy = rendered.split("Also on")[0]
+    assert "Placeholder example" not in own_copy
+    assert "unofficial" not in own_copy.lower()
 
 
 def test_selection_detail_warns_on_placeholder():
-    body = _text(respond_to_selection("ph_porter_arts_night"))
-    assert "Placeholder example" in body
+    message = respond_to_selection("ph_porter_arts_night")
+    assert "Placeholder example" in _text(message) + _card_text(message)
 
 
 def test_unknown_selection_is_handled():

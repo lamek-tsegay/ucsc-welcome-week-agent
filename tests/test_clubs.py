@@ -237,16 +237,20 @@ def test_no_match_response_suggests_alternatives():
 
 
 def test_selection_detail_points_at_official_sources():
-    body = _text(respond_to_selection("c_anime"))
-    assert "Anime & Manga Club" in body
-    assert "soar@ucsc.edu" in body
-    assert "Cornucopia" in body
-    assert "not a live roster entry" in body
+    """Detail content lives on the card, so that is where the routes to the
+    real thing have to be."""
+    message = respond_to_selection("c_anime")
+    rendered = _text(message) + _card_text(message)
+    assert "Anime & Manga Club" in rendered
+    assert "soar@ucsc.edu" in rendered
+    assert "Cornucopia" in rendered
+    assert "not a live roster entry" in rendered
 
 
 def test_selection_detail_does_not_fabricate_contact():
-    body = _text(respond_to_selection("c_hiking"))
-    assert "@" not in body.replace("soar@ucsc.edu", ""), (
+    message = respond_to_selection("c_hiking")
+    rendered = _text(message) + _card_text(message)
+    assert "@" not in rendered.replace("soar@ucsc.edu", ""), (
         "the only email address shown should be the official SOAR contact"
     )
 
@@ -322,17 +326,13 @@ def test_engineering_orgs_are_findable_by_acronym():
 
 
 def test_verified_detail_cites_source_and_site():
-    from agents.clubs.service import respond_to_selection
-    from uagents_core.contrib.protocols.chat import TextContent
-
     message = respond_to_selection("be_swe")
-    body = "\n".join(
-        i.text for i in message.content if isinstance(i, TextContent)
-    )
-    assert "Confirmed" in body or "✅" in body
-    assert "sweclub.engineering.ucsc.edu" in body  # the official page's link
+    rendered = _text(message) + _card_text(message)
+    assert "Confirmed" in rendered
+    assert "Baskin Engineering" in rendered
+    assert "sweclub.engineering.ucsc.edu" in rendered  # the official page's link
     # And still no invented contact details:
-    assert "@" not in body.replace("soar@ucsc.edu", "")
+    assert "@" not in rendered.replace("soar@ucsc.edu", "")
 
 
 def test_verified_orgs_do_not_hijack_unrelated_categories():

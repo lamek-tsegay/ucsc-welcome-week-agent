@@ -247,6 +247,14 @@ def build_list_payload(
     return {"root": section}
 
 
+@dataclass
+class DetailBlock:
+    """A titled group of lines on a detail card, e.g. "How to join"."""
+
+    title: str
+    lines: list[str]
+
+
 def build_detail_payload(
     *,
     title: str,
@@ -254,6 +262,7 @@ def build_detail_payload(
     body: str,
     badges: list[tuple[str, str]],
     rows: list[DetailRow],
+    blocks: list[DetailBlock] | None = None,
     footnote: str | None = None,
     back_label: str,
     back_action: str,
@@ -261,6 +270,10 @@ def build_detail_payload(
     extra_buttons: list[MenuButton] | None = None,
 ) -> dict[str, Any]:
     """Build the `card_payload` for a single-record detail card.
+
+    `rows` are one-line facts (Category, Interests). `blocks` are short titled
+    lists — how to join, what's similar — so everything a student needs sits on
+    the card itself rather than in a paragraph above it.
 
     `extra_buttons` sit in the action row before Back — record-specific actions
     like "Directions to this event".
@@ -274,6 +287,13 @@ def build_detail_payload(
         column.extend(
             {"type": "text", "value": f"{row.label}: {row.value}", "style": "body"}
             for row in rows
+        )
+
+    for block in blocks or []:
+        column.append({"type": "divider"})
+        column.append({"type": "heading", "value": block.title, "level": 4})
+        column.extend(
+            {"type": "text", "value": line, "style": "body"} for line in block.lines
         )
 
     if footnote:

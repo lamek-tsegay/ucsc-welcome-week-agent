@@ -348,7 +348,8 @@ async def test_events_card_tap() -> None:
 
     replies = chat_replies(ctx)
     check(len(replies) == 2, f"events tap: expected a detail reply, got {len(replies)}")
-    detail = text_of(replies[1])
+    # Detail content is on the card; the bubble is just the title line.
+    detail = text_of(replies[1]) + json.dumps(card_payload(replies[1]))
     check("Where:" in detail, "events tap: detail omits the location")
     check("Time:" in detail, "events tap: detail omits the time line")
 
@@ -441,7 +442,8 @@ async def test_clubs_card_tap() -> None:
 
     replies = chat_replies(ctx)
     check(len(replies) == 2, "clubs tap: no detail reply")
-    detail = text_of(replies[1])
+    # Detail content is on the card; the bubble is just the title line.
+    detail = text_of(replies[1]) + json.dumps(card_payload(replies[1]))
     check("soar@ucsc.edu" in detail, "clubs tap: detail omits the official contact")
     check(
         "not a live roster entry" in detail,

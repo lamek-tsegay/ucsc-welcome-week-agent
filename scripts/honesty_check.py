@@ -215,10 +215,15 @@ async def check_rendered_events() -> None:
             )
 
     for event in events():
-        detail = text_of(events_selection(event["id"]))
+        # Detail content lives on the card, so check the whole rendered payload.
+        message = events_selection(event["id"])
+        detail = text_of(message) + card_text(message)
         if event["verified"]:
             check(
-                "Placeholder example" not in detail.split("**Also on")[0],
+                # Split before the "Also on <day>" block: that section lists
+                # sibling events, which may legitimately be placeholders. Only
+                # this event's own copy is under test.
+                "Placeholder example" not in detail.split("Also on")[0],
                 f"event detail {event['id']}: confirmed event is labelled a "
                 "placeholder.",
             )
@@ -267,7 +272,10 @@ async def check_rendered_clubs() -> None:
         )
 
     for club in clubs():
-        detail = text_of(clubs_selection(club["id"]))
+        # Detail content lives on the card, so the whole rendered payload is
+        # what a student reads — check there, not just the text bubble.
+        message = clubs_selection(club["id"])
+        detail = text_of(message) + card_text(message)
         if club["verified"]:
             # Confirmed orgs cite their official source instead of the roster
             # caveat — but must never overstate what "confirmed" means.

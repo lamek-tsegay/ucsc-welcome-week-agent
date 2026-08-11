@@ -5,6 +5,7 @@ from __future__ import annotations
 from agents.clubs.search import ScoredClub, category_label
 from common.cards import (
     CardItem,
+    DetailBlock,
     DetailRow,
     MenuButton,
     build_chip_payload,
@@ -344,32 +345,35 @@ def detail_message(
 
     website = club.get("website")
 
-    rows = [
-        DetailRow("Category", category_label(club["category"])),
-        DetailRow("Interests", tags),
-    ]
+    rows = [DetailRow("Interests", tags)]
     if website:
         rows.append(DetailRow("Site", website))
-    rows.append(
-        DetailRow(
-            "Contact",
-            "See the club's site" if website else "See the official directory",
+
+    join_lines = []
+    if website:
+        join_lines.append(f"• Their site: {website}")
+    join_lines.append(f"• Directory: {OFFICIAL_CLUBS_URL}")
+    join_lines.append("• Cornucopia — Tue Sept 22, East Upper Field")
+    join_lines.append(f"• Email SOAR: {CLUBS_CONTACT}")
+
+    blocks = [DetailBlock("How to join", join_lines)]
+    if others:
+        blocks.append(
+            DetailBlock(
+                "Similar", [" · ".join(other["name"] for other in others)]
+            )
         )
-    )
-    rows.append(DetailRow("Meetings", "Not published here — check their site" if website else "Not published here — check the directory"))
 
     if club["verified"]:
         footnote = (
-            "✅ Listed on the official Baskin Engineering student-organizations "
-            f"page ({ENGINEERING_ORGS_URL}, checked "
-            f"{club.get('source_checked', '2026')}). That page confirms the "
-            "organization exists; check its own site for current details."
+            "✅ Confirmed on the official Baskin Engineering page "
+            f"({club.get('source_checked', '2026')}). Meeting times and contacts "
+            "live on the club's own site, not here."
         )
     else:
         footnote = (
-            "⚠️ Representative example, not a live roster entry. Registration status, "
-            f"contact details, and meeting times live at {OFFICIAL_CLUBS_URL} "
-            f"(or email {CLUBS_CONTACT})."
+            "⚠️ Representative example, not a live roster entry. Contact details "
+            "and meeting times are omitted rather than guessed."
         )
 
     payload = build_detail_payload(
@@ -381,58 +385,24 @@ def detail_message(
             badge(club["verified"]),
         ],
         rows=rows,
+        blocks=blocks,
         footnote=footnote,
-        back_label="Back to clubs",
+        back_label="Back",
         back_action=BACK_ACTION,
         source=SOURCE,
         extra_buttons=[
             MenuButton(
-                "✅ On your shortlist" if saved else "⭐ Shortlist for Cornucopia",
+                "✅ Shortlisted" if saved else "⭐ Shortlist",
                 {CLUB_ID_FIELD: club["id"], "action": "save_club"},
             )
         ],
     )
 
-    lines = [
-        f"**{club['name']}** — {category_label(club['category'])}",
-        "",
-        club["description"],
-        "",
-        f"**Interests:** {tags}",
-    ]
-    if website:
-        lines.append("")
-        lines.append(f"**Site:** [{website}]({website})")
-    lines.append("")
-    lines.append("**How to actually join:**")
-    if website:
-        lines.append(f"• Their own site is the front door: {website}")
-    lines.append(f"• Look it up in the official directory: {OFFICIAL_CLUBS_URL}")
-    lines.append(
-        "• Go to **Cornucopia** (Tue Sept 22, East Upper Field) — most "
-        "organizations table there in person"
+    # The card carries the detail. The bubble is a one-line title so the reply
+    # still reads as a chat message and stays usable without card rendering.
+    return card_message(
+        f"**{club['name']}** — {category_label(club['category'])}", payload
     )
-    lines.append(f"• Or email SOAR at {CLUBS_CONTACT}")
-    lines.append("")
-    if club["verified"]:
-        lines.append(
-            "✅ *Confirmed: listed on the official Baskin Engineering "
-            f"student-organizations page.* I still don't hold contact details "
-            "or meeting times — their site is the authority."
-        )
-    else:
-        lines.append(
-            "⚠️ *This is a representative example, not a live roster entry.* I don't "
-            "hold contact details or meeting times, because a wrong address would send "
-            "you to the wrong place."
-        )
-
-    if others:
-        lines.append("")
-        lines.append(f"**Similar in {category_label(club['category'])}:**")
-        lines.extend(f"• {other['name']}" for other in others)
-
-    return card_message("\n".join(lines), payload)
 
 
 def categories_message() -> ChatMessage:
