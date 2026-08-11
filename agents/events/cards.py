@@ -17,9 +17,9 @@ from common.cards import (
 )
 from common.chat import create_text_chat
 from common.colleges import COLLEGES
-from common.links import essentials_text
+from common.links import essentials_text, link_row
 from common.loader import events_window, landmark_name
-from common.maps import PIN_CAVEAT, pin_line
+from common.maps import PIN_CAVEAT, pin_line, pin_url
 from common.notices import (
     OFFICIAL_EVENTS_URL,
     badge,
@@ -239,6 +239,8 @@ def list_message(
     if date_note:
         lines.append(f"ℹ️ {date_note}\n")
     lines.append(heading)
+    lines.append("")
+    lines.append(link_row(("Official schedule", OFFICIAL_EVENTS_URL)))
     preamble = "\n".join(lines)
 
     items = [
@@ -341,10 +343,19 @@ def detail_message(
         extra_buttons=extra_buttons,
     )
 
-    # The card carries the detail; the bubble is a one-line title.
-    return card_message(
-        f"**{event['title']}** — {_day_label(event['date'])}", payload
+    # The card carries the detail; the bubble carries the tappable links,
+    # since card text is not clickable.
+    pairs = []
+    maps_url = pin_url(event["location_id"]) if event.get("location_id") else None
+    if maps_url:
+        pairs.append(("📍 Open in Maps", maps_url))
+    pairs.append(("Official schedule", OFFICIAL_EVENTS_URL))
+
+    preamble = (
+        f"**{event['title']}** — {_day_label(event['date'])}\n\n"
+        + link_row(*pairs)
     )
+    return card_message(preamble, payload)
 
 
 def planner_message(

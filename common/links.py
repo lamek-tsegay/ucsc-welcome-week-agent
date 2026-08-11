@@ -68,6 +68,18 @@ ESSENTIALS: list[tuple[str, str, str, str]] = [
 ]
 
 
+def link_row(*pairs: tuple[str, str]) -> str:
+    """A compact row of markdown links: `[A](url) · [B](url)`.
+
+    Card `text` elements render plain text — markdown in them is not
+    clickable, which is why the reference implementation puts its one
+    clickable link in the chat bubble instead. So anything a student should be
+    able to tap goes through here, into the bubble, while the card keeps the
+    URL in readable plain text.
+    """
+    return " · ".join(f"[{label}]({url})" for label, url in pairs if url)
+
+
 def essentials_text() -> str:
     """The links hub as a markdown block."""
     lines = ["**Essential UCSC links** 🔗", ""]

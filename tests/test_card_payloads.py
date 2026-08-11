@@ -149,3 +149,63 @@ def test_card_has_a_title_and_renders_something(name, payload):
     assert root["type"] == "section"
     assert root.get("title"), f"{name}: card has no title"
     assert root.get("children"), f"{name}: card has no content"
+
+
+# --- clickable links ----------------------------------------------------------
+# Card `text` elements render plain text: markdown inside them is not
+# clickable. The reference implementation works around this by putting its one
+# clickable link in the chat bubble, and so do we. These tests pin that split
+# so a link never silently becomes unclickable by drifting onto the card.
+
+import re
+
+MARKDOWN_LINK = re.compile(r"\[[^\]]+\]\((https?://|mailto:)[^)]+\)")
+
+
+def _bubble(message) -> str:
+    from uagents_core.contrib.protocols.chat import TextContent
+
+    return "\n".join(
+        item.text for item in message.content if isinstance(item, TextContent)
+    )
+
+
+def test_club_detail_offers_tappable_links():
+    from agents.clubs.service import respond_to_selection
+
+    bubble = _bubble(respond_to_selection("be_swe"))
+    links = MARKDOWN_LINK.findall(bubble)
+    assert links, "verified club detail has no tappable link"
+    assert "sweclub.engineering.ucsc.edu" in bubble
+    assert "getinvolved.ucsc.edu" in bubble
+    assert "mailto:soar@ucsc.edu" in bubble
+
+    # An unverified club has no site of its own, but must still be reachable.
+    bubble = _bubble(respond_to_selection("c_anime"))
+    assert MARKDOWN_LINK.search(bubble)
+    assert "getinvolved.ucsc.edu" in bubble
+
+
+def test_event_detail_offers_tappable_links():
+    from agents.events.service import respond_to_selection
+
+    bubble = _bubble(respond_to_selection("cornucopia"))
+    assert MARKDOWN_LINK.search(bubble), "event detail has no tappable link"
+    assert "google.com/maps" in bubble, "known venue should be tappable on a map"
+    assert "welcome.ucsc.edu" in bubble
+
+    # An event with no published venue must not grow a fake map link.
+    bubble = _bubble(respond_to_selection("choose_your_own_slugventure"))
+    assert "google.com/maps" not in bubble
+    assert "welcome.ucsc.edu" in bubble
+
+
+def test_listings_offer_a_tappable_source_link():
+    from agents.clubs.service import respond_to_vibe
+    from agents.events.service import respond_to_query as events_query
+
+    bubble = _bubble(respond_to_vibe("creative")[0])
+    assert MARKDOWN_LINK.search(bubble), "clubs listing has no tappable source"
+
+    message, _ = asyncio.run(events_query("show me the whole week", today=DURING))
+    assert MARKDOWN_LINK.search(_bubble(message)), "events listing has no tappable source"

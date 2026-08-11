@@ -15,7 +15,7 @@ from common.cards import (
     menu_message,
 )
 from common.chat import create_text_chat
-from common.links import essentials_text
+from common.links import essentials_text, link_row
 from common.loader import club_categories
 from common.notices import (
     CLUBS_CONTACT,
@@ -249,7 +249,8 @@ def full_roster_message(all_clubs: list[dict]) -> ChatMessage:
     preamble = (
         f"**Sure — here are all {len(all_clubs)} organizations I know** 🎓\n\n"
         "Tap any name for details, or pick a vibe at the bottom to narrow it "
-        "down."
+        "down.\n\n"
+        + link_row(("Official directory", OFFICIAL_CLUBS_URL))
     )
 
     # Category headers keep a long grid navigable. Rendered as body lines
@@ -307,10 +308,11 @@ def list_message(
     heading: str,
     footer_buttons: list[MenuButton] | None = None,
 ) -> ChatMessage:
-    # The text bubble is the heading and nothing else. Organizations, their
-    # badges, and the source caveat all live on the card — repeating any of it
-    # here made a short result set read as a wall of text.
-    preamble = heading
+    # The text bubble is the heading plus the one link a student may want to
+    # tap: card text is not clickable, so the directory link has to live here.
+    preamble = heading + "\n\n" + link_row(
+        ("Official directory", OFFICIAL_CLUBS_URL)
+    )
 
     items = [
         CardItem(
@@ -398,11 +400,19 @@ def detail_message(
         ],
     )
 
-    # The card carries the detail. The bubble is a one-line title so the reply
-    # still reads as a chat message and stays usable without card rendering.
-    return card_message(
-        f"**{club['name']}** — {category_label(club['category'])}", payload
+    # The card carries the detail; the bubble carries the title and the
+    # tappable links, since card text is not clickable.
+    pairs = []
+    if website:
+        pairs.append(("Their site", website))
+    pairs.append(("Official directory", OFFICIAL_CLUBS_URL))
+    pairs.append(("Email SOAR", f"mailto:{CLUBS_CONTACT}"))
+
+    preamble = (
+        f"**{club['name']}** — {category_label(club['category'])}\n\n"
+        + link_row(*pairs)
     )
+    return card_message(preamble, payload)
 
 
 def categories_message() -> ChatMessage:
@@ -501,6 +511,8 @@ def shortlist_message(chosen: list[dict]) -> ChatMessage:
         "",
         "Find them in person at **Cornucopia** — Tuesday Sept 22, East Upper "
         "Field.",
+        "",
+        link_row(("Official directory", OFFICIAL_CLUBS_URL)),
     ]
 
     items = [
