@@ -24,6 +24,7 @@ from common.notices import (
     badge,
     event_time,
     events_disclaimer,
+    events_footnote,
     marker,
 )
 from uagents_core.contrib.protocols.chat import ChatMessage
@@ -237,8 +238,6 @@ def list_message(
     if date_note:
         lines.append(f"ℹ️ {date_note}\n")
     lines.append(heading)
-    lines.append("")
-    lines.append(events_disclaimer(any_unverified=any_unverified))
     preamble = "\n".join(lines)
 
     items = [
@@ -261,6 +260,7 @@ def list_message(
         subtitle="Tap an event for details",
         id_field=EVENT_ID_FIELD,
         source=SOURCE,
+        footnote=events_footnote(any_unverified=any_unverified),
     )
     return card_message(preamble, payload)
 

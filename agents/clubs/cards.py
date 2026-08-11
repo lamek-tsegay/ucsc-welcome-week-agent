@@ -22,6 +22,7 @@ from common.notices import (
     OFFICIAL_CLUBS_URL,
     badge,
     clubs_disclaimer,
+    clubs_footnote,
     marker,
 )
 from uagents_core.contrib.protocols.chat import ChatMessage
@@ -244,18 +245,11 @@ def full_roster_message(all_clubs: list[dict]) -> ChatMessage:
     for club in all_clubs:
         by_category.setdefault(club["category"], []).append(club)
 
-    lines = [
-        f"**Sure — here are all {len(all_clubs)} organizations I know** 🎓",
-        "",
+    preamble = (
+        f"**Sure — here are all {len(all_clubs)} organizations I know** 🎓\n\n"
         "Tap any name for details, or pick a vibe at the bottom to narrow it "
-        "down.",
-        "",
-        "_✅ = confirmed on the official Baskin Engineering page. The rest are "
-        "representative examples, and the official directories have far more._",
-        "",
-        clubs_disclaimer(),
-    ]
-    preamble = "\n".join(lines)
+        "down."
+    )
 
     # Category headers keep a long grid navigable. Rendered as body lines
     # between chip groups would break the row chunking, so the grid is built
@@ -293,6 +287,8 @@ def full_roster_message(all_clubs: list[dict]) -> ChatMessage:
         source=SOURCE,
         footer_buttons=footer,
         per_row=3,
+        footnote="✅ = confirmed on the official Baskin Engineering page. "
+        + clubs_footnote(),
     )
     return card_message(preamble, payload)
 
@@ -310,12 +306,10 @@ def list_message(
     heading: str,
     footer_buttons: list[MenuButton] | None = None,
 ) -> ChatMessage:
-    # Only the heading and the caveat go in the text bubble. The card below
-    # already shows every organization with its name, description, category,
-    # and Confirmed/Unofficial badge, so listing them here too printed the
-    # whole result set twice. Verification labelling is not lost — it moves to
-    # the per-item badge, which the honesty gate checks there.
-    preamble = "\n".join([heading, "", clubs_disclaimer()])
+    # The text bubble is the heading and nothing else. Organizations, their
+    # badges, and the source caveat all live on the card — repeating any of it
+    # here made a short result set read as a wall of text.
+    preamble = heading
 
     items = [
         CardItem(
@@ -338,6 +332,7 @@ def list_message(
         id_field=CLUB_ID_FIELD,
         source=SOURCE,
         footer_buttons=footer_buttons,
+        footnote=clubs_footnote(),
     )
     return card_message(preamble, payload)
 
@@ -535,9 +530,7 @@ def shortlist_message(chosen: list[dict]) -> ChatMessage:
         f"**Your Cornucopia shortlist** ⭐ — {len(chosen)} starred",
         "",
         "Find them in person at **Cornucopia** — Tuesday Sept 22, East Upper "
-        "Field — or look them up in the official directory.",
-        "",
-        clubs_disclaimer(),
+        "Field.",
     ]
 
     items = [
@@ -565,6 +558,7 @@ def shortlist_message(chosen: list[dict]) -> ChatMessage:
         id_field=CLUB_ID_FIELD,
         source=SOURCE,
         footer_buttons=footer,
+        footnote=clubs_footnote(),
     )
     return card_message("\n".join(lines), payload)
 

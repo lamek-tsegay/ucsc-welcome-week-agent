@@ -306,7 +306,7 @@ async def test_events() -> None:
         "events: unpublished times not stated as unpublished",
     )
     check(
-        "welcome.ucsc.edu" in body,
+        "welcome.ucsc.edu" in json.dumps(card_payload(listing)),
         "events: listing omits the official source link",
     )
 
@@ -403,11 +403,11 @@ async def test_clubs() -> None:
         "clubs: listing omits the obvious match",
     )
     check(
-        "representative examples" in body,
+        "not a live roster" in json.dumps(card_payload(listing)),
         "clubs: listing omits the representative-examples caveat",
     )
     check(
-        "getinvolved.ucsc.edu" in body,
+        "getinvolved.ucsc.edu" in json.dumps(card_payload(listing)),
         "clubs: listing omits the official directory link",
     )
 

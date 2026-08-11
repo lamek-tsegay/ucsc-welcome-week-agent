@@ -32,6 +32,17 @@ def _has_card(message) -> bool:
     return any(isinstance(item, MetadataContent) for item in message.content)
 
 
+def _card_text(message) -> str:
+    """Everything rendered on the card, footnote included.
+
+    Source pointers and caveats ride on the card as a muted footnote rather
+    than above the results, so assertions about them look here."""
+    for item in message.content:
+        if isinstance(item, MetadataContent):
+            return item.metadata["card_payload"]
+    return ""
+
+
 # --- interest and category detection -----------------------------------------
 
 
@@ -174,9 +185,9 @@ def test_response_includes_card_and_disclaimer():
     message, ids = asyncio.run(respond_to_query("clubs about hiking"))
     assert ids
     assert _has_card(message)
-    body = _text(message)
-    assert "getinvolved.ucsc.edu" in body
-    assert "representative examples" in body
+    rendered = _text(message) + _card_text(message)
+    assert "getinvolved.ucsc.edu" in rendered
+    assert "not a live roster" in rendered
 
 
 def test_response_labels_every_entry_on_the_card():

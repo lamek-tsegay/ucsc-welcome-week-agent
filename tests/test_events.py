@@ -33,6 +33,14 @@ def _text(message) -> str:
     )
 
 
+def _card_text(message) -> str:
+    """Everything rendered on the card, footnote included."""
+    for item in message.content:
+        if isinstance(item, MetadataContent):
+            return item.metadata["card_payload"]
+    return ""
+
+
 def _has_card(message) -> bool:
     return any(isinstance(item, MetadataContent) for item in message.content)
 
@@ -247,15 +255,14 @@ def test_response_includes_card_and_standalone_text():
     )
     assert ids
     assert _has_card(message)
-    body = _text(message)
-    assert "Wednesday" in body
-    assert "welcome.ucsc.edu" in body
+    assert "Wednesday" in _text(message)
+    assert "welcome.ucsc.edu" in _card_text(message)
 
 
 def test_response_labels_placeholders():
+    """Placeholder entries carry an Unofficial badge on their card item."""
     message, _ = asyncio.run(respond_to_query("show me the whole week", today=DURING))
-    body = _text(message)
-    assert "unofficial" in body.lower()
+    assert "Unofficial" in _card_text(message)
 
 
 def test_response_states_time_not_published():

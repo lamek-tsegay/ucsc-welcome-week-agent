@@ -145,6 +145,7 @@ def build_chip_payload(
     source: str,
     footer_buttons: list[MenuButton] | None = None,
     per_row: int = 3,
+    footnote: str | None = None,
 ) -> dict[str, Any]:
     """A dense grid of small buttons — one per record, label only.
 
@@ -176,6 +177,8 @@ def build_chip_payload(
     if footer_buttons:
         children.append({"type": "divider"})
         children.extend(_button_rows(footer_buttons, source))
+    if footnote:
+        children.append({"type": "text", "value": footnote, "style": "muted"})
 
     section: dict[str, Any] = {"type": "section", "title": title, "children": children}
     if subtitle:
@@ -191,11 +194,15 @@ def build_list_payload(
     id_field: str,
     source: str,
     footer_buttons: list[MenuButton] | None = None,
+    footnote: str | None = None,
 ) -> dict[str, Any]:
     """Build the `card_payload` for a tappable list card.
 
     `footer_buttons` render below the list — follow-up actions on the result
     set as a whole ("Plan this day", "Try another vibe") rather than on one row.
+
+    `footnote` renders last, in muted style: source pointers and caveats that
+    must travel with the results but should not shout over them.
     """
     rendered: list[dict[str, Any]] = []
 
@@ -225,6 +232,9 @@ def build_list_payload(
     children: list[dict[str, Any]] = [{"type": "list", "items": rendered}]
     if footer_buttons:
         children.extend(_button_rows(footer_buttons, source))
+    if footnote:
+        children.append({"type": "divider"})
+        children.append({"type": "text", "value": footnote, "style": "muted"})
 
     section: dict[str, Any] = {
         "type": "section",

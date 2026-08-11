@@ -937,7 +937,8 @@ def test_show_all_escape_hatch_returns_every_club_as_chips():
     }
     assert ticked == {club["name"] for club in clubs_data() if club["verified"]}
 
-    assert "getinvolved.ucsc.edu" in text_of(message)
+    # The source pointer rides on the card footnote, not above the chips.
+    assert "getinvolved.ucsc.edu" in json.dumps(payload)
 
 
 def test_specific_asks_skip_the_question_entirely():

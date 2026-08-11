@@ -60,6 +60,28 @@ def events_disclaimer(*, any_unverified: bool) -> str:
     return base
 
 
+def clubs_footnote() -> str:
+    """One-line caveat for the foot of a results card.
+
+    The full `clubs_disclaimer()` is right for a detail view or a text-only
+    client, but printed above every listing it buried the results. This keeps
+    the two things a student must not lose — that entries are examples, and
+    where the real roster lives — in a single muted line.
+    """
+    return (
+        f"Examples, not a live roster · full directory: {OFFICIAL_CLUBS_URL} "
+        f"· {CLUBS_CONTACT} · meet them at Cornucopia, Tue Sept 22"
+    )
+
+
+def events_footnote(*, any_unverified: bool) -> str:
+    """One-line caveat for the foot of an events results card."""
+    base = f"Dates from {OFFICIAL_EVENTS_URL} · times not published yet"
+    if any_unverified:
+        base += " · entries marked Unofficial are placeholder examples"
+    return base + " · your college emails its own first-day schedule"
+
+
 def clubs_disclaimer() -> str:
     return (
         "Entries marked **Confirmed** are listed on official UCSC pages "

@@ -41,6 +41,14 @@ def check(condition: bool, message: str) -> None:
         failures.append(message)
 
 
+def card_text(message) -> str:
+    """All text rendered on a message's card, footnotes included."""
+    for item in message.content:
+        if isinstance(item, MetadataContent):
+            return json.dumps(json.loads(item.metadata["card_payload"]))
+    return ""
+
+
 def card_items(message) -> list[dict]:
     """Every list-card item in a message, as {heading, body, badges}.
 
@@ -176,9 +184,9 @@ def check_transit_data() -> None:
 
 async def check_rendered_events() -> None:
     message, shown_ids = await events_query("show me the whole week", today=DURING)
-    body = text_of(message)
+    rendered = text_of(message) + card_text(message)
     check(
-        "welcome.ucsc.edu" in body,
+        "welcome.ucsc.edu" in rendered,
         "events listing: no pointer to the official schedule.",
     )
 
@@ -228,13 +236,15 @@ async def check_rendered_events() -> None:
 
 async def check_rendered_clubs() -> None:
     message, shown_ids = await clubs_query("show me cultural orgs")
-    body = text_of(message)
+    # The caveat rides on the card as a muted footnote rather than above the
+    # results, so it is checked in the payload the student actually sees.
+    rendered = text_of(message) + card_text(message)
     check(
-        "representative examples" in body,
-        "clubs listing: missing the 'representative examples' caveat.",
+        "not a live roster" in rendered,
+        "clubs listing: missing the not-a-live-roster caveat.",
     )
     check(
-        "getinvolved.ucsc.edu" in body,
+        "getinvolved.ucsc.edu" in rendered,
         "clubs listing: no pointer to the official directory.",
     )
 
