@@ -171,14 +171,14 @@ async def respond_to_query(text: str) -> tuple[ChatMessage, list[str]]:
 
     query = build_query(text)
 
-    # A pure browse ask ("what clubs are at UCSC") gets the whole roster and a
-    # what-are-you-into card — the complete answer first, the narrowing second.
+    # A generic ask ("Hi, I'd like to know about the clubs at UCSC") gets the
+    # interests question first, not 76 names. A student who doesn't know what
+    # they want can't use a roster, but everyone can answer "what are you
+    # into?" — so the first reply narrows, and the picker keeps a "show me
+    # everything" escape hatch for anyone who really does want the full list.
     if query.browse_all and not (query.tags or query.category or query.named):
-        all_clubs = sorted(clubs_data(), key=lambda c: (c["category"], c["name"]))
-        return (
-            cards.full_roster_message(all_clubs),
-            [club["id"] for club in all_clubs],
-        )
+        return cards.interests_message(), []
+
     query = await _enrich_with_asi1(text, query)
 
     scored, total = select(query)
@@ -189,6 +189,15 @@ async def respond_to_query(text: str) -> tuple[ChatMessage, list[str]]:
         scored, heading=_heading(query, scored, total, text)
     )
     return message, [item.club["id"] for item in scored]
+
+
+def respond_to_full_roster() -> tuple[ChatMessage, list[str]]:
+    """Every organization as name chips — the escape hatch from the picker."""
+    all_clubs = sorted(clubs_data(), key=lambda c: (c["category"], c["name"]))
+    return (
+        cards.full_roster_message(all_clubs),
+        [club["id"] for club in all_clubs],
+    )
 
 
 def respond_to_shortlist(club_ids: list[str]) -> tuple[ChatMessage, list[str]]:

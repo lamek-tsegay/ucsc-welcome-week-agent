@@ -58,7 +58,10 @@ EXTRA_FIELDS = ("vibe", "category", "q")
 # vibe matches at least one organization, so the quiz can never dead-end.
 VIBES: list[tuple[str, str, str, set[str]]] = [
     ("creative", "🎨 Creative & artsy", "making things", {"arts", "music", "theater", "art", "writing", "performance", "creative", "media"}),
-    ("active", "🏃 Active & outdoors", "moving and exploring", {"sports", "fitness", "outdoors", "competition"}),
+    # "competition" is deliberately absent: in this data it tags robotics,
+    # rocketry, and competitive programming far more than anything athletic,
+    # so including it surfaced Formula Slug under "Active & outdoors".
+    ("active", "🏃 Active & outdoors", "moving and exploring", {"sports", "fitness", "outdoors", "hiking", "climbing", "surfing", "cycling"}),
     ("curious", "🧠 Curious & academic", "ideas and career", {"academic", "research", "science", "debate", "career", "leadership", "tech", "engineering", "programming"}),
     ("chill", "🎮 Chill & playful", "games and hanging out", {"games", "gaming", "social", "food"}),
     ("global", "🌍 Cultural & global", "community and identity", {"cultural", "identity", "international", "community"}),
@@ -93,9 +96,9 @@ def welcome() -> str:
 def short_welcome() -> str:
     return (
         "Hey! 👋 I'm your **clubs & orgs** matchmaker for Welcome Week.\n\n"
-        "Tap **🎯 Match my vibe** and answer one question, or just tell me "
-        "what you're into — *I like anime*, *something outdoorsy*, *pre-med "
-        "stuff*.\n\n"
+        "Ask me *\"I'd like to know about the clubs at UCSC\"* and I'll ask "
+        "what you're into, then match you. Or skip ahead and tell me straight "
+        "out — *I like anime*, *something outdoorsy*, *pre-med stuff*.\n\n"
         "_My entries are examples, not a live roster — I'll always say so, "
         "and point you at the official directory._"
     )
@@ -121,17 +124,54 @@ def welcome_message() -> ChatMessage:
     )
 
 
+def _interest_buttons() -> list[MenuButton]:
+    return [
+        MenuButton(label, {"action": "vibe_pick", "vibe": key})
+        for key, label, _, _ in VIBES
+    ]
+
+
+def interests_message() -> ChatMessage:
+    """The first reply to "tell me about clubs" — asks interests, not a dump.
+
+    A brand-new student can't use a list of 76 names they've never heard of,
+    but anyone can answer "what are you into?". So the opening move is the
+    question, and the roster stays one tap away for the rare student who
+    genuinely wants to read all of it.
+    """
+    preamble = (
+        "Happy to help you find your people at UCSC! 🎓\n\n"
+        "**First — what are you into?** Tap whichever sounds most like you "
+        "and I'll show you the organizations that fit.\n\n"
+        + "\n".join(f"• {label} — {blurb}" for _, label, blurb, _ in VIBES)
+        + "\n\n_Or just tell me in your own words — *I like anime*, "
+        "*something outdoorsy*, *pre-med stuff* all work._"
+    )
+    buttons = _interest_buttons()
+    buttons.append(
+        MenuButton("🗂️ Browse by category", {"action": "quick", "q": "what categories are there"})
+    )
+    buttons.append(MenuButton("📋 Show me all of them", {"action": "show_all"}))
+    return menu_message(
+        preamble,
+        title="What are you into? 🎓",
+        subtitle="Tap one — I'll match you with organizations",
+        body_lines=None,
+        buttons=buttons,
+        source=SOURCE,
+        per_row=2,
+    )
+
+
 def vibe_picker_message() -> ChatMessage:
-    """The one-question quiz. Six taps cover every kind of student."""
+    """The same question, reached deliberately via 🎯 Match my vibe."""
     preamble = (
         "**What's your vibe?** Tap the one that sounds most like you and I'll "
         "match you with organizations — no club names needed.\n\n"
         + "\n".join(f"• {label} — {blurb}" for _, label, blurb, _ in VIBES)
     )
-    buttons = [
-        MenuButton(label, {"action": "vibe_pick", "vibe": key})
-        for key, label, _, _ in VIBES
-    ]
+    buttons = _interest_buttons()
+    buttons.append(MenuButton("📋 Show me all of them", {"action": "show_all"}))
     return menu_message(
         preamble,
         title="Match my vibe 🎯",

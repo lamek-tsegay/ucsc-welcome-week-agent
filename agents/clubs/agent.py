@@ -30,6 +30,7 @@ from agents.clubs.service import (
     WELCOME,
     bridge_to_navigation,
     respond_to_category,
+    respond_to_full_roster,
     respond_to_query,
     respond_to_selection,
     respond_to_shortlist,
@@ -95,6 +96,8 @@ Week, **Monday Sept 21 - Saturday Sept 26**.
 
 ## Try asking
 
+- *Hi, I'd like to know about the clubs at UCSC* - I'll ask what you're into,
+  then show you the organizations that fit
 - tap **🎯 Match my vibe** and answer one question
 - *clubs about hiking*
 - *I'm into anime*
@@ -174,6 +177,12 @@ async def _handle_selection(
 
     if action == "quiz":
         await _send(ctx, sender, cards.vibe_picker_message())
+        return True
+
+    if action == "show_all":
+        message, shown_ids = respond_to_full_roster()
+        ctx.storage.set(SHOWN_IDS_KEY, json.dumps(shown_ids))
+        await _send(ctx, sender, message)
         return True
 
     if action == "vibe_pick":

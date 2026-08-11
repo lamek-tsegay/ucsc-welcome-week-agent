@@ -757,40 +757,99 @@ def _card_buttons(payload: dict) -> list[dict]:
     return found
 
 
-def test_the_exact_live_failure_now_gets_the_full_roster():
-    """The original bug report: "@ucsc-clubs Hi tell me what clubs are at
-    UCSC" got a no-match reply. Fixed in stages — the query matches now, and
-    the answer is a single card holding every club as a small name chip, with
-    the detail card carrying everything a chip can't.
-    """
-    from agents.clubs.service import respond_to_query
-    from common.loader import clubs as clubs_data
+@pytest.mark.parametrize(
+    "opener",
+    [
+        "Hi, I would like to know about the clubs at UCSC",
+        "Hi tell me what clubs are at UCSC",
+        "what clubs are at UCSC",
+        "tell me about clubs",
+    ],
+)
+def test_generic_ask_leads_with_the_interests_question(opener):
+    """Step 1 of the flow: a student who asks about clubs in general is asked
+    what they're into, not handed 76 names they've never heard of.
 
-    # After the agent strips the mention, the service sees this:
-    message, shown_ids = asyncio.run(
-        respond_to_query("Hi tell me what clubs are at UCSC")
-    )
-    # Every organization is offered — the complete answer, not a sample.
+    This also covers the original bug report ("@ucsc-clubs Hi tell me what
+    clubs are at UCSC" got a no-match reply) — every phrasing must land here.
+    """
+    from agents.clubs.cards import VIBES
+    from agents.clubs.service import respond_to_query
+
+    message, shown_ids = asyncio.run(respond_to_query(opener))
+
+    # No clubs listed yet — this reply is the question, not the answer.
+    assert shown_ids == []
+
+    body = text_of(message)
+    assert "what are you into" in body.lower()
+
+    payload = payload_of(message)
+    assert payload is not None
+    selections = selections_of(payload)
+
+    # Every interest is one tap away.
+    vibes = {sel.get("vibe") for sel in selections if "vibe" in sel}
+    assert vibes == {key for key, _, _, _ in VIBES}
+
+    # And an escape hatch for anyone who really does want the whole list.
+    actions = {sel.get("action") for sel in selections}
+    assert "show_all" in actions
+
+
+def test_tapping_an_interest_returns_matching_clubs():
+    """Step 2: picking an interest yields organizations that fit it."""
+    from agents.clubs.service import respond_to_vibe
+
+    result = respond_to_vibe("active")
+    assert result is not None
+    message, shown_ids = result
+
+    assert shown_ids, "an interest must return matches"
+    payload = payload_of(message)
+    assert payload is not None
+
+    # Results are the rich list layout (description + badges), which suits a
+    # short filtered set — the compact chip grid is only for the full roster.
+    tappable = {
+        sel["club_id"]
+        for sel in selections_of(payload)
+        if "club_id" in sel and "action" not in sel
+    }
+    assert tappable == set(shown_ids)
+
+
+def test_active_interest_does_not_surface_engineering_teams():
+    """"competition" tags robotics and rocketry in this data far more than
+    anything athletic, so it must not feed the Active & outdoors interest."""
+    from agents.clubs.search import by_id
+    from agents.clubs.service import respond_to_vibe
+
+    _message, shown_ids = respond_to_vibe("active")
+    categories = {by_id(club_id)["category"] for club_id in shown_ids}
+    assert "tech_engineering" not in categories
+
+
+def test_show_all_escape_hatch_returns_every_club_as_chips():
+    """Step 2b: the roster is still reachable, as compact name chips."""
+    from common.loader import clubs as clubs_data
+    from agents.clubs.service import respond_to_full_roster
+
+    message, shown_ids = respond_to_full_roster()
     assert len(shown_ids) == len(clubs_data())
 
     payload = payload_of(message)
-    assert payload is not None, "the full roster must be a tappable card"
+    assert payload is not None
 
-    # One compact chip per club, each tapping straight through to its detail.
-    selections = selections_of(payload)
-    tappable_ids = {
-        sel["club_id"] for sel in selections if "club_id" in sel and "action" not in sel
-    }
-    assert tappable_ids == {club["id"] for club in clubs_data()}
-
-    # Chips stay small: label plus action only. A description, badges, or a
-    # separate per-row action button would make the roster unusably tall.
     club_chips = [
         button
         for button in _card_buttons(payload)
         if "club_id" in button["action"]["selection"]
     ]
     assert len(club_chips) == len(clubs_data())
+
+    # Chips stay small: label plus action only. A description, badges, or a
+    # separate per-row action button would make the roster unusably tall.
     for chip in club_chips:
         assert set(chip) == {"type", "label", "primary", "action"}
 
@@ -806,15 +865,16 @@ def test_the_exact_live_failure_now_gets_the_full_roster():
     }
     assert ticked == {club["name"] for club in clubs_data() if club["verified"]}
 
-    body = text_of(message)
-    assert "getinvolved.ucsc.edu" in body  # honesty pointer still present
+    assert "getinvolved.ucsc.edu" in text_of(message)
 
-    # Narrowing down is one tap away too — every vibe rides along as a footer
-    # button on the same card.
-    vibes = {sel.get("vibe") for sel in selections if "vibe" in sel}
-    from agents.clubs.cards import VIBES
 
-    assert vibes == {key for key, _, _, _ in VIBES}
+def test_specific_asks_skip_the_question_entirely():
+    """A student who already said what they want must not be re-interrogated."""
+    from agents.clubs.service import respond_to_query
+
+    for text in ("clubs about hiking", "I'm into anime", "show me cultural orgs"):
+        _message, shown_ids = asyncio.run(respond_to_query(text))
+        assert shown_ids, f"{text!r} should return clubs directly"
 
 
 @pytest.mark.parametrize(
