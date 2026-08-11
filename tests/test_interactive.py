@@ -739,31 +739,14 @@ def test_strip_mention(raw, expected):
     assert strip_mention(raw) == expected
 
 
-def _card_headings(payload: dict) -> list[str]:
-    """Every card-item heading value, in document order."""
-    found: list[str] = []
+def _card_buttons(payload: dict) -> list[dict]:
+    """Every button node in a card payload, in document order."""
+    found: list[dict] = []
 
     def walk(node) -> None:
         if isinstance(node, dict):
-            if node.get("type") == "heading":
-                found.append(node.get("value", ""))
-            for value in node.values():
-                walk(value)
-        elif isinstance(node, list):
-            for entry in node:
-                walk(entry)
-
-    walk(payload)
-    return found
-
-
-def _card_badge_labels(payload: dict) -> list[str]:
-    found: list[str] = []
-
-    def walk(node) -> None:
-        if isinstance(node, dict):
-            if node.get("type") == "badge":
-                found.append(node.get("label", ""))
+            if node.get("type") == "button":
+                found.append(node)
             for value in node.values():
                 walk(value)
         elif isinstance(node, list):
@@ -776,9 +759,9 @@ def _card_badge_labels(payload: dict) -> list[str]:
 
 def test_the_exact_live_failure_now_gets_the_full_roster():
     """The original bug report: "@ucsc-clubs Hi tell me what clubs are at
-    UCSC" got a no-match reply. Fixed twice over — first so the query matches
-    at all, then so the answer is one tappable card holding every club (not a
-    text wall), matching the tap-for-details shape every other listing uses.
+    UCSC" got a no-match reply. Fixed in stages — the query matches now, and
+    the answer is a single card holding every club as a small name chip, with
+    the detail card carrying everything a chip can't.
     """
     from agents.clubs.service import respond_to_query
     from common.loader import clubs as clubs_data
@@ -787,32 +770,41 @@ def test_the_exact_live_failure_now_gets_the_full_roster():
     message, shown_ids = asyncio.run(
         respond_to_query("Hi tell me what clubs are at UCSC")
     )
-    # Every organization is listed — the complete answer, not a sample.
+    # Every organization is offered — the complete answer, not a sample.
     assert len(shown_ids) == len(clubs_data())
 
     payload = payload_of(message)
     assert payload is not None, "the full roster must be a tappable card"
 
-    headings = _card_headings(payload)
-    for club in clubs_data():
-        assert any(club["name"] in heading for heading in headings), (
-            f"roster card omits {club['name']}"
-        )
-
-    # Each row carries its own Details button — one card, tap any club, its
-    # detail pops up. Confirming the selection payloads are all present and
-    # correctly keyed, exactly like a normal filtered search result.
+    # One compact chip per club, each tapping straight through to its detail.
     selections = selections_of(payload)
     tappable_ids = {
         sel["club_id"] for sel in selections if "club_id" in sel and "action" not in sel
     }
     assert tappable_ids == {club["id"] for club in clubs_data()}
 
-    # Verification status survives as a badge on every row, not lost in a wall
-    # of text — both tiers must be visibly represented.
-    badge_labels = set(_card_badge_labels(payload))
-    assert "Confirmed" in badge_labels
-    assert "Unofficial" in badge_labels
+    # Chips stay small: label plus action only. A description, badges, or a
+    # separate per-row action button would make the roster unusably tall.
+    club_chips = [
+        button
+        for button in _card_buttons(payload)
+        if "club_id" in button["action"]["selection"]
+    ]
+    assert len(club_chips) == len(clubs_data())
+    for chip in club_chips:
+        assert set(chip) == {"type", "label", "primary", "action"}
+
+    # The label is the club's own name, so the grid is scannable.
+    chip_labels = {chip["label"].removeprefix("✅ ") for chip in club_chips}
+    assert chip_labels == {club["name"] for club in clubs_data()}
+
+    # Confirmed organizations are marked inline, since chips carry no badges.
+    ticked = {
+        chip["label"].removeprefix("✅ ")
+        for chip in club_chips
+        if chip["label"].startswith("✅ ")
+    }
+    assert ticked == {club["name"] for club in clubs_data() if club["verified"]}
 
     body = text_of(message)
     assert "getinvolved.ucsc.edu" in body  # honesty pointer still present

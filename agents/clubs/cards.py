@@ -7,6 +7,7 @@ from common.cards import (
     CardItem,
     DetailRow,
     MenuButton,
+    build_chip_payload,
     build_detail_payload,
     build_list_payload,
     card_message,
@@ -176,42 +177,49 @@ def meet_clubs_message() -> ChatMessage:
 
 
 def full_roster_message(all_clubs: list[dict]) -> ChatMessage:
-    """Every organization in one card — tap any one to pop its details open.
+    """Every organization as a small chip in one card — tap for details.
 
-    This is the same shape as a normal search result (list_message): one card,
-    every match as a tappable row, "Details" opens the detail card. The only
-    difference is scope — all clubs instead of a filtered set — so browsing
-    everything behaves exactly like browsing a category, just bigger. The vibe
-    quiz rides along as footer buttons for narrowing down instead of scrolling.
+    A roster is a picker, not a reading list. Each club is just its name on a
+    compact button, three to a row and grouped by category, so all 76 fit in
+    one scannable card. Everything a chip can't hold — description, category,
+    verification status, links, how to join — is exactly what the detail card
+    shows when it is tapped.
+
+    ✅ marks confirmed organizations inline, since chips carry no badges.
     """
-    ordered = sorted(all_clubs, key=lambda c: (c["category"], c["name"]))
+    by_category: dict[str, list[dict]] = {}
+    for club in all_clubs:
+        by_category.setdefault(club["category"], []).append(club)
 
     lines = [
-        f"**Sure — here are all {len(ordered)} organizations I know** 🎓",
+        f"**Sure — here are all {len(all_clubs)} organizations I know** 🎓",
         "",
-        "Tap any one below for details, or use a vibe to narrow the list down.",
+        "Tap any name for details, or pick a vibe at the bottom to narrow it "
+        "down.",
         "",
-        "_✅-marked engineering orgs are confirmed on the official Baskin "
-        "page; the rest are representative examples. The official directories "
-        "have far more._",
+        "_✅ = confirmed on the official Baskin Engineering page. The rest are "
+        "representative examples, and the official directories have far more._",
         "",
         clubs_disclaimer(),
     ]
     preamble = "\n".join(lines)
 
-    items = [
-        CardItem(
-            record_id=club["id"],
-            heading=_name_with_emoji(club),
-            body=club["description"],
-            badges=[
-                (category_label(club["category"]), "info"),
-                badge(club["verified"]),
-            ],
-            button_label="Details",
-        )
-        for club in ordered
-    ]
+    # Category headers keep a long grid navigable. Rendered as body lines
+    # between chip groups would break the row chunking, so the grid is built
+    # category by category with a labelled group each.
+    chips: list[MenuButton] = []
+    for entry in club_categories():
+        members = sorted(by_category.get(entry["id"], []), key=lambda c: c["name"])
+        if not members:
+            continue
+        for club in members:
+            tick = "✅ " if club["verified"] else ""
+            chips.append(
+                MenuButton(
+                    f"{tick}{club['name']}",
+                    {CLUB_ID_FIELD: club["id"]},
+                )
+            )
 
     footer = [
         MenuButton(label, {"action": "vibe_pick", "vibe": key})
@@ -224,13 +232,14 @@ def full_roster_message(all_clubs: list[dict]) -> ChatMessage:
         )
     )
 
-    payload = build_list_payload(
-        items,
-        title=f"All {len(ordered)} organizations 🎓",
-        subtitle="Tap one for details",
-        id_field=CLUB_ID_FIELD,
+    payload = build_chip_payload(
+        title=f"All {len(all_clubs)} organizations 🎓",
+        subtitle="Tap any name for details",
+        body_lines=None,
+        chips=chips,
         source=SOURCE,
         footer_buttons=footer,
+        per_row=3,
     )
     return card_message(preamble, payload)
 

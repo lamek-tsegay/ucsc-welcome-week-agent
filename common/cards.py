@@ -136,6 +136,53 @@ def build_menu_payload(
     return {"root": section}
 
 
+def build_chip_payload(
+    *,
+    title: str,
+    subtitle: str | None,
+    body_lines: list[str] | None,
+    chips: list[MenuButton],
+    source: str,
+    footer_buttons: list[MenuButton] | None = None,
+    per_row: int = 3,
+) -> dict[str, Any]:
+    """A dense grid of small buttons — one per record, label only.
+
+    Distinct from `build_list_payload`, which gives every record a heading, a
+    description, badges, and its own action button: correct for a handful of
+    search results, unusably tall for a full roster. Here each record is just
+    its name on a chip, so a long list stays scannable in one card and the
+    detail card carries everything that was omitted.
+
+    `footer_buttons` render below the grid, separated so set-wide actions don't
+    read as another record.
+    """
+    children: list[dict[str, Any]] = []
+    if body_lines:
+        children.append(
+            {
+                "type": "group",
+                "direction": "column",
+                "gap": 8,
+                "children": [
+                    {"type": "text", "value": line, "style": "body"}
+                    for line in body_lines
+                ],
+            }
+        )
+
+    children.extend(_button_rows(chips, source, per_row=per_row))
+
+    if footer_buttons:
+        children.append({"type": "divider"})
+        children.extend(_button_rows(footer_buttons, source))
+
+    section: dict[str, Any] = {"type": "section", "title": title, "children": children}
+    if subtitle:
+        section["subtitle"] = subtitle
+    return {"root": section}
+
+
 def build_list_payload(
     items: list[CardItem],
     *,
