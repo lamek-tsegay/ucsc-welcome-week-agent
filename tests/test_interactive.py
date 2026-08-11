@@ -404,7 +404,8 @@ def test_category_browse_by_id():
     assert result is not None
     message, shown_ids = result
     assert shown_ids
-    assert "Arts & Performance" in text_of(message)
+    # The category name is the card's title, not bubble text.
+    assert "Arts & Performance" in json.dumps(payload_of(message))
     assert respond_to_category("nonexistent") is None
 
 
@@ -553,7 +554,8 @@ from agents.clubs.service import respond_to_shortlist
 def test_shortlist_lists_saved_clubs_with_cornucopia_pointer():
     message, shown_ids = respond_to_shortlist(["c_anime", "c_hiking"])
     assert shown_ids == ["c_anime", "c_hiking"]
-    assert "Cornucopia" in text_of(message)
+    # The Cornucopia pointer rides on the card footnote now.
+    assert "Cornucopia" in json.dumps(payload_of(message))
 
     payload = payload_of(message)
     # The starred organizations are on the card, each still labelled.

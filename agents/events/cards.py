@@ -238,8 +238,6 @@ def list_message(
     lines: list[str] = []
     if date_note:
         lines.append(f"ℹ️ {date_note}\n")
-    lines.append(heading)
-    lines.append("")
     lines.append(link_row(("Official schedule", OFFICIAL_EVENTS_URL)))
     preamble = "\n".join(lines)
 
@@ -351,11 +349,8 @@ def detail_message(
         pairs.append(("📍 Open in Maps", maps_url))
     pairs.append(("Official schedule", OFFICIAL_EVENTS_URL))
 
-    preamble = (
-        f"**{event['title']}** — {_day_label(event['date'])}\n\n"
-        + link_row(*pairs)
-    )
-    return card_message(preamble, payload)
+    # Links only: the card names the event and its day already.
+    return card_message(link_row(*pairs), payload)
 
 
 def planner_message(

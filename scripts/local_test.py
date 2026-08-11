@@ -299,7 +299,10 @@ async def test_events() -> None:
 
     listing = replies[1]
     body = text_of(listing)
-    check("Wednesday" in body, "events: listing omits the requested day")
+    check(
+        "Wednesday" in json.dumps(card_payload(listing)),
+        "events: listing omits the requested day",
+    )
     # Events themselves render on the card, so their times are checked there.
     check(
         "time not yet published" in json.dumps(card_payload(listing)),

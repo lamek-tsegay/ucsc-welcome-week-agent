@@ -246,12 +246,7 @@ def full_roster_message(all_clubs: list[dict]) -> ChatMessage:
     for club in all_clubs:
         by_category.setdefault(club["category"], []).append(club)
 
-    preamble = (
-        f"**Sure — here are all {len(all_clubs)} organizations I know** 🎓\n\n"
-        "Tap any name for details, or pick a vibe at the bottom to narrow it "
-        "down.\n\n"
-        + link_row(("Official directory", OFFICIAL_CLUBS_URL))
-    )
+    preamble = link_row(("Official directory", OFFICIAL_CLUBS_URL))
 
     # Category headers keep a long grid navigable. Rendered as body lines
     # between chip groups would break the row chunking, so the grid is built
@@ -308,11 +303,11 @@ def list_message(
     heading: str,
     footer_buttons: list[MenuButton] | None = None,
 ) -> ChatMessage:
-    # The text bubble is the heading plus the one link a student may want to
-    # tap: card text is not clickable, so the directory link has to live here.
-    preamble = heading + "\n\n" + link_row(
-        ("Official directory", OFFICIAL_CLUBS_URL)
-    )
+    # The bubble is one line: the tappable directory link, and nothing else.
+    # The card's own title already carries the heading, so repeating it here
+    # only made the reply longer. The link cannot move onto the card because
+    # card text renders as plain text, not markdown.
+    preamble = link_row(("Official directory", OFFICIAL_CLUBS_URL))
 
     items = [
         CardItem(
@@ -408,11 +403,9 @@ def detail_message(
     pairs.append(("Official directory", OFFICIAL_CLUBS_URL))
     pairs.append(("Email SOAR", f"mailto:{CLUBS_CONTACT}"))
 
-    preamble = (
-        f"**{club['name']}** — {category_label(club['category'])}\n\n"
-        + link_row(*pairs)
-    )
-    return card_message(preamble, payload)
+    # Links only: the card's heading and badges already name the club and its
+    # category. These have to sit in the bubble to stay tappable.
+    return card_message(link_row(*pairs), payload)
 
 
 def categories_message() -> ChatMessage:
@@ -539,14 +532,7 @@ def empty_shortlist_message() -> ChatMessage:
 
 def shortlist_message(chosen: list[dict]) -> ChatMessage:
     """The student's starred organizations — their Cornucopia hit-list."""
-    lines = [
-        f"**Your Cornucopia shortlist** ⭐ — {len(chosen)} starred",
-        "",
-        "Find them in person at **Cornucopia** — Tuesday Sept 22, East Upper "
-        "Field.",
-        "",
-        link_row(("Official directory", OFFICIAL_CLUBS_URL)),
-    ]
+    lines = [link_row(("Official directory", OFFICIAL_CLUBS_URL))]
 
     items = [
         CardItem(

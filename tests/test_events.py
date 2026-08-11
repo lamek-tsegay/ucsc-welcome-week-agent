@@ -255,8 +255,9 @@ def test_response_includes_card_and_standalone_text():
     )
     assert ids
     assert _has_card(message)
-    assert "Wednesday" in _text(message)
-    assert "welcome.ucsc.edu" in _card_text(message)
+    # The day and the events are on the card; the bubble is the source link.
+    assert "Wednesday" in _card_text(message)
+    assert "welcome.ucsc.edu" in _text(message)
 
 
 def test_response_labels_placeholders():
