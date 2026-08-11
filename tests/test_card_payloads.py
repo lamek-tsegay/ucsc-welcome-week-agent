@@ -187,17 +187,15 @@ def test_club_detail_offers_tappable_links():
 
 
 def test_event_detail_offers_tappable_links():
+    """The official schedule is the link this agent owns. Maps and routing
+    belong to the navigation agent, so no map links appear here."""
     from agents.events.service import respond_to_selection
 
-    bubble = _bubble(respond_to_selection("cornucopia"))
-    assert MARKDOWN_LINK.search(bubble), "event detail has no tappable link"
-    assert "google.com/maps" in bubble, "known venue should be tappable on a map"
-    assert "welcome.ucsc.edu" in bubble
-
-    # An event with no published venue must not grow a fake map link.
-    bubble = _bubble(respond_to_selection("choose_your_own_slugventure"))
-    assert "google.com/maps" not in bubble
-    assert "welcome.ucsc.edu" in bubble
+    for event_id in ("cornucopia", "choose_your_own_slugventure"):
+        bubble = _bubble(respond_to_selection(event_id))
+        assert MARKDOWN_LINK.search(bubble), f"{event_id} has no tappable link"
+        assert "welcome.ucsc.edu" in bubble
+        assert "google.com/maps" not in bubble
 
 
 def test_listings_offer_a_tappable_source_link():

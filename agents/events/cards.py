@@ -10,6 +10,7 @@ from common.cards import (
     DetailBlock,
     DetailRow,
     MenuButton,
+    build_chip_payload,
     build_detail_payload,
     build_list_payload,
     card_message,
@@ -19,7 +20,6 @@ from common.chat import create_text_chat
 from common.colleges import COLLEGES
 from common.links import essentials_text, link_row
 from common.loader import events_window, landmark_name
-from common.maps import PIN_CAVEAT, pin_line, pin_url
 from common.notices import (
     OFFICIAL_EVENTS_URL,
     badge,
@@ -60,7 +60,93 @@ SOURCE = "events_tab"
 BACK_ACTION = "back_to_events"
 
 # Selection keys this agent's buttons carry beyond the event id.
-EXTRA_FIELDS = ("college", "date", "q")
+EXTRA_FIELDS = ("college", "date", "q", "vibe")
+
+# Six ways into the week, for a student who doesn't know what's on. Mirrors the
+# clubs agent's vibe matcher: nobody can pick from a schedule they've never
+# seen, but everyone can say what they're in the mood for. Every tag here
+# exists in data/events.json — a test enforces that each interest matches at
+# least one event, so no option can dead-end.
+VIBES: list[tuple[str, str, str, set[str]]] = [
+    ("food", "🍕 Free food", "meals and snacks", {"food"}),
+    ("social", "🎉 Meet people", "socials and traditions",
+     {"social", "orgs", "tradition", "festival"}),
+    ("active", "🌲 Outdoors & active", "moving around campus",
+     {"outdoors", "sports", "recreation"}),
+    ("arts", "🎨 Arts & music", "performances and making things",
+     {"arts", "music", "photo"}),
+    ("career", "💼 Career & academic", "jobs and getting set up",
+     {"academic", "career", "jobs", "tech"}),
+    ("explore", "🚌 Off campus", "the town and the coast",
+     {"offcampus", "tour", "exploration"}),
+]
+
+VIBE_TAGS = {key: tags for key, _, _, tags in VIBES}
+VIBE_LABELS = {key: label for key, label, _, _ in VIBES}
+
+
+def _interest_buttons() -> list[MenuButton]:
+    return [
+        MenuButton(label, {"action": "vibe_pick", "vibe": key})
+        for key, label, _, _ in VIBES
+    ]
+
+
+def interests_message() -> ChatMessage:
+    """The first reply to a general ask about Welcome Week.
+
+    Twenty-two events across six days is not something a new student can pick
+    from cold, but anyone can say what they're in the mood for. So the opening
+    move is the question; the whole week stays one tap away.
+    """
+    preamble = (
+        "Welcome to Slug Start! 🎪 Six days, Sept 21–26.\n\n"
+        "**What are you in the mood for?** Tap one below, or just ask me — "
+        "*what's on Wednesday*, *free food Friday*, *plan my Tuesday* all work."
+    )
+    footer = [
+        MenuButton(
+            "🗓️ Show me the whole week",
+            {"action": "quick", "q": "show me the whole week"},
+            primary=True,
+        ),
+        MenuButton("🧭 Plan a day", {"action": "plan_day"}),
+    ]
+    payload = build_chip_payload(
+        title="What are you into? 🎪",
+        subtitle="Tap one — I'll show you what fits",
+        body_lines=None,
+        chips=_interest_buttons(),
+        source=SOURCE,
+        footer_buttons=footer,
+        per_row=1,
+    )
+    return card_message(preamble, payload)
+
+
+def vibe_picker_message() -> ChatMessage:
+    """The same question, reached deliberately from a button."""
+    preamble = (
+        "**What are you in the mood for?** Tap whichever fits — or just "
+        "describe it in your own words."
+    )
+    footer = [
+        MenuButton(
+            "🗓️ Whole week",
+            {"action": "quick", "q": "show me the whole week"},
+        ),
+        MenuButton("🧭 Plan a day", {"action": "plan_day"}),
+    ]
+    payload = build_chip_payload(
+        title="What are you into? 🎪",
+        subtitle="Tap one — I'll show you what fits",
+        body_lines=None,
+        chips=_interest_buttons(),
+        source=SOURCE,
+        footer_buttons=footer,
+        per_row=1,
+    )
+    return card_message(preamble, payload)
 
 
 def welcome() -> str:
@@ -74,14 +160,14 @@ def welcome() -> str:
         "• *free food this week*\n"
         "• *plan my Tuesday*\n"
         "• *show me the whole week*\n\n"
-        "Tap an event for details — including **walking directions from your "
-        "college**, once you've told me which one you're in.\n\n"
+        "Tap an event for its date, venue, and who it's for.\n\n"
         "Two things to know up front: the official page publishes **dates but not "
         "times**, so I'll say when a time isn't published rather than guess. And "
         "some entries in my data are **placeholder examples** — I label those "
         "clearly.\n\n"
-        "For directions to a venue, ask the **UCSC Campus Navigation** agent. "
-        "For organizations to join, ask **UCSC Clubs & Societies**."
+        "For walking directions to any venue, ask the **UCSC Campus "
+        "Navigation** agent. For organizations to join, ask **UCSC Clubs & "
+        "Societies**."
     )
 
 
@@ -106,7 +192,7 @@ def welcome_message(college_name: str | None) -> ChatMessage:
     body = (
         [f"🎓 Your saved college: {college_name}"]
         if college_name
-        else ["Tap 🎓 to save your college — it unlocks event directions."]
+        else ["Tap 🎓 to save your college — UCSC's first-day programming depends on it."]
     )
     buttons = [
         MenuButton(
@@ -143,24 +229,20 @@ def links_message() -> ChatMessage:
     return create_text_chat(essentials_text())
 
 
-def college_picker_message(
-    *, note: str | None = None, event_id: str | None = None
-) -> ChatMessage:
-    """College buttons; optionally carries the event the student was routing to.
-
-    When `event_id` is set, choosing a college continues straight into
-    directions for that event instead of making the student tap again.
-    """
+def college_picker_message(*, note: str | None = None) -> ChatMessage:
+    """College buttons. UCSC's first-day programming is college-specific, so
+    this genuinely changes which events are relevant."""
     preamble = (note + "\n\n" if note else "") + (
-        "Which residential college are you in? I'll remember it for event "
-        "recommendations and walking directions."
+        "Which residential college are you in? I'll use it to filter events — "
+        "UCSC's first-day programming depends on it."
     )
-    buttons = []
-    for college in COLLEGES:
-        selection = {"action": "set_college", "college": college.key}
-        if event_id:
-            selection[EVENT_ID_FIELD] = event_id
-        buttons.append(MenuButton(f"{college.emoji} {college.name}", selection))
+    buttons = [
+        MenuButton(
+            f"{college.emoji} {college.name}",
+            {"action": "set_college", "college": college.key},
+        )
+        for college in COLLEGES
+    ]
     return menu_message(
         preamble,
         title="Set your college 🎓",
@@ -184,7 +266,7 @@ def day_picker_message() -> ChatMessage:
     return menu_message(
         "Which day should I lay out for you?",
         title="Plan your day 🧭",
-        subtitle="Confirmed events first, walking times included",
+        subtitle="Confirmed events first",
         body_lines=None,
         buttons=buttons,
         source=SOURCE,
@@ -225,6 +307,7 @@ def list_message(
     *,
     heading: str,
     date_note: str | None,
+    footer_buttons: list[MenuButton] | None = None,
 ) -> ChatMessage:
     """The list card, plus a text bubble carrying the heading and caveats.
 
@@ -261,6 +344,7 @@ def list_message(
         subtitle="Tap an event for details",
         id_field=EVENT_ID_FIELD,
         source=SOURCE,
+        footer_buttons=footer_buttons,
         footnote=events_footnote(any_unverified=any_unverified),
     )
     return card_message(preamble, payload)
@@ -280,9 +364,6 @@ def detail_message(
     ]
 
     blocks = []
-    pin = pin_line(event["location_id"]) if event.get("location_id") else None
-    if pin:
-        blocks.append(DetailBlock("Getting there", [pin, PIN_CAVEAT.strip("_")]))
     if others:
         blocks.append(
             DetailBlock(
@@ -309,23 +390,12 @@ def detail_message(
             f"announced event. Confirm at {OFFICIAL_EVENTS_URL}."
         )
 
-    # Directions only when the venue is actually known — an event whose location
-    # is "not yet published" must not grow a button that pretends otherwise.
-    extra_buttons = []
-    if event.get("location_id"):
-        extra_buttons.append(
-            MenuButton(
-                "🗺️ Directions",
-                {EVENT_ID_FIELD: event["id"], "action": "directions"},
-                primary=True,
-            )
-        )
-    extra_buttons.append(
+    extra_buttons = [
         MenuButton(
             "✅ In your plan" if saved else "⭐ Add to my plan",
             {EVENT_ID_FIELD: event["id"], "action": "save_event"},
         )
-    )
+    ]
 
     payload = build_detail_payload(
         title=event["title"],
@@ -343,25 +413,17 @@ def detail_message(
 
     # The card carries the detail; the bubble carries the tappable links,
     # since card text is not clickable.
-    pairs = []
-    maps_url = pin_url(event["location_id"]) if event.get("location_id") else None
-    if maps_url:
-        pairs.append(("📍 Open in Maps", maps_url))
-    pairs.append(("Official schedule", OFFICIAL_EVENTS_URL))
-
     # Links only: the card names the event and its day already.
-    return card_message(link_row(*pairs), payload)
+    return card_message(
+        link_row(("Official schedule", OFFICIAL_EVENTS_URL)), payload
+    )
 
 
 def planner_message(
     iso_date: str,
     scored: list[ScoredEvent],
-    legs: list[tuple[str, str, int]],
 ) -> ChatMessage:
-    """A one-day menu with walking times chained between venues.
-
-    `legs` is (from_venue_name, to_venue_name, walk_minutes) for consecutive
-    events whose venues are both known.
+    """A one-day menu of what's on, confirmed events first.
 
     The framing matters: the university has published dates but no times, so
     this is deliberately a *menu for the day*, never a schedule. Ordering
@@ -369,29 +431,6 @@ def planner_message(
     first, same as everywhere else.
     """
     day = _day_label(iso_date)
-    any_unverified = any(not item.event["verified"] for item in scored)
-
-    lines = [f"**Your {day} menu** 🧭", ""]
-    lines.append(
-        "_Times aren't published yet, so this is a menu, not a schedule — "
-        "confirmed events first, walking times to help you chain them._"
-    )
-    lines.append("")
-    for item in scored:
-        event = item.event
-        lines.append(
-            f"• {marker(event['verified'])}**{event['title']}** — "
-            f"{_location_text(event)}, {event_time(event.get('time'))}"
-        )
-    if legs:
-        lines.append("")
-        lines.append("**Getting between venues** (walking estimates):")
-        lines.extend(
-            f"• {origin} → {dest}: about {minutes} min"
-            for origin, dest, minutes in legs
-        )
-    lines.append("")
-    lines.append(events_disclaimer(any_unverified=any_unverified))
 
     items = [
         CardItem(
@@ -417,8 +456,13 @@ def planner_message(
         id_field=EVENT_ID_FIELD,
         source=SOURCE,
         footer_buttons=footer,
+        footnote=events_footnote(
+            any_unverified=any(not item.event["verified"] for item in scored)
+        ),
     )
-    return card_message("\n".join(lines), payload)
+    return card_message(
+        link_row(("Official schedule", OFFICIAL_EVENTS_URL)), payload
+    )
 
 
 def empty_plan_message() -> ChatMessage:
@@ -447,40 +491,17 @@ def empty_plan_message() -> ChatMessage:
     )
 
 
-def my_plan_message(
-    chosen: list[dict],
-    legs_by_date: dict[str, list[tuple[str, str, int]]],
-) -> ChatMessage:
+def my_plan_message(chosen: list[dict]) -> ChatMessage:
     """The student's starred events as a personal itinerary.
 
     Same honesty framing as the day planner: dates are real, times are not
     published, so within a day this is a set of picks, not a sequence.
     """
-    any_unverified = any(not event["verified"] for event in chosen)
-
-    lines = ["**Your Welcome Week plan** ⭐", ""]
-    lines.append(
-        "_Times aren't published yet — within each day these are your picks, "
-        "not an order of events._"
-    )
-    for iso in sorted({event["date"] for event in chosen}):
-        lines.append("")
-        lines.append(f"**{_day_label(iso)}**")
-        for event in (e for e in chosen if e["date"] == iso):
-            lines.append(
-                f"• {marker(event['verified'])}**{event['title']}** — "
-                f"{_location_text(event)}, {event_time(event.get('time'))}"
-            )
-        for origin, dest, minutes in legs_by_date.get(iso, []):
-            lines.append(f"   🚶 {origin} → {dest}: about {minutes} min")
-    lines.append("")
-    lines.append(events_disclaimer(any_unverified=any_unverified))
-
     items = [
         CardItem(
             record_id=event["id"],
-            heading=event["title"],
-            body=f"{_day_label(event['date'])} · {_location_text(event)}",
+            heading=f"{_day_label(event['date'])} · {event['title']}",
+            body=f"{_location_text(event)} · {event_time(event.get('time'))}",
             badges=[badge(event["verified"])],
             button_label="Details",
         )
@@ -493,29 +514,17 @@ def my_plan_message(
     payload = build_list_payload(
         items,
         title="Your Welcome Week plan ⭐",
-        subtitle=f"{len(chosen)} starred · tap for details",
+        subtitle=f"{len(chosen)} starred · in date order",
         id_field=EVENT_ID_FIELD,
         source=SOURCE,
         footer_buttons=footer,
+        footnote=events_footnote(
+            any_unverified=any(not event["verified"] for event in chosen)
+        ),
     )
-    return card_message("\n".join(lines), payload)
-
-
-def directions_message(event: dict, origin_name: str, route_text: str) -> ChatMessage:
-    """Walking directions to an event's venue, from the student's college."""
-    lines = [
-        f"**Getting to {event['title']}** — {_location_text(event)}",
-        f"_Starting from {origin_name}, your saved college._",
-        "",
-        route_text,
-    ]
-    if not event["verified"]:
-        lines.append("")
-        lines.append(
-            "⚠️ *Reminder: this event is a placeholder example, not an announced "
-            f"event. Confirm at {OFFICIAL_EVENTS_URL} before walking anywhere.*"
-        )
-    return create_text_chat("\n".join(lines))
+    return card_message(
+        link_row(("Official schedule", OFFICIAL_EVENTS_URL)), payload
+    )
 
 
 def plan_toggled_message(event: dict, *, saved: bool, total: int) -> ChatMessage:

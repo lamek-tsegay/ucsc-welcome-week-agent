@@ -279,14 +279,14 @@ def test_route_between_known_landmarks():
     assert route_between("crown_college", "narnia") is None
 
 
-# --- events: planner and directions -------------------------------------------
+# --- events: planner and interests --------------------------------------------
 
 from datetime import date
 
 from agents.events.service import (
-    directions_to_event,
     parse_plan_request,
     respond_to_plan,
+    respond_to_vibe as events_vibe,
 )
 
 IN_WEEK = date(2026, 9, 22)
@@ -307,64 +307,95 @@ def test_parse_plan_request_ignores_normal_queries():
     assert parse_plan_request("what's happening Wednesday", today=IN_WEEK) is None
 
 
-def test_planner_puts_confirmed_first_and_includes_walking_legs():
-    message, shown_ids = asyncio.run(respond_to_plan("2026-09-21"))
-    body = text_of(message)
-    assert "menu, not a schedule" in body
+def test_planner_puts_confirmed_first():
+    message, shown_ids = respond_to_plan("2026-09-21")
     assert shown_ids, "planner returned no events"
     # Monday has two confirmed events; they must lead.
     assert shown_ids[0] in {"new_admit_class_photo", "late_night_athletics_rec"}
     assert shown_ids[1] in {"new_admit_class_photo", "late_night_athletics_rec"}
-    assert "Getting between venues" in body
-    assert "about" in body and "min" in body
 
 
 def test_planner_never_invents_times():
-    message, _ = asyncio.run(respond_to_plan("2026-09-21"))
-    body = text_of(message)
-    assert "time not yet published" in body
+    message, _ = respond_to_plan("2026-09-21")
+    rendered = text_of(message) + json.dumps(payload_of(message))
+    assert "time not yet published" in rendered
     # No clock times anywhere: the university has not published any.
     import re
 
-    assert not re.search(r"\b\d{1,2}:\d{2}\s*(?:am|pm)?\b", body, re.IGNORECASE)
+    assert not re.search(r"\b\d{1,2}:\d{2}\s*(?:am|pm)?\b", rendered, re.IGNORECASE)
 
 
-def test_directions_to_event_from_college():
-    message = asyncio.run(directions_to_event("cornucopia", "Crown"))
-    assert message is not None
-    body = text_of(message)
-    assert "Cornucopia" in body
-    assert "min" in body
-    assert "Crown" in body
+# --- events: navigation belongs to the navigation agent ----------------------
+# Routing was removed from this agent deliberately: a separate Campus
+# Navigation agent owns it, and two agents answering the same question meant
+# two places to keep correct.
 
 
-def test_directions_refused_when_venue_unpublished():
-    # Choose Your Own Slugventure has location_id null — no route, no guess.
-    message = asyncio.run(directions_to_event("choose_your_own_slugventure", "Crown"))
-    assert message is None
+def test_events_agent_holds_no_navigation_code():
+    """No import of the navigation package anywhere in the events agent."""
+    import pathlib
+
+    for name in ("agent.py", "service.py", "cards.py", "recommend.py"):
+        source = pathlib.Path("agents/events", name).read_text()
+        assert "agents.navigation" not in source, f"{name} still imports navigation"
+        assert "directions_text" not in source, f"{name} still routes"
 
 
-def test_unverified_event_directions_carry_the_placeholder_warning():
-    message = asyncio.run(directions_to_event("ph_farm_tour", "Porter"))
-    assert message is not None
-    assert "placeholder" in text_of(message).lower()
-
-
-def test_detail_card_directions_button_gated_on_known_venue():
+def test_event_detail_offers_no_directions_button():
     from agents.events.cards import detail_message
     from agents.events.recommend import by_id
 
-    with_venue = detail_message(by_id("cornucopia"), [])
-    actions = {
-        sel.get("action") for sel in selections_of(payload_of(with_venue))
-    }
-    assert "directions" in actions
+    for event_id in ("cornucopia", "choose_your_own_slugventure"):
+        message = detail_message(by_id(event_id), [])
+        actions = {sel.get("action") for sel in selections_of(payload_of(message))}
+        assert "directions" not in actions, event_id
 
-    without_venue = detail_message(by_id("choose_your_own_slugventure"), [])
-    actions = {
-        sel.get("action") for sel in selections_of(payload_of(without_venue))
-    }
-    assert "directions" not in actions
+
+def test_events_still_point_at_the_navigation_agent():
+    """Removing the feature must not strand the student — the reply says who
+    does own directions."""
+    from agents.events.cards import welcome
+
+    assert "Campus Navigation" in welcome()
+
+
+# --- events: interest matcher -------------------------------------------------
+
+
+@pytest.mark.parametrize("key", [k for k, _, _, _ in __import__(
+    "agents.events.cards", fromlist=["VIBES"]).VIBES])
+def test_every_event_interest_matches_something(key):
+    """An interest that dead-ends would be a broken button."""
+    result = events_vibe(key)
+    assert result is not None
+    _message, shown_ids = result
+    assert shown_ids, f"interest {key!r} matched no events"
+
+
+def test_unknown_event_interest_is_rejected():
+    assert events_vibe("not-a-vibe") is None
+
+
+def test_general_ask_leads_with_the_interests_question():
+    from agents.events.cards import VIBES
+    from agents.events.service import respond_to_query as events_query
+
+    message, shown_ids = asyncio.run(
+        events_query("Tell me about Welcome Week", today=IN_WEEK)
+    )
+    assert shown_ids == [], "a general ask should ask, not dump the schedule"
+    payload = payload_of(message)
+    assert payload is not None
+    vibes = {sel.get("vibe") for sel in selections_of(payload) if "vibe" in sel}
+    assert vibes == {key for key, _, _, _ in VIBES}
+
+
+def test_specific_event_asks_skip_the_question():
+    from agents.events.service import respond_to_query as events_query
+
+    for text in ("what's happening Wednesday", "free food this week"):
+        _message, shown_ids = asyncio.run(events_query(text, today=IN_WEEK))
+        assert shown_ids, f"{text!r} should return events directly"
 
 
 # --- clubs: vibe matcher ------------------------------------------------------
@@ -500,27 +531,22 @@ def test_unpublished_venue_event_does_not_resolve():
 from agents.events.service import respond_to_my_plan
 
 
-def test_my_plan_groups_by_day_with_walk_legs():
-    message, shown_ids = asyncio.run(
-        respond_to_my_plan(
-            ["late_night_athletics_rec", "cornucopia", "new_admit_class_photo"]
-        )
+def test_my_plan_lists_starred_events_in_date_order():
+    message, shown_ids = respond_to_my_plan(
+        ["cornucopia", "late_night_athletics_rec", "new_admit_class_photo"]
     )
-    body = text_of(message)
-    # Chronological days, confirmed events, honest framing.
-    assert "Monday Sep 21" in body and "Tuesday Sep 22" in body
-    assert "your picks" in body
-    # Monday's two venues get a walking leg.
-    assert "East Upper Field" in body and "min" in body
-    # Within Monday, order is data-honest (confirmed first) — both are
-    # confirmed here, so both simply appear.
-    assert set(shown_ids) == {
-        "late_night_athletics_rec", "cornucopia", "new_admit_class_photo"
+    # Monday's two events sort before Tuesday's, whatever order they were
+    # starred in.
+    assert shown_ids[-1] == "cornucopia"
+    assert set(shown_ids[:2]) == {
+        "late_night_athletics_rec", "new_admit_class_photo"
     }
+    rendered = json.dumps(payload_of(message))
+    assert "Monday Sep 21" in rendered and "Tuesday Sep 22" in rendered
 
 
 def test_my_plan_empty_state_recovers_with_buttons():
-    message, shown_ids = asyncio.run(respond_to_my_plan([]))
+    message, shown_ids = respond_to_my_plan([])
     assert shown_ids == []
     payload = payload_of(message)
     assert payload is not None
@@ -529,9 +555,7 @@ def test_my_plan_empty_state_recovers_with_buttons():
 
 
 def test_my_plan_skips_stale_ids():
-    message, shown_ids = asyncio.run(
-        respond_to_my_plan(["cornucopia", "deleted_event_id"])
-    )
+    message, shown_ids = respond_to_my_plan(["cornucopia", "deleted_event_id"])
     assert shown_ids == ["cornucopia"]
 
 
@@ -661,35 +685,19 @@ def test_locate_reply_includes_pin_and_contextual_links():
     assert "dining.ucsc.edu" in text_of(dining.message)
 
 
-def test_event_detail_includes_venue_pin():
+def test_event_detail_names_the_venue_without_mapping_it():
+    """The venue name is event information; putting it on a map is the
+    navigation agent's job, so no map links live here."""
     from agents.events.cards import detail_message
     from agents.events.recommend import by_id
 
     message = detail_message(by_id("cornucopia"), [])
     rendered = text_of(message) + json.dumps(payload_of(message))
-    assert "google.com/maps/search" in rendered
-    assert "approximate" in rendered
-
-    # No venue -> no pin, no pretend link.
-    hidden = detail_message(by_id("choose_your_own_slugventure"), [])
-    hidden_rendered = text_of(hidden) + json.dumps(payload_of(hidden))
-    assert "google.com/maps" not in hidden_rendered
+    assert "East Upper Field" in rendered
+    assert "google.com/maps" not in rendered
 
 
 # --- cross-agent bridging -----------------------------------------------------
-
-
-def test_bridge_answers_nav_questions_but_not_domain_queries():
-    """"any events for Crown students" must stay an events query."""
-    from agents.events.service import bridge_to_navigation
-
-    hijack = asyncio.run(bridge_to_navigation("any events for Crown students"))
-    assert hijack is None
-
-    genuine = asyncio.run(bridge_to_navigation("where is Quarry Plaza"))
-    assert genuine is not None
-    assert "Quarry Plaza" in genuine
-    assert "Campus Navigation" in genuine  # credits the sibling
 
 
 def test_clubs_domain_gate():

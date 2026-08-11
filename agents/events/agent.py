@@ -30,12 +30,11 @@ from agents.events import cards
 from agents.events.cards import BACK_ACTION, EVENT_ID_FIELD
 from agents.events.service import (
     WELCOME,
-    bridge_to_navigation,
-    directions_to_event,
     respond_to_my_plan,
     respond_to_plan,
     respond_to_query,
     respond_to_selection,
+    respond_to_vibe,
 )
 from agents.events.recommend import by_id as event_by_id, detect_college
 from common import profile
@@ -71,10 +70,10 @@ LAST_QUERY_KEY = "events:last_query"
 SHOWN_IDS_KEY = "events:shown_ids"
 
 DESCRIPTION = (
-    "Recommends UC Santa Cruz Slug Start / Fall Welcome Week events (Monday Sept 21 "
-    "to Saturday Sept 26), filtered by day, residential college, and interest. "
-    "Distinguishes officially confirmed events from placeholder examples, and never "
-    "invents an event time the university has not published."
+    "What's on during UC Santa Cruz Slug Start / Fall Welcome Week (Monday Sept 21 "
+    "to Saturday Sept 26). Ask what you're in the mood for, browse by day, filter "
+    "by residential college, and star events into your own plan. Confirmed events "
+    "are distinguished from examples, and event times are never invented."
 )
 
 README = """# UCSC Welcome Week Events 🎪
@@ -91,13 +90,14 @@ Event recommendations for **UC Santa Cruz Slug Start / Fall Welcome Week**,
 
 ## What it does
 
+- **🎯 Interest matcher** - one tap, zero typing: pick what you're in the mood
+  for (free food, meeting people, outdoors, arts, career, off campus) and see
+  what fits across the whole week. Built for students who don't know what's on.
 - **Day lookup** - what's on Monday, Wednesday, Saturday, or the whole week
-- **Day planner** - *plan my Tuesday* lays out the day confirmed-first, with
-  **walking times between venues** so you can chain events on a hillside campus
-- **Directions inside event cards** - tap 🗺️ on any event and get a walking
-  route from your own residential college
+- **Day planner** - *plan my Tuesday* lays out that day, confirmed events first
+- **⭐ My plan** - star events and get your own Welcome Week list back
 - **Remembers your college** - say *I'm at Crown* once (or tap it); event
-  recommendations and directions use it from then on
+  recommendations use it from then on
 - **College filtering** - programming for your residential college, since UCSC's
   first-day schedule depends on college affiliation
 - **Interest matching** - food, music, sports, outdoors, career, cultural, tech,
@@ -108,9 +108,10 @@ Event recommendations for **UC Santa Cruz Slug Start / Fall Welcome Week**,
 
 ## Try asking
 
+- *Tell me about Welcome Week* - I'll ask what you're into, then show what fits
 - *what's happening Wednesday*
 - *plan my Tuesday*
-- *I'm at Crown* — then tap 🗺️ on any event for directions
+- *I'm at Crown* — then see events for your college
 - *free food this week*
 - *outdoor stuff on Saturday*
 - *show me the whole week*
@@ -138,7 +139,8 @@ everywhere they appear. Your college sends its own first-day schedule separately
 
 ## Related agents
 
-- **UCSC Campus Navigation** - directions to any venue
+- **UCSC Campus Navigation** - walking directions to any venue. This agent
+  covers what's on; routing is that agent's job.
 - **UCSC Clubs & Societies** - student organizations to join
 """
 
@@ -181,18 +183,6 @@ async def _send(ctx: Context, sender: str, message: ChatMessage) -> None:
     await ctx.send(sender, message)
 
 
-async def _send_directions(
-    ctx: Context, sender: str, event_id: str, college_name: str
-) -> None:
-    message = await directions_to_event(event_id, college_name)
-    if message is None:
-        message = create_text_chat(
-            "I can't route to that one — its venue hasn't been published, and I "
-            "won't guess at a location. Check the official page closer to the day."
-        )
-    await _send(ctx, sender, message)
-
-
 async def _handle_selection(
     ctx: Context, sender: str, selection: dict[str, str]
 ) -> bool:
@@ -211,10 +201,6 @@ async def _handle_selection(
         if not college:
             return False
         profile.set_college(sender, college.name)
-        if event_id:
-            # They were mid-flow toward directions — continue, don't restart.
-            await _send_directions(ctx, sender, event_id, college.name)
-            return True
         await _send_query_result(
             ctx, sender, f"any events for {college.name} students"
         )
@@ -229,19 +215,17 @@ async def _handle_selection(
             await _send(ctx, sender, cards.college_picker_message())
         return True
 
-    if action == "directions" and event_id:
-        if saved_college:
-            await _send_directions(ctx, sender, event_id, saved_college)
-        else:
-            await _send(
-                ctx,
-                sender,
-                cards.college_picker_message(
-                    note="Directions start from your college, and I don't know "
-                    "yours yet.",
-                    event_id=event_id,
-                ),
-            )
+    if action == "quiz":
+        await _send(ctx, sender, cards.vibe_picker_message())
+        return True
+
+    if action == "vibe_pick":
+        result = respond_to_vibe(selection.get("vibe", ""))
+        if result is None:
+            return False
+        message, shown_ids = result
+        ctx.storage.set(SHOWN_IDS_KEY, json.dumps(shown_ids))
+        await _send(ctx, sender, message)
         return True
 
     if action == "plan_day":
@@ -375,9 +359,8 @@ async def handle_message(ctx: Context, sender: str, msg: ChatMessage):
                     ctx,
                     sender,
                     create_text_chat(
-                        f"Got it — you're at **{college_name}**. 🎓 Event "
-                        "recommendations and directions now use that. Here's "
-                        "what's on for you:"
+                        f"Got it — you're at **{college_name}**. 🎓 I'll "
+                        "filter events for your college. Here's what's on:"
                     ),
                 )
                 await _send_query_result(
@@ -398,15 +381,6 @@ async def handle_message(ctx: Context, sender: str, msg: ChatMessage):
                 ),
             )
             await _send_query_result(ctx, sender, "free food this week")
-            return
-
-        # A navigation-shaped question typed here should just get answered —
-        # students don't know which agent owns what.
-        bridged = await bridge_to_navigation(text)
-        if bridged:
-            answer = create_text_chat(bridged)
-            _note_outbound(sender, answer)
-            await ctx.send(sender, answer)
             return
 
         ctx.logger.info(f"Events query from {sender}: {text!r}")
