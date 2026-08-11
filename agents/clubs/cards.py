@@ -176,63 +176,63 @@ def meet_clubs_message() -> ChatMessage:
 
 
 def full_roster_message(all_clubs: list[dict]) -> ChatMessage:
-    """Every organization we have, grouped by category, then ask about them.
+    """Every organization in one card — tap any one to pop its details open.
 
-    The browse answer a student actually wants: the complete list first, and
-    the card alongside asks what they're into so the next step is one tap —
-    either a vibe or a category. Individual details are a typed name or a
-    category tap away.
+    This is the same shape as a normal search result (list_message): one card,
+    every match as a tappable row, "Details" opens the detail card. The only
+    difference is scope — all clubs instead of a filtered set — so browsing
+    everything behaves exactly like browsing a category, just bigger. The vibe
+    quiz rides along as footer buttons for narrowing down instead of scrolling.
     """
-    by_category: dict[str, list[dict]] = {}
-    for club in all_clubs:
-        by_category.setdefault(club["category"], []).append(club)
+    ordered = sorted(all_clubs, key=lambda c: (c["category"], c["name"]))
 
     lines = [
-        f"**Sure — here are all {len(all_clubs)} organizations I know** 🎓",
+        f"**Sure — here are all {len(ordered)} organizations I know** 🎓",
+        "",
+        "Tap any one below for details, or use a vibe to narrow the list down.",
         "",
         "_✅-marked engineering orgs are confirmed on the official Baskin "
         "page; the rest are representative examples. The official directories "
         "have far more._",
+        "",
+        clubs_disclaimer(),
     ]
-    for entry in club_categories():
-        members = sorted(
-            by_category.get(entry["id"], []), key=lambda c: c["name"]
-        )
-        if not members:
-            continue
-        emoji = CATEGORY_EMOJI.get(entry["id"], "")
-        lines.append("")
-        lines.append(f"**{emoji} {entry['label']}** ({len(members)})")
-        lines.extend(
-            f"• {marker(club['verified'])}{club['name']}" for club in members
-        )
-    lines.append("")
-    lines.append(
-        "**Which of these sound like you?** Tap a vibe below and I'll narrow "
-        "it down — or name any organization for details."
-    )
-    lines.append("")
-    lines.append(clubs_disclaimer())
+    preamble = "\n".join(lines)
 
-    buttons = [
+    items = [
+        CardItem(
+            record_id=club["id"],
+            heading=_name_with_emoji(club),
+            body=club["description"],
+            badges=[
+                (category_label(club["category"]), "info"),
+                badge(club["verified"]),
+            ],
+            button_label="Details",
+        )
+        for club in ordered
+    ]
+
+    footer = [
         MenuButton(label, {"action": "vibe_pick", "vibe": key})
         for key, label, _, _ in VIBES
     ]
-    buttons.append(
+    footer.append(
         MenuButton(
             "🗂️ Browse by category",
             {"action": "quick", "q": "what categories are there"},
         )
     )
-    return menu_message(
-        "\n".join(lines),
-        title="All organizations — what are you into? 🎓",
-        subtitle=f"{len(all_clubs)} examples · tap a vibe to narrow down",
-        body_lines=None,
-        buttons=buttons,
+
+    payload = build_list_payload(
+        items,
+        title=f"All {len(ordered)} organizations 🎓",
+        subtitle="Tap one for details",
+        id_field=CLUB_ID_FIELD,
         source=SOURCE,
-        per_row=2,
+        footer_buttons=footer,
     )
+    return card_message(preamble, payload)
 
 
 def _summary_line(club: dict) -> str:

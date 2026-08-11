@@ -739,7 +739,47 @@ def test_strip_mention(raw, expected):
     assert strip_mention(raw) == expected
 
 
+def _card_headings(payload: dict) -> list[str]:
+    """Every card-item heading value, in document order."""
+    found: list[str] = []
+
+    def walk(node) -> None:
+        if isinstance(node, dict):
+            if node.get("type") == "heading":
+                found.append(node.get("value", ""))
+            for value in node.values():
+                walk(value)
+        elif isinstance(node, list):
+            for entry in node:
+                walk(entry)
+
+    walk(payload)
+    return found
+
+
+def _card_badge_labels(payload: dict) -> list[str]:
+    found: list[str] = []
+
+    def walk(node) -> None:
+        if isinstance(node, dict):
+            if node.get("type") == "badge":
+                found.append(node.get("label", ""))
+            for value in node.values():
+                walk(value)
+        elif isinstance(node, list):
+            for entry in node:
+                walk(entry)
+
+    walk(payload)
+    return found
+
+
 def test_the_exact_live_failure_now_gets_the_full_roster():
+    """The original bug report: "@ucsc-clubs Hi tell me what clubs are at
+    UCSC" got a no-match reply. Fixed twice over — first so the query matches
+    at all, then so the answer is one tappable card holding every club (not a
+    text wall), matching the tap-for-details shape every other listing uses.
+    """
     from agents.clubs.service import respond_to_query
     from common.loader import clubs as clubs_data
 
@@ -749,15 +789,37 @@ def test_the_exact_live_failure_now_gets_the_full_roster():
     )
     # Every organization is listed — the complete answer, not a sample.
     assert len(shown_ids) == len(clubs_data())
-    body = text_of(message)
-    for club in clubs_data():
-        assert club["name"] in body, f"roster omits {club['name']}"
-    assert "[unofficial]" in body  # example labels survive
-    assert "getinvolved.ucsc.edu" in body  # and so does the honesty pointer
 
-    # The card alongside asks about interests: every vibe is one tap away.
     payload = payload_of(message)
-    vibes = {sel.get("vibe") for sel in selections_of(payload) if "vibe" in sel}
+    assert payload is not None, "the full roster must be a tappable card"
+
+    headings = _card_headings(payload)
+    for club in clubs_data():
+        assert any(club["name"] in heading for heading in headings), (
+            f"roster card omits {club['name']}"
+        )
+
+    # Each row carries its own Details button — one card, tap any club, its
+    # detail pops up. Confirming the selection payloads are all present and
+    # correctly keyed, exactly like a normal filtered search result.
+    selections = selections_of(payload)
+    tappable_ids = {
+        sel["club_id"] for sel in selections if "club_id" in sel and "action" not in sel
+    }
+    assert tappable_ids == {club["id"] for club in clubs_data()}
+
+    # Verification status survives as a badge on every row, not lost in a wall
+    # of text — both tiers must be visibly represented.
+    badge_labels = set(_card_badge_labels(payload))
+    assert "Confirmed" in badge_labels
+    assert "Unofficial" in badge_labels
+
+    body = text_of(message)
+    assert "getinvolved.ucsc.edu" in body  # honesty pointer still present
+
+    # Narrowing down is one tap away too — every vibe rides along as a footer
+    # button on the same card.
+    vibes = {sel.get("vibe") for sel in selections if "vibe" in sel}
     from agents.clubs.cards import VIBES
 
     assert vibes == {key for key, _, _, _ in VIBES}
