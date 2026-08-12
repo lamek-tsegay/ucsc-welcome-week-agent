@@ -68,9 +68,9 @@ def links_message() -> ChatMessage:
 
 def welcome_message(home_name: str | None, *, step_free: bool = False) -> ChatMessage:
     """Welcome menu. Short and warm; the full pitch lives behind ℹ️."""
-    # The card title already names this agent, so the greeting doesn't.
     preamble = (
-        "Hey! 👋 Walking routes that actually respect the hills.\n\n"
+        "Hey! 👋 I'm your **UCSC Campus Navigation** guide — walking routes "
+        "that actually respect the hills.\n\n"
         "Say *\"I'm at Porter\"* once and *\"route to the library\"* just "
         "works. Event names work too: *\"how do I get to Cornucopia\"*.\n\n"
         "Also here: **UCSC Welcome Week Events** · **UCSC Clubs & Societies**"

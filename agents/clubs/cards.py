@@ -167,12 +167,10 @@ def interests_message() -> ChatMessage:
     # The options live only on the card — listing them here too made the agent
     # read as if it were saying everything twice. Clients that render no cards
     # still have a way through: the free-text invitation below.
-    # The card title asks the question, so the bubble doesn't ask it again.
-    # What's left is the part no card element carries: that typing works too.
     preamble = (
         "Let's find your people at UCSC 🐌\n\n"
-        "Tap one below, or just say it: *anime*, *something outdoorsy*, "
-        "*pre-med*."
+        "**What are you into?** Tap one, or just say it: *anime*, "
+        "*something outdoorsy*, *pre-med*."
     )
     return _interest_card(
         preamble,
@@ -248,10 +246,13 @@ def list_message(
     heading: str,
     footer_buttons: list[MenuButton] | None = None,
 ) -> ChatMessage:
-    # No bubble: it was the heading, and the heading is the card's own title,
-    # so it printed one line above itself. The directory URL rides on the card
-    # footnote rather than here — the client unfurls any link in message text
-    # into a preview box, which on a listing is pure noise.
+    # The bubble carries the heading as plain text, deliberately with no URL
+    # in it: the chat client unfurls any link it finds into a preview card, and
+    # on a listing that box is pure noise. The directory URL still rides on the
+    # card footnote, readable and copyable; detail cards keep the tappable
+    # version, where acting on it is the point.
+    preamble = heading
+
     items = [
         CardItem(
             record_id=item.club["id"],
@@ -275,7 +276,7 @@ def list_message(
         footer_buttons=footer_buttons,
         footnote=clubs_footnote(),
     )
-    return card_message("", payload)
+    return card_message(preamble, payload)
 
 
 def detail_message(club: dict, others: list[dict]) -> ChatMessage:
@@ -369,10 +370,9 @@ def detail_message(club: dict, others: list[dict]) -> ChatMessage:
         extra_buttons=link_buttons,
     )
 
-    # No bubble at all: it held the club's name, which the card title already
-    # is, so it read as the name printed twice. card_message drops the text
-    # part entirely when the preamble is empty.
-    return card_message("", payload)
+    # No URL in the bubble at all now: the links are buttons on the card, so
+    # nothing here for the client to unfurl into a preview box.
+    return card_message(f"**{club['name']}**", payload)
 
 
 def all_clubs_message(all_clubs: list[dict]) -> ChatMessage:

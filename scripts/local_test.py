@@ -175,17 +175,6 @@ def card_payload(message: ChatMessage) -> dict | None:
     return None
 
 
-def rendered(message: ChatMessage) -> str:
-    """Bubble plus card — what the student actually sees, in one string.
-
-    Which half a phrase lands in shifts as cards absorb what text used to
-    carry, so checks about *what was said* look here rather than at the bubble
-    alone.
-    """
-    payload = card_payload(message)
-    return text_of(message) + (json.dumps(payload) if payload else "")
-
-
 async def converse(protocol: Protocol, messages: list[ChatMessage]) -> FakeContext:
     """Run a sequence of inbound messages against one agent, sharing context."""
     handle = handler_for(protocol, "ChatMessage")
@@ -226,8 +215,7 @@ async def test_navigation() -> None:
     replies = chat_replies(ctx)
     check(len(replies) == 2, f"navigation: expected welcome + answer, got {len(replies)}")
 
-    # The card title names the agent now; the bubble no longer repeats it.
-    welcome = rendered(replies[0])
+    welcome = text_of(replies[0])
     check("Campus Navigation" in welcome, "navigation: welcome does not identify itself")
     check(
         "Events" in welcome and "Clubs" in welcome,

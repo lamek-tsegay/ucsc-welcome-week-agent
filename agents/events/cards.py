@@ -295,22 +295,22 @@ def list_message(
     date_note: str | None,
     footer_buttons: list[MenuButton] | None = None,
 ) -> ChatMessage:
-    """The list card, plus a bubble for anything the card cannot say.
+    """The list card, plus a text bubble carrying the heading and caveats.
 
     The events themselves live only on the card, which shows each one's title,
     day, time, venue, and Confirmed/Unofficial badge. Repeating them as text
     printed the whole schedule twice. Time and verification labelling move to
     the card items, where the honesty gate checks them.
-
-    The heading is not in the bubble either: it is the card's own title, so
-    putting it here printed it directly above itself. What is left is the date
-    note, which nothing else carries — and usually nothing at all.
     """
     any_unverified = any(not item.event["verified"] for item in scored)
 
+    lines: list[str] = []
+    if date_note:
+        lines.append(f"ℹ️ {date_note}\n")
     # No URL in the bubble: the client unfurls any link into a preview box,
     # which on a listing is noise. The schedule link stays on the card footnote.
-    preamble = f"ℹ️ {date_note}" if date_note else ""
+    lines.append(heading)
+    preamble = "\n".join(lines)
 
     items = [
         CardItem(
@@ -389,7 +389,7 @@ def detail_message(event: dict, others: list[dict]) -> ChatMessage:
 
     payload = build_detail_payload(
         title=event["title"],
-        heading=None,  # the card title is already the event's title
+        heading=event["title"],
         body=event["description"],
         badges=[badge(verified)],
         rows=rows,
@@ -401,8 +401,9 @@ def detail_message(event: dict, others: list[dict]) -> ChatMessage:
         extra_buttons=extra_buttons,
     )
 
-    # No bubble: it held the event's title, which the card title already is.
-    return card_message("", payload)
+    # No URL in the bubble: the schedule link is a button on the card, so
+    # there is nothing here for the client to unfurl into a preview.
+    return card_message(f"**{event['title']}**", payload)
 
 
 def planner_message(
@@ -446,7 +447,7 @@ def planner_message(
             any_unverified=any(not item.event["verified"] for item in scored)
         ),
     )
-    return card_message("", payload)
+    return card_message(f"**{day} — your menu** 🧭", payload)
 
 
 def no_matches_message(
