@@ -321,7 +321,9 @@ def list_message(
     lines: list[str] = []
     if date_note:
         lines.append(f"ℹ️ {date_note}\n")
-    lines.append(link_row(("Official schedule", OFFICIAL_EVENTS_URL)))
+    # No URL in the bubble: the client unfurls any link into a preview box,
+    # which on a listing is noise. The schedule link stays on the card footnote.
+    lines.append(heading)
     preamble = "\n".join(lines)
 
     items = [
@@ -460,9 +462,7 @@ def planner_message(
             any_unverified=any(not item.event["verified"] for item in scored)
         ),
     )
-    return card_message(
-        link_row(("Official schedule", OFFICIAL_EVENTS_URL)), payload
-    )
+    return card_message(f"**{day} — your menu** 🧭", payload)
 
 
 def empty_plan_message() -> ChatMessage:
@@ -522,9 +522,7 @@ def my_plan_message(chosen: list[dict]) -> ChatMessage:
             any_unverified=any(not event["verified"] for event in chosen)
         ),
     )
-    return card_message(
-        link_row(("Official schedule", OFFICIAL_EVENTS_URL)), payload
-    )
+    return card_message("**Your Welcome Week plan** ⭐", payload)
 
 
 def plan_toggled_message(event: dict, *, saved: bool, total: int) -> ChatMessage:

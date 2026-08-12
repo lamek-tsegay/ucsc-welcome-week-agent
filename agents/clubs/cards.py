@@ -245,7 +245,7 @@ def full_roster_message(all_clubs: list[dict]) -> ChatMessage:
     for club in all_clubs:
         by_category.setdefault(club["category"], []).append(club)
 
-    preamble = link_row(("Official directory", OFFICIAL_CLUBS_URL))
+    preamble = f"**All {len(all_clubs)} organizations** 🎓"
 
     # Category headers keep a long grid navigable. Rendered as body lines
     # between chip groups would break the row chunking, so the grid is built
@@ -302,11 +302,12 @@ def list_message(
     heading: str,
     footer_buttons: list[MenuButton] | None = None,
 ) -> ChatMessage:
-    # The bubble is one line: the tappable directory link, and nothing else.
-    # The card's own title already carries the heading, so repeating it here
-    # only made the reply longer. The link cannot move onto the card because
-    # card text renders as plain text, not markdown.
-    preamble = link_row(("Official directory", OFFICIAL_CLUBS_URL))
+    # The bubble carries the heading as plain text, deliberately with no URL
+    # in it: the chat client unfurls any link it finds into a preview card, and
+    # on a listing that box is pure noise. The directory URL still rides on the
+    # card footnote, readable and copyable; detail cards keep the tappable
+    # version, where acting on it is the point.
+    preamble = heading
 
     items = [
         CardItem(

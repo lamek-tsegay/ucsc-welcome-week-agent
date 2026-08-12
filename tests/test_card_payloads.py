@@ -195,12 +195,37 @@ def test_event_detail_offers_tappable_links():
         assert "google.com/maps" not in bubble
 
 
-def test_listings_offer_a_tappable_source_link():
-    from agents.clubs.service import respond_to_vibe
-    from agents.events.service import respond_to_query as events_query
+def test_listings_carry_no_url_in_the_bubble():
+    """The chat client unfurls any URL in message text into a preview box.
 
-    bubble = _bubble(respond_to_vibe("creative")[0])
-    assert MARKDOWN_LINK.search(bubble), "clubs listing has no tappable source"
+    On a listing that box is noise, so listings keep their source pointer on
+    the card footnote instead — readable and copyable, but not a link. Detail
+    cards make the opposite trade, where tapping through is the point.
+    """
+    from agents.clubs.service import respond_to_full_roster, respond_to_vibe
+    from agents.events.service import (
+        respond_to_my_plan,
+        respond_to_plan,
+        respond_to_query as events_query,
+        respond_to_vibe as events_vibe,
+    )
 
-    message, _ = asyncio.run(events_query("show me the whole week", today=DURING))
-    assert MARKDOWN_LINK.search(_bubble(message)), "events listing has no tappable source"
+    listings = [
+        ("clubs vibe", respond_to_vibe("creative")[0]),
+        ("clubs roster", respond_to_full_roster()[0]),
+        ("events vibe", events_vibe("food")[0]),
+        ("events listing", asyncio.run(
+            events_query("show me the whole week", today=DURING))[0]),
+        ("events planner", respond_to_plan("2026-09-21")[0]),
+        ("events my plan", respond_to_my_plan(["cornucopia"])[0]),
+    ]
+    for name, message in listings:
+        bubble = _bubble(message)
+        assert "http" not in bubble and "mailto:" not in bubble, (
+            f"{name}: a URL in the bubble unfurls a preview box"
+        )
+        assert bubble.strip(), f"{name}: bubble is empty"
+        # The pointer still travels — on the card.
+        assert "http" in json.dumps(_payload(message)), (
+            f"{name}: lost its source pointer entirely"
+        )

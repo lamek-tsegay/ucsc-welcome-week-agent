@@ -255,9 +255,11 @@ def test_response_includes_card_and_standalone_text():
     )
     assert ids
     assert _has_card(message)
-    # The day and the events are on the card; the bubble is the source link.
+    # Everything is on the card, including the source pointer: a URL in the
+    # bubble would unfurl into a preview box.
     assert "Wednesday" in _card_text(message)
-    assert "welcome.ucsc.edu" in _text(message)
+    assert "welcome.ucsc.edu" in _card_text(message)
+    assert "http" not in _text(message)
 
 
 def test_response_labels_placeholders():
