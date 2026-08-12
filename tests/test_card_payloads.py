@@ -16,7 +16,7 @@ from datetime import date
 
 import pytest
 
-from common.notices import OFFICIAL_CLUBS_URL, OFFICIAL_EVENTS_URL
+from common.notices import CLUBS_CONTACT, OFFICIAL_CLUBS_URL, OFFICIAL_EVENTS_URL
 from uagents_core.contrib.protocols.chat import MetadataContent
 
 # The element-tree schema, from the Agentverse element-tree-primitives docs
@@ -268,9 +268,11 @@ def test_club_detail_opens_links_in_one_tap():
     assert OFFICIAL_CLUBS_URL in redirects, "no button opens the campus directory"
     assert any("swe" in url.lower() for url in redirects), "no button opens the club's own site"
 
-    # Email stays a tap: redirect is documented for pages, and an address is
-    # more useful returned as copyable text anyway.
-    assert "open_email" in {sel.get("action") for sel in _selections(payload)}
+    # The email button opens Gmail already addressed to SOAR, so sending is one
+    # more tap rather than a copy-paste into whatever mail app exists.
+    compose = [url for url in redirects if "mail.google.com" in url]
+    assert compose, "no button opens a pre-addressed email"
+    assert f"to={CLUBS_CONTACT}" in compose[0], compose[0]
 
     # An unverified club has no site of its own but stays reachable.
     assert OFFICIAL_CLUBS_URL in _redirects(_payload(respond_to_selection("c_anime")))

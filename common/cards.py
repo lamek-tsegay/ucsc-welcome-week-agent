@@ -293,7 +293,7 @@ class DetailBlock:
 def build_detail_payload(
     *,
     title: str,
-    heading: str,
+    heading: str | None,
     body: str,
     badges: list[tuple[str, str]],
     rows: list[DetailRow],
@@ -312,9 +312,14 @@ def build_detail_payload(
 
     `extra_buttons` sit in the action row before Back — record-specific actions
     like "Directions to this event".
+
+    `heading` is optional, and passing None is the right call whenever it would
+    repeat `title`: the card already shows the title, so a heading with the
+    same words is the record's name printed twice.
     """
     column: list[dict[str, Any]] = [_badge(label, variant) for label, variant in badges]
-    column.append({"type": "heading", "value": heading, "level": 2})
+    if heading:
+        column.append({"type": "heading", "value": heading, "level": 2})
     column.append({"type": "text", "value": body, "style": "body"})
 
     if rows:

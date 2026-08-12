@@ -15,7 +15,7 @@ from common.cards import (
     menu_message,
 )
 from common.chat import create_text_chat
-from common.links import essentials_text, link_row
+from common.links import essentials_text, gmail_compose, link_row
 from common.loader import club_categories
 from common.notices import (
     CLUBS_CONTACT,
@@ -284,18 +284,18 @@ def detail_message(club: dict, others: list[dict]) -> ChatMessage:
 
     website = club.get("website")
 
-    rows = [DetailRow("Interests", tags)]
-    if website:
-        rows.append(DetailRow("Site", website))
+    # No "Site" row: the address is on the 🌐 button, which opens it. Printing
+    # it here too is the same link twice, and the copy of it that can't be
+    # tapped.
+    rows = [
+        DetailRow("Interests", tags),
+        DetailRow("Meet them at", "Cornucopia, Tue Sept 22, East Upper Field"),
+    ]
 
-    join_lines = []
-    if website:
-        join_lines.append(f"• Their site: {website}")
-    join_lines.append(f"• Directory: {OFFICIAL_CLUBS_URL}")
-    join_lines.append("• Cornucopia — Tue Sept 22, East Upper Field")
-    join_lines.append(f"• Email SOAR: {CLUBS_CONTACT}")
-
-    blocks = [DetailBlock("How to join", join_lines)]
+    # No "How to join" block either. It listed the club's site, the directory,
+    # and the SOAR address — every one of which is now a button directly below
+    # it, so the block was the button row written out as text.
+    blocks = []
     if others:
         blocks.append(
             DetailBlock(
@@ -338,15 +338,24 @@ def detail_message(club: dict, others: list[dict]) -> ChatMessage:
         )
     )
     link_buttons.append(
-        # No url: redirect is documented for web pages, and a mailto that the
-        # client declines to open would be a button that does nothing. Tapping
-        # this returns the address as text, which is copyable anyway.
-        MenuButton("✉️ Email SOAR", {"action": "open_email"})
+        MenuButton(
+            "✉️ Email SOAR",
+            {"action": "open_email"},
+            url=gmail_compose(
+                CLUBS_CONTACT,
+                subject=f"Question about {club['name']}",
+                body=(
+                    f"Hi SOAR,\n\nI'm a UCSC student interested in "
+                    f"{club['name']}. Could you point me to how to get "
+                    f"involved?\n\nThanks!"
+                ),
+            ),
+        )
     )
 
     payload = build_detail_payload(
         title=club["name"],
-        heading=club["name"],
+        heading=None,  # the card title is already the club's name
         body=club["description"],
         badges=[
             (category_label(club["category"]), "info"),

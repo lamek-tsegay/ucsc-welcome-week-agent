@@ -13,6 +13,8 @@ answer everywhere.
 
 from __future__ import annotations
 
+from urllib.parse import quote, urlencode
+
 # (emoji, label, url, one-line why)
 ESSENTIALS: list[tuple[str, str, str, str]] = [
     (
@@ -66,6 +68,29 @@ ESSENTIALS: list[tuple[str, str, str, str]] = [
         "Accessibility services and accommodations",
     ),
 ]
+
+
+def gmail_compose(to: str, *, subject: str = "", body: str = "") -> str:
+    """A Gmail compose URL, pre-addressed and pre-written.
+
+    A `mailto:` is the obvious thing here, but a card button can only open an
+    https address, and a mailto also lands on whatever desktop mail client the
+    device has configured — often nothing, on a phone borrowed for orientation
+    week. This opens Gmail in the browser with the address, subject, and a
+    first draft already filled in, so sending it is one more tap.
+
+    Students not on Gmail still get the address: the agent answers the tap
+    with it as text, and it is in the compose window either way.
+    """
+    # safe="@" keeps the address legible in the URL rather than as %40 — Gmail
+    # accepts both, and it means the address is still findable on the card for
+    # anyone reading the payload or copying it out.
+    params = urlencode(
+        {"view": "cm", "fs": "1", "to": to, "su": subject, "body": body},
+        safe="@",
+        quote_via=quote,
+    )
+    return f"https://mail.google.com/mail/?{params}"
 
 
 def link_row(*pairs: tuple[str, str]) -> str:
