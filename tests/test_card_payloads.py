@@ -174,6 +174,25 @@ def test_card_uses_only_renderable_elements(name, payload):
 
 
 @pytest.mark.parametrize("name,payload", ALL_CARDS, ids=[n for n, _ in ALL_CARDS])
+def test_every_button_is_the_same_shade(name, payload):
+    """`primary` is the schema's only colour control: true renders the bright
+    accent, false a muted fill. Every button is bright, so a card reads as one
+    row of controls rather than one highlighted button and some greyed ones.
+
+    A new button defaults to `primary=False` on MenuButton, so without this
+    check the odd muted button creeps back in one call site at a time.
+    """
+    muted: list[str] = []
+
+    def visit(node, path):
+        if node.get("type") == "button" and node.get("primary") is not True:
+            muted.append(f"{path}: {node.get('label')!r}")
+
+    _walk(payload, visit)
+    assert not muted, f"{name}: not bright green:\n  " + "\n  ".join(muted)
+
+
+@pytest.mark.parametrize("name,payload", ALL_CARDS, ids=[n for n, _ in ALL_CARDS])
 def test_card_has_a_title_and_renders_something(name, payload):
     root = payload["root"]
     assert root["type"] == "section"

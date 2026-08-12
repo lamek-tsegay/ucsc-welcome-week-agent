@@ -70,6 +70,9 @@ class MenuButton:
     `selection` is still required on a link button. It is what the agent
     answers with if a client ever ignores the redirect, and the tests check
     every one of those fallbacks resolves to a real address.
+
+    `primary` is kept because it records which button is the intended next
+    move, but it no longer changes the colour — see `_button`.
     """
 
     label: str
@@ -93,12 +96,17 @@ def _button(button: MenuButton, source: str) -> dict[str, Any]:
     action carries only the one key the client documents for this, and the
     fallback lives where it costs nothing if unused: the agent still answers
     `open_*` selections with the address as text.
+
+    Every button is emitted `primary`. `primary` is the only colour control the
+    schema has — true is the bright accent, false the muted fill — so making
+    them uniform means setting it everywhere. The pressed and hover shades are
+    the client's own and are not addressable from the payload.
     """
     if button.url:
         return {
             "type": "button",
             "label": button.label,
-            "primary": button.primary,
+            "primary": True,
             "action": {"redirect": button.url},
         }
 
@@ -107,7 +115,7 @@ def _button(button: MenuButton, source: str) -> dict[str, Any]:
     return {
         "type": "button",
         "label": button.label,
-        "primary": button.primary,
+        "primary": True,
         "action": {"selection": selection},
     }
 
@@ -346,13 +354,10 @@ def build_detail_payload(
     action_row: list[dict[str, Any]] = [
         _button(button, source) for button in (extra_buttons or [])
     ]
+    # Back goes through _button like the rest so it gets the same shade — it
+    # was the one hand-built button here, and the one that stayed muted.
     action_row.append(
-        {
-            "type": "button",
-            "label": back_label,
-            "primary": False,
-            "action": {"selection": {"action": back_action, "source": source}},
-        }
+        _button(MenuButton(back_label, {"action": back_action}), source)
     )
 
     section: dict[str, Any] = {
