@@ -79,12 +79,12 @@ def _every_card() -> list[tuple[str, dict]]:
     )
     from agents.navigation import cards as nav_cards
 
-    found: list[tuple[str, dict]] = []
+    found: list[tuple[str, object, dict]] = []
 
     def add(name, message):
         payload = _payload(message)
         if payload is not None:
-            found.append((name, payload))
+            found.append((name, message, payload))
 
     add("clubs.welcome", clubs_cards.welcome_message())
     add("clubs.interests", clubs_cards.interests_message())
@@ -122,7 +122,8 @@ def _walk(node, visit, path="root"):
             _walk(entry, visit, f"{path}[{index}]")
 
 
-ALL_CARDS = _every_card()
+ALL_MESSAGES = _every_card()
+ALL_CARDS = [(name, payload) for name, _, payload in ALL_MESSAGES]
 
 
 def test_the_audit_covers_every_agent():
@@ -130,6 +131,34 @@ def test_the_audit_covers_every_agent():
     names = {name.split(".")[0] for name, _ in ALL_CARDS}
     assert names == {"clubs", "events", "nav"}
     assert len(ALL_CARDS) >= 20
+
+
+@pytest.mark.parametrize(
+    "name,message,payload", ALL_MESSAGES, ids=[n for n, _, _ in ALL_MESSAGES]
+)
+def test_the_bubble_never_repeats_the_card_title(name, message, payload):
+    """The text bubble above a card must not restate the card's own title.
+
+    A detail card titled "Cycling & Mountain Biking Club" with a bubble saying
+    the same thing shows the name twice, one line apart, which is what a
+    student actually sees and reads as a bug. The bubble is for what the card
+    cannot carry, or it is empty — `card_message` drops it entirely then.
+    """
+    from uagents_core.contrib.protocols.chat import TextContent
+
+    bubble = "\n".join(
+        item.text for item in message.content if isinstance(item, TextContent)
+    )
+    title = payload["root"].get("title", "")
+    if not bubble.strip() or not title:
+        return
+
+    def normalise(value: str) -> str:
+        return re.sub(r"[^a-z0-9 ]", "", value.lower()).strip()
+
+    assert normalise(title) not in normalise(bubble), (
+        f"{name}: bubble repeats the card title {title!r}\n  bubble: {bubble!r}"
+    )
 
 
 @pytest.mark.parametrize("name,payload", ALL_CARDS, ids=[n for n, _ in ALL_CARDS])

@@ -147,7 +147,7 @@ def join_message() -> ChatMessage:
             f"From their site and linktree, read {_checked('chapter_site')}."
         ),
     )
-    return card_message("**How to join UCSC NSBE**", payload)
+    return card_message("", payload)
 
 
 def about_message() -> ChatMessage:
@@ -185,7 +185,7 @@ def about_message() -> ChatMessage:
             f"{_checked('chapter_site')}."
         ),
     )
-    return card_message("**What NSBE is**", payload)
+    return card_message("", payload)
 
 
 def links_message() -> ChatMessage:
@@ -218,7 +218,7 @@ def links_message() -> ChatMessage:
         per_row=1,
         footnote=f"Collected from their site and linktree, read {_checked('chapter_site')}.",
     )
-    return card_message("**UCSC NSBE — their links**", payload)
+    return card_message("", payload)
 
 
 def link_fallback_message(link_id: str) -> ChatMessage:
