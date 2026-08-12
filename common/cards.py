@@ -176,7 +176,10 @@ def build_chip_payload(
 
     if footer_buttons:
         children.append({"type": "divider"})
-        children.extend(_button_rows(footer_buttons, source))
+        # Footer buttons share the grid's width, so every button on the card
+        # renders the same size. Packing them tighter than the chips above
+        # made the secondary actions a visibly different shape.
+        children.extend(_button_rows(footer_buttons, source, per_row=per_row))
     if footnote:
         children.append({"type": "text", "value": footnote, "style": "muted"})
 

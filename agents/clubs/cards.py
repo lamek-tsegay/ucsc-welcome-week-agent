@@ -223,7 +223,11 @@ def category_card(entry: dict, members: list[dict]) -> ChatMessage:
             MenuButton("🗂️ Other categories", {"action": "quick", "q": "what categories are there"}),
             MenuButton("🎯 Match my vibe", {"action": "quiz"}),
         ],
-        per_row=2,
+        # One per row so every button is the same width. Two to a row sized
+        # each button to its own label, so a column of organizations came out
+        # ragged — and club names vary from "iGEM" to "Society for the
+        # Advancement of Chicanos and Native Americans in Science".
+        per_row=1,
         # Chips carry no badges, so without this a card of unmarked names
         # would read as a confirmed roster.
         footnote="✅ = confirmed on an official UCSC page. " + clubs_footnote(),
@@ -353,12 +357,15 @@ def categories_message() -> ChatMessage:
         "Pick a category below, or just tell me what you're into — "
         "*I like hiking and photography* works fine."
     )
+    # Alphabetical by label, not the order they happen to sit in the data
+    # file: a student scanning for one category reads down the list looking
+    # for a word, and the curated order gives them nothing to scan by.
     chips = [
         MenuButton(
             f"{CATEGORY_EMOJI.get(entry['id'], '')} {entry['label']}".strip(),
             {"action": "category", "category": entry["id"]},
         )
-        for entry in club_categories()
+        for entry in sorted(club_categories(), key=lambda e: e["label"].lower())
     ]
     payload = build_chip_payload(
         title="Browse by category 🗂️",
@@ -367,7 +374,7 @@ def categories_message() -> ChatMessage:
         chips=chips,
         source=SOURCE,
         footer_buttons=[MenuButton("🎯 Match my vibe instead", {"action": "quiz"})],
-        per_row=2,
+        per_row=1,
         footnote=clubs_footnote(),
     )
     return card_message(preamble, payload)
