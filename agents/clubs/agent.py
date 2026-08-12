@@ -34,10 +34,8 @@ from agents.clubs.service import (
     respond_to_full_roster,
     respond_to_query,
     respond_to_selection,
-    respond_to_shortlist,
     respond_to_vibe,
 )
-from common import profile
 from common.chat import (
     create_text_chat,
     is_menu_request,
@@ -216,46 +214,6 @@ async def _handle_selection(
         await _send(ctx, sender, cards.links_message())
         return True
 
-    if action == "save_club":
-        club_id = selection.get(CLUB_ID_FIELD, "")
-        if not club_id:
-            return False
-        club = club_by_id(club_id)
-        if club is None:
-            return False
-        now_saved = profile.toggle_saved(sender, "shortlist", club_id)
-        # A confirmation only — no card. The student is already looking at the
-        # detail they tapped from.
-        await _send(
-            ctx,
-            sender,
-            cards.shortlist_toggled_message(
-                club,
-                saved=now_saved,
-                total=len(profile.saved(sender, "shortlist")),
-            ),
-        )
-        return True
-
-    if action == "shortlist":
-        message, shown_ids = respond_to_shortlist(
-            profile.saved(sender, "shortlist")
-        )
-        ctx.storage.set(SHOWN_IDS_KEY, json.dumps(shown_ids))
-        await _send(ctx, sender, message)
-        return True
-
-    if action == "clear_shortlist":
-        profile.clear_saved(sender, "shortlist")
-        await _send(
-            ctx,
-            sender,
-            create_text_chat(
-                "Cleared. ⭐ Star any organization to start a fresh shortlist."
-            ),
-        )
-        return True
-
     if action == "quick":
         canned = selection.get("q", "").strip()
         if not canned:
@@ -265,9 +223,7 @@ async def _handle_selection(
 
     club_id = selection.get(CLUB_ID_FIELD)
     if club_id and not action:
-        message = respond_to_selection(
-            club_id, saved=club_id in profile.saved(sender, "shortlist")
-        )
+        message = respond_to_selection(club_id)
         await _send(ctx, sender, message)
         return True
 

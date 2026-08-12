@@ -45,7 +45,6 @@ def _every_card() -> list[tuple[str, dict]]:
         respond_to_full_roster,
         respond_to_query as clubs_query,
         respond_to_selection as clubs_selection,
-        respond_to_shortlist,
         respond_to_vibe,
     )
     from agents.events import cards as events_cards
@@ -67,11 +66,9 @@ def _every_card() -> list[tuple[str, dict]]:
     add("clubs.vibe_picker", clubs_cards.vibe_picker_message())
     add("clubs.categories", clubs_cards.categories_message())
     add("clubs.meet_clubs", clubs_cards.meet_clubs_message())
-    add("clubs.empty_shortlist", clubs_cards.empty_shortlist_message())
     add("clubs.no_matches", clubs_cards.no_matches_message("zzz"))
     add("clubs.vibe_results", respond_to_vibe("creative")[0])
     add("clubs.full_roster", respond_to_full_roster()[0])
-    add("clubs.shortlist", respond_to_shortlist(["c_anime", "be_swe"])[0])
     add("clubs.detail_unverified", clubs_selection("c_a_cappella"))
     add("clubs.detail_verified", clubs_selection("be_swe"))
     add("clubs.search_results", asyncio.run(clubs_query("clubs about hiking"))[0])

@@ -200,17 +200,9 @@ def respond_to_full_roster() -> tuple[ChatMessage, list[str]]:
     )
 
 
-def respond_to_shortlist(club_ids: list[str]) -> tuple[ChatMessage, list[str]]:
-    """The student's starred organizations, ready for Cornucopia."""
-    chosen = [club for club_id in club_ids if (club := by_id(club_id))]
-    if not chosen:
-        return cards.empty_shortlist_message(), []
-    return cards.shortlist_message(chosen), [club["id"] for club in chosen]
-
-
-def respond_to_selection(club_id: str, *, saved: bool = False) -> ChatMessage:
-    """Answer a card tap. `saved` is the student's ⭐ state for this club."""
+def respond_to_selection(club_id: str) -> ChatMessage:
+    """Answer a card tap."""
     club = by_id(club_id)
     if club is None:
         return cards.stale_selection_message()
-    return cards.detail_message(club, similar(club), saved=saved)
+    return cards.detail_message(club, similar(club))

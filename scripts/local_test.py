@@ -453,9 +453,13 @@ async def test_clubs_card_tap() -> None:
         "clubs tap: detail omits the not-a-roster caveat",
     )
 
-    # Starring confirms in one line and offers the next step: the interests
-    # picker plus a direct route to the shortlist. It must not re-send the
-    # detail card the student is already looking at.
+    # The shortlist was removed: no detail card offers a star, and a stale
+    # save_club tap from an old card in someone's scroll-back must fall through
+    # harmlessly rather than raise.
+    check(
+        "save_club" not in json.dumps(card_payload(replies[1])),
+        "clubs detail: still offers a shortlist star",
+    )
     await handle(
         ctx,
         USER,
@@ -465,26 +469,9 @@ async def test_clubs_card_tap() -> None:
             )
         ),
     )
-    replies = chat_replies(ctx)
-    check(len(replies) == 3, f"clubs star: expected one reply, got {len(replies) - 2}")
-    starred = replies[-1]
     check(
-        "shortlist" in text_of(starred).lower(),
-        "clubs star: confirmation does not mention the shortlist",
-    )
-
-    payload = json.dumps(card_payload(starred))
-    check(
-        '"action": "shortlist"' in payload,
-        "clubs star: no one-tap route to the shortlist",
-    )
-    check(
-        '"vibe"' in payload,
-        "clubs star: the interests picker did not come back",
-    )
-    check(
-        f'"club_id": "{club_id}"' not in payload,
-        "clubs star: re-sent the detail card instead of the next step",
+        len(chat_replies(ctx)) >= 2,
+        "clubs: a stale save_club tap should not crash the handler",
     )
 
 

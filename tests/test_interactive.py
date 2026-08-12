@@ -570,35 +570,6 @@ def test_detail_card_star_button_reflects_saved_state():
     assert "✅ In your plan" in json.dumps(payload_of(saved), ensure_ascii=False)
 
 
-# --- clubs: shortlist ---------------------------------------------------------
-
-from agents.clubs.service import respond_to_shortlist
-
-
-def test_shortlist_lists_saved_clubs_with_cornucopia_pointer():
-    message, shown_ids = respond_to_shortlist(["c_anime", "c_hiking"])
-    assert shown_ids == ["c_anime", "c_hiking"]
-    # The Cornucopia pointer rides on the card footnote now.
-    assert "Cornucopia" in json.dumps(payload_of(message))
-
-    payload = payload_of(message)
-    # The starred organizations are on the card, each still labelled.
-    tappable = {
-        sel["club_id"]
-        for sel in selections_of(payload)
-        if "club_id" in sel and "action" not in sel
-    }
-    assert tappable == {"c_anime", "c_hiking"}
-    assert "Unofficial" in {badge["label"] for badge in _card_badges(payload)}
-
-
-def test_shortlist_empty_state():
-    message, shown_ids = respond_to_shortlist([])
-    assert shown_ids == []
-    actions = {sel.get("action") for sel in selections_of(payload_of(message))}
-    assert "quiz" in actions
-
-
 # --- menu recovery and emoji --------------------------------------------------
 
 from common.chat import is_menu_request
@@ -998,53 +969,6 @@ def test_nonsense_still_matches_nothing():
 
 
 # --- starring is an acknowledgement, not a re-render --------------------------
-
-
-def test_shortlist_confirmation_continues_the_flow():
-    """Tapping ⭐ confirms in one line and offers the next step.
-
-    It must not re-send the detail card the student is already looking at, but
-    it should carry the interests picker so browsing continues, plus a direct
-    route to the shortlist itself.
-    """
-    from agents.clubs.cards import VIBES, shortlist_toggled_message
-    from agents.clubs.search import by_id
-
-    club = by_id("c_a_cappella")
-    message = shortlist_toggled_message(club, saved=True, total=1)
-
-    body = text_of(message)
-    assert "A Cappella Collective" in body
-    assert "shortlist" in body.lower()
-    assert len(body.splitlines()) <= 2, "the confirmation itself stays one line"
-
-    payload = payload_of(message)
-    assert payload is not None, "the confirmation should carry the next step"
-
-    selections = selections_of(payload)
-    # Every interest is one tap away again.
-    vibes = {sel.get("vibe") for sel in selections if "vibe" in sel}
-    assert vibes == {key for key, _, _, _ in VIBES}
-    # And the shortlist itself is directly reachable.
-    assert "shortlist" in {sel.get("action") for sel in selections}
-
-    # It must not be the club's own detail card coming back.
-    assert not [
-        sel for sel in selections if "club_id" in sel and "action" not in sel
-    ]
-
-
-def test_shortlist_confirmation_counts_and_unstars():
-    from agents.clubs.cards import shortlist_toggled_message
-    from agents.clubs.search import by_id
-
-    club = by_id("c_anime")
-    assert "first one" in text_of(shortlist_toggled_message(club, saved=True, total=1))
-    assert "3 saved" in text_of(shortlist_toggled_message(club, saved=True, total=3))
-
-    removed = text_of(shortlist_toggled_message(club, saved=False, total=0))
-    assert "Removed" in removed
-    assert "empty" in removed
 
 
 def test_plan_confirmation_continues_the_flow():

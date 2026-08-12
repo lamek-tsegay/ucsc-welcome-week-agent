@@ -112,7 +112,6 @@ def welcome_message() -> ChatMessage:
         MenuButton("🎯 Match my vibe", {"action": "quiz"}, primary=True),
         MenuButton("🗂️ Browse categories", {"action": "quick", "q": "what categories are there"}),
         MenuButton("🤝 How to meet clubs", {"action": "meet_clubs"}),
-        MenuButton("⭐ My shortlist", {"action": "shortlist"}),
         MenuButton("🔗 Campus links", {"action": "links"}),
         MenuButton("ℹ️ About my data", {"action": "about"}),
     ]
@@ -209,8 +208,8 @@ def meet_clubs_message() -> ChatMessage:
         "(updated weekly through fall as orgs re-register).\n"
         f"3. **Email SOAR** — {CLUBS_CONTACT}, the office that supports all "
         "student organizations.\n\n"
-        "I can help you build a shortlist first — tap 🎯 or tell me what "
-        "you're into, and walk into Cornucopia knowing who to look for.\n\n"
+        "Tap 🎯 or tell me what you're into, and walk into Cornucopia "
+        "knowing which organizations to look for.\n\n"
         "_For walking directions to East Upper Field, ask the **UCSC Campus "
         "Navigation** agent._"
     )
@@ -335,9 +334,7 @@ def list_message(
     return card_message(preamble, payload)
 
 
-def detail_message(
-    club: dict, others: list[dict], *, saved: bool = False
-) -> ChatMessage:
+def detail_message(club: dict, others: list[dict]) -> ChatMessage:
     tags = ", ".join(sorted(club.get("tags", []))) or "—"
 
     website = club.get("website")
@@ -387,12 +384,6 @@ def detail_message(
         back_label="Back",
         back_action=BACK_ACTION,
         source=SOURCE,
-        extra_buttons=[
-            MenuButton(
-                "✅ Shortlisted" if saved else "⭐ Shortlist",
-                {CLUB_ID_FIELD: club["id"], "action": "save_club"},
-            )
-        ],
     )
 
     # The card carries the detail; the bubble carries the title and the
@@ -465,112 +456,11 @@ def no_matches_message(query_text: str) -> ChatMessage:
     )
 
 
-def shortlist_toggled_message(
-    club: dict, *, saved: bool, total: int
-) -> ChatMessage:
-    """Confirmation after ⭐, carrying the interests card so browsing continues.
-
-    Re-sending the *detail* card here would repeat what the student is already
-    looking at. Sending the interests picker instead turns the confirmation
-    into the next step: keep exploring, or go review what's saved.
-    """
-    if saved:
-        count = "that's your first one" if total == 1 else f"that's {total} saved"
-        text = f"⭐ Added **{club['name']}** to your shortlist — {count}."
-        subtitle = "Keep going — tap another interest"
-    else:
-        remaining = (
-            "your shortlist is empty now" if total == 0 else f"{total} still saved"
-        )
-        text = f"Removed **{club['name']}** from your shortlist — {remaining}."
-        subtitle = "Tap an interest to keep looking"
-
-    footer = [
-        MenuButton(
-            "⭐ Show me my shortlist", {"action": "shortlist"}, primary=True
-        ),
-        MenuButton(
-            "🗂️ Browse by category",
-            {"action": "quick", "q": "what categories are there"},
-        ),
-        MenuButton("📋 Show me all of them", {"action": "show_all"}),
-    ]
-    payload = build_chip_payload(
-        title="What are you into? 🎓",
-        subtitle=subtitle,
-        body_lines=None,
-        chips=_interest_buttons(),
-        source=SOURCE,
-        footer_buttons=footer,
-        per_row=1,
-    )
-    return card_message(text, payload)
-
-
 def stale_selection_message() -> ChatMessage:
     return create_text_chat(
         "I've lost track of that organization — ask me again and tap from the "
         "fresh list."
     )
-
-
-def empty_shortlist_message() -> ChatMessage:
-    """Shown when ⭐ My shortlist has nothing in it yet."""
-    preamble = (
-        "**Your shortlist is empty so far.** ⭐\n\n"
-        "Tap any organization for details, then **⭐ Shortlist for "
-        "Cornucopia** — walk into the involvement festival (Tue Sept 22, East "
-        "Upper Field) knowing exactly who to look for."
-    )
-    buttons = [
-        MenuButton("🎯 Match my vibe", {"action": "quiz"}, primary=True),
-        MenuButton(
-            "🗂️ Browse categories",
-            {"action": "quick", "q": "what categories are there"},
-        ),
-    ]
-    return menu_message(
-        preamble,
-        title="My shortlist ⭐",
-        subtitle="Star organizations to find at Cornucopia",
-        body_lines=None,
-        buttons=buttons,
-        source=SOURCE,
-    )
-
-
-def shortlist_message(chosen: list[dict]) -> ChatMessage:
-    """The student's starred organizations — their Cornucopia hit-list."""
-    lines = [link_row(("Official directory", OFFICIAL_CLUBS_URL))]
-
-    items = [
-        CardItem(
-            record_id=club["id"],
-            heading=club["name"],
-            body=club["description"],
-            badges=[
-                (category_label(club["category"]), "info"),
-                badge(club["verified"]),
-            ],
-            button_label="Details",
-        )
-        for club in chosen
-    ]
-    footer = [
-        MenuButton("🎯 Add more", {"action": "quiz"}),
-        MenuButton("🤝 How to meet them", {"action": "meet_clubs"}),
-        MenuButton("🗑️ Clear shortlist", {"action": "clear_shortlist"}),
-    ]
-    payload = build_list_payload(
-        items,
-        title="Your Cornucopia shortlist ⭐",
-        subtitle=f"{len(chosen)} starred · tap for details",
-        id_field=CLUB_ID_FIELD,
-        source=SOURCE,
-        footer_buttons=footer,
-        footnote=clubs_footnote(),
-    )
-    return card_message("\n".join(lines), payload)
 
 
 def about_message() -> ChatMessage:

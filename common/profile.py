@@ -25,7 +25,8 @@ from typing import Any
 
 _DEFAULT_PATH = Path(__file__).resolve().parent.parent / ".profiles.json"
 
-VALID_SAVED_KINDS = ("plan", "shortlist")
+# Only the events agent saves records now; the clubs shortlist was removed.
+VALID_SAVED_KINDS = ("plan",)
 
 
 def _path() -> Path:
