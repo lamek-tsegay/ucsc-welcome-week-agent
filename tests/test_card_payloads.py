@@ -67,7 +67,8 @@ def _every_card() -> list[tuple[str, dict]]:
     add("clubs.categories", clubs_cards.categories_message())
     add("clubs.no_matches", clubs_cards.no_matches_message("zzz"))
     add("clubs.vibe_results", respond_to_vibe("creative")[0])
-    add("clubs.full_roster", respond_to_full_roster()[0])
+    for index, roster_card in enumerate(respond_to_full_roster()[0]):
+        add(f"clubs.roster_{index}", roster_card)
     add("clubs.detail_unverified", clubs_selection("c_a_cappella"))
     add("clubs.detail_verified", clubs_selection("be_swe"))
     add("clubs.search_results", asyncio.run(clubs_query("clubs about hiking"))[0])
@@ -211,7 +212,10 @@ def test_listings_carry_no_url_in_the_bubble():
 
     listings = [
         ("clubs vibe", respond_to_vibe("creative")[0]),
-        ("clubs roster", respond_to_full_roster()[0]),
+        *(
+            (f"clubs roster card {i}", card)
+            for i, card in enumerate(respond_to_full_roster()[0])
+        ),
         ("events vibe", events_vibe("food")[0]),
         ("events listing", asyncio.run(
             events_query("show me the whole week", today=DURING))[0]),
@@ -223,7 +227,6 @@ def test_listings_carry_no_url_in_the_bubble():
         assert "http" not in bubble and "mailto:" not in bubble, (
             f"{name}: a URL in the bubble unfurls a preview box"
         )
-        assert bubble.strip(), f"{name}: bubble is empty"
         # The pointer still travels — on the card.
         assert "http" in json.dumps(_payload(message)), (
             f"{name}: lost its source pointer entirely"

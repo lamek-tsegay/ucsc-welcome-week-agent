@@ -362,13 +362,17 @@ def menu_message(
 
 
 def card_message(preamble: str, payload: dict[str, Any]) -> ChatMessage:
-    """A ChatMessage carrying a text bubble plus one card.
+    """A ChatMessage carrying a card, with a text bubble when there is one.
+
+    An empty `preamble` sends the card alone rather than an empty TextContent,
+    which would render as a stray blank bubble. That matters for runs of cards
+    sent together, where only the first says anything.
 
     No EndSessionContent: the session has to stay open for the user to tap a
     card and get a reply.
     """
-    return ChatMessage(
-        timestamp=utc_now(),
-        msg_id=uuid4(),
-        content=[TextContent(type="text", text=preamble), card_metadata(payload)],
-    )
+    content: list[Any] = []
+    if preamble.strip():
+        content.append(TextContent(type="text", text=preamble))
+    content.append(card_metadata(payload))
+    return ChatMessage(timestamp=utc_now(), msg_id=uuid4(), content=content)

@@ -884,43 +884,64 @@ def test_active_interest_does_not_surface_engineering_teams():
     assert "tech_engineering" not in categories
 
 
-def test_show_all_escape_hatch_returns_every_club_as_chips():
-    """Step 2b: the roster is still reachable, as compact name chips."""
-    from common.loader import clubs as clubs_data
+def test_show_all_returns_one_card_per_category():
+    """Step 2b: the roster arrives as several cards, one per category.
+
+    All 76 in a single card was a wall — the grouping existed in the ordering
+    but was invisible. Splitting it gives each group a heading and a readable
+    size, and they still arrive together so "show me everything" is answered
+    in one go.
+    """
+    from common.loader import club_categories, clubs as clubs_data
     from agents.clubs.service import respond_to_full_roster
 
-    message, shown_ids = respond_to_full_roster()
+    messages, shown_ids = respond_to_full_roster()
     assert len(shown_ids) == len(clubs_data())
 
-    payload = payload_of(message)
-    assert payload is not None
+    populated = {
+        club["category"] for club in clubs_data()
+    }
+    assert len(messages) == len(populated), "one card per populated category"
 
-    club_chips = [
-        button
-        for button in _card_buttons(payload)
-        if "club_id" in button["action"]["selection"]
-    ]
-    assert len(club_chips) == len(clubs_data())
+    all_chips = []
+    for message in messages:
+        payload = payload_of(message)
+        assert payload is not None
+        chips = [
+            button
+            for button in _card_buttons(payload)
+            if "club_id" in button["action"]["selection"]
+        ]
+        assert chips, f"{payload['root']['title']}: card has no organizations"
 
-    # Chips stay small: label plus action only. A description, badges, or a
-    # separate per-row action button would make the roster unusably tall.
-    for chip in club_chips:
-        assert set(chip) == {"type", "label", "primary", "action"}
+        # Alphabetical within the card, case-insensitively — plain sorting
+        # would file "iGEM" after "Women in Science".
+        names = [chip["label"].removeprefix("✅ ") for chip in chips]
+        assert names == sorted(names, key=str.lower), payload["root"]["title"]
 
-    # The label is the club's own name, so the grid is scannable.
-    chip_labels = {chip["label"].removeprefix("✅ ") for chip in club_chips}
-    assert chip_labels == {club["name"] for club in clubs_data()}
+        # Chips stay small: label plus action only.
+        for chip in chips:
+            assert set(chip) == {"type", "label", "primary", "action"}
+        all_chips.extend(chips)
+
+    # Between them the cards cover every organization exactly once.
+    labels = [chip["label"].removeprefix("✅ ") for chip in all_chips]
+    assert sorted(labels) == sorted(club["name"] for club in clubs_data())
 
     # Confirmed organizations are marked inline, since chips carry no badges.
     ticked = {
         chip["label"].removeprefix("✅ ")
-        for chip in club_chips
+        for chip in all_chips
         if chip["label"].startswith("✅ ")
     }
     assert ticked == {club["name"] for club in clubs_data() if club["verified"]}
 
-    # The source pointer rides on the card footnote, not above the chips.
-    assert "getinvolved.ucsc.edu" in json.dumps(payload)
+    # Every card carries the caveat, not just the last: chips have no badges,
+    # so a card of unmarked names would otherwise read as a confirmed roster.
+    for message in messages:
+        rendered = json.dumps(payload_of(message))
+        assert "getinvolved.ucsc.edu" in rendered
+        assert "not a live roster" in rendered
 
 
 def test_specific_asks_skip_the_question_entirely():

@@ -177,9 +177,10 @@ async def _handle_selection(
         return True
 
     if action == "show_all":
-        message, shown_ids = respond_to_full_roster()
+        messages, shown_ids = respond_to_full_roster()
         ctx.storage.set(SHOWN_IDS_KEY, json.dumps(shown_ids))
-        await _send(ctx, sender, message)
+        for message in messages:
+            await _send(ctx, sender, message)
         return True
 
     if action == "vibe_pick":

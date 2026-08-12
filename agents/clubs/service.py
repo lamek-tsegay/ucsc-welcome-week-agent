@@ -194,11 +194,12 @@ async def respond_to_query(text: str) -> tuple[ChatMessage, list[str]]:
     return message, [item.club["id"] for item in scored]
 
 
-def respond_to_full_roster() -> tuple[ChatMessage, list[str]]:
-    """Every organization as name chips — the escape hatch from the picker."""
+def respond_to_full_roster() -> tuple[list[ChatMessage], list[str]]:
+    """Every organization, one card per category — the escape hatch from the
+    picker. Returns several messages, sent together."""
     all_clubs = sorted(clubs_data(), key=lambda c: (c["category"], c["name"]))
     return (
-        cards.full_roster_message(all_clubs),
+        cards.full_roster_messages(all_clubs),
         [club["id"] for club in all_clubs],
     )
 
