@@ -25,10 +25,6 @@ from typing import Any
 
 _DEFAULT_PATH = Path(__file__).resolve().parent.parent / ".profiles.json"
 
-# Only the events agent saves records now; the clubs shortlist was removed.
-VALID_SAVED_KINDS = ("plan",)
-
-
 def _path() -> Path:
     override = os.getenv("UCSC_PROFILE_PATH")
     return Path(override) if override else _DEFAULT_PATH
@@ -81,29 +77,3 @@ def accessible(sender: str) -> bool:
 
 def set_accessible(sender: str, flag: bool) -> None:
     _update(sender, accessible=bool(flag))
-
-
-def saved(sender: str, kind: str) -> list[str]:
-    """Starred item ids, in the order they were saved."""
-    assert kind in VALID_SAVED_KINDS, kind
-    value = get(sender).get(kind)
-    return [item for item in value if isinstance(item, str)] if isinstance(value, list) else []
-
-
-def toggle_saved(sender: str, kind: str, item_id: str) -> bool:
-    """Star or unstar an item. Returns True when it is now saved."""
-    assert kind in VALID_SAVED_KINDS, kind
-    current = saved(sender, kind)
-    if item_id in current:
-        current = [item for item in current if item != item_id]
-        now_saved = False
-    else:
-        current = current + [item_id]
-        now_saved = True
-    _update(sender, **{kind: current})
-    return now_saved
-
-
-def clear_saved(sender: str, kind: str) -> None:
-    assert kind in VALID_SAVED_KINDS, kind
-    _update(sender, **{kind: []})

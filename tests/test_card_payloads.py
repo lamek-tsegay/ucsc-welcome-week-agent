@@ -203,7 +203,6 @@ def test_listings_carry_no_url_in_the_bubble():
     """
     from agents.clubs.service import respond_to_category, respond_to_vibe
     from agents.events.service import (
-        respond_to_my_plan,
         respond_to_plan,
         respond_to_query as events_query,
         respond_to_vibe as events_vibe,
@@ -216,7 +215,6 @@ def test_listings_carry_no_url_in_the_bubble():
         ("events listing", asyncio.run(
             events_query("show me the whole week", today=DURING))[0]),
         ("events planner", respond_to_plan("2026-09-21")[0]),
-        ("events my plan", respond_to_my_plan(["cornucopia"])[0]),
     ]
     for name, message in listings:
         bubble = _bubble(message)

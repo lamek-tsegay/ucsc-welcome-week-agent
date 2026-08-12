@@ -468,18 +468,6 @@ def test_profile_roundtrip_and_sharing():
     assert profile.accessible("agent1qother") is False
 
 
-def test_profile_toggle_saved_and_clear():
-    sender = "agent1qstudent"
-    assert profile.toggle_saved(sender, "plan", "cornucopia") is True
-    assert profile.toggle_saved(sender, "plan", "boardwalk_frolic") is True
-    assert profile.saved(sender, "plan") == ["cornucopia", "boardwalk_frolic"]
-    # Toggling again removes.
-    assert profile.toggle_saved(sender, "plan", "cornucopia") is False
-    assert profile.saved(sender, "plan") == ["boardwalk_frolic"]
-    profile.clear_saved(sender, "plan")
-    assert profile.saved(sender, "plan") == []
-
-
 def test_profile_survives_corrupt_file(tmp_path, monkeypatch):
     """A mangled profile file degrades to empty, never to a crash."""
     path = tmp_path / "broken.json"
@@ -526,57 +514,13 @@ def test_unpublished_venue_event_does_not_resolve():
     assert match is None or match.how == "fuzzy"
 
 
-# --- events: my plan ----------------------------------------------------------
-
-from agents.events.service import respond_to_my_plan
-
-
-def test_my_plan_lists_starred_events_in_date_order():
-    message, shown_ids = respond_to_my_plan(
-        ["cornucopia", "late_night_athletics_rec", "new_admit_class_photo"]
-    )
-    # Monday's two events sort before Tuesday's, whatever order they were
-    # starred in.
-    assert shown_ids[-1] == "cornucopia"
-    assert set(shown_ids[:2]) == {
-        "late_night_athletics_rec", "new_admit_class_photo"
-    }
-    rendered = json.dumps(payload_of(message))
-    assert "Monday Sep 21" in rendered and "Tuesday Sep 22" in rendered
-
-
-def test_my_plan_empty_state_recovers_with_buttons():
-    message, shown_ids = respond_to_my_plan([])
-    assert shown_ids == []
-    payload = payload_of(message)
-    assert payload is not None
-    actions = {sel.get("action") for sel in selections_of(payload)}
-    assert "plan_day" in actions
-
-
-def test_my_plan_skips_stale_ids():
-    message, shown_ids = respond_to_my_plan(["cornucopia", "deleted_event_id"])
-    assert shown_ids == ["cornucopia"]
-
-
-def test_detail_card_star_button_reflects_saved_state():
-    from agents.events.cards import detail_message
-    from agents.events.recommend import by_id
-
-    fresh = detail_message(by_id("cornucopia"), [], saved=False)
-    saved = detail_message(by_id("cornucopia"), [], saved=True)
-    # ensure_ascii=False keeps the emoji literal instead of ⭐ escapes.
-    assert "⭐ Add to my plan" in json.dumps(payload_of(fresh), ensure_ascii=False)
-    assert "✅ In your plan" in json.dumps(payload_of(saved), ensure_ascii=False)
-
-
-# --- menu recovery and emoji --------------------------------------------------
+# --- recovery: help / menu / a bare greeting ---------------------------------
 
 from common.chat import is_menu_request
 
 
 @pytest.mark.parametrize(
-    "text", ["help", "menu", "  HELP?! ", "hi", "start over", "what can you do"]
+    "text", ["help", "menu", "Menu", "options", "start over", "hi", "hey", "hello"]
 )
 def test_menu_requests_recognised(text):
     assert is_menu_request(text)
@@ -978,24 +922,3 @@ def test_nonsense_still_matches_nothing():
 
 
 # --- starring is an acknowledgement, not a re-render --------------------------
-
-
-def test_plan_confirmation_continues_the_flow():
-    from agents.events.cards import plan_toggled_message
-    from agents.events.recommend import by_id
-
-    message = plan_toggled_message(by_id("cornucopia"), saved=True, total=2)
-    body = text_of(message)
-    assert "Cornucopia" in body
-    assert "2 saved" in body
-
-    payload = payload_of(message)
-    assert payload is not None
-    actions = {sel.get("action") for sel in selections_of(payload)}
-    assert "my_plan" in actions, "the plan itself should be one tap away"
-
-
-# The end-to-end version of this (real handler, one reply, no card) lives in
-# scripts/local_test.py: constructing an Agent inside pytest schedules
-# publish_manifest() on a loop that a later asyncio.run() closes, which is why
-# handler-level checks belong in that harness rather than here.

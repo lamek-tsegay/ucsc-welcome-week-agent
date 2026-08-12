@@ -104,14 +104,7 @@ def interests_message() -> ChatMessage:
         "**What are you in the mood for?** Tap one below, or just ask me — "
         "*what's on Wednesday*, *free food Friday*, *plan my Tuesday* all work."
     )
-    footer = [
-        MenuButton(
-            "🗓️ Show me the whole week",
-            {"action": "quick", "q": "show me the whole week"},
-            primary=True,
-        ),
-        MenuButton("🧭 Plan a day", {"action": "plan_day"}),
-    ]
+    footer = [MenuButton("📅 Browse by day", {"action": "plan_day"})]
     payload = build_chip_payload(
         title="What are you into? 🎪",
         subtitle="Tap one — I'll show you what fits",
@@ -130,13 +123,7 @@ def vibe_picker_message() -> ChatMessage:
         "**What are you in the mood for?** Tap whichever fits — or just "
         "describe it in your own words."
     )
-    footer = [
-        MenuButton(
-            "🗓️ Whole week",
-            {"action": "quick", "q": "show me the whole week"},
-        ),
-        MenuButton("🧭 Plan a day", {"action": "plan_day"}),
-    ]
+    footer = [MenuButton("📅 Browse by day", {"action": "plan_day"})]
     payload = build_chip_payload(
         title="What are you into? 🎪",
         subtitle="Tap one — I'll show you what fits",
@@ -194,21 +181,19 @@ def welcome_message(college_name: str | None) -> ChatMessage:
         if college_name
         else ["Tap 🎓 to save your college — UCSC's first-day programming depends on it."]
     )
+    # Two ways in — by interest or by day — and nothing else competing with
+    # them. Whole week, Plan my day, and Free food were three more doors into
+    # the same 22 events.
     buttons = [
-        MenuButton(
-            "🗓️ Whole week", {"action": "quick", "q": "show me the whole week"},
-            primary=True,
-        ),
-        MenuButton("🍕 Free food", {"action": "quick", "q": "free food this week"}),
-        MenuButton("🧭 Plan my day", {"action": "plan_day"}),
-        MenuButton("⭐ My plan", {"action": "my_plan"}),
+        MenuButton("🎯 What are you into", {"action": "quiz"}, primary=True),
+        MenuButton("📅 Browse by day", {"action": "plan_day"}),
         MenuButton(
             "🎓 My college" if college_name else "🎓 Set my college",
             {"action": "my_college"},
         ),
+        MenuButton("🔗 Campus links", {"action": "links"}),
+        MenuButton("ℹ️ About my data", {"action": "about"}),
     ]
-    buttons.append(MenuButton("🔗 Campus links", {"action": "links"}))
-    buttons.append(MenuButton("ℹ️ About my data", {"action": "about"}))
     return menu_message(
         short_welcome(college_name),
         title="UCSC Welcome Week Events 🎪",
@@ -255,7 +240,7 @@ def college_picker_message(*, note: str | None = None) -> ChatMessage:
 
 
 def day_picker_message() -> ChatMessage:
-    """One button per Welcome Week day, for the planner."""
+    """One button per Welcome Week day — the twin of the clubs category picker."""
     buttons = [
         MenuButton(
             f"{weekday_name(iso)[:3]} {date.fromisoformat(iso).strftime('%b %-d')}",
@@ -263,10 +248,11 @@ def day_picker_message() -> ChatMessage:
         )
         for iso in window_dates()
     ]
+    buttons.append(MenuButton("🎯 What are you into", {"action": "quiz"}))
     return menu_message(
-        "Which day should I lay out for you?",
-        title="Plan your day 🧭",
-        subtitle="Confirmed events first",
+        "Which day?",
+        title="Browse by day 📅",
+        subtitle="Tap a day to see what's on",
         body_lines=None,
         buttons=buttons,
         source=SOURCE,
@@ -352,10 +338,8 @@ def list_message(
     return card_message(preamble, payload)
 
 
-def detail_message(
-    event: dict, others: list[dict], *, saved: bool = False
-) -> ChatMessage:
-    """Detail card for one event. `saved` reflects the student's ⭐ state."""
+def detail_message(event: dict, others: list[dict]) -> ChatMessage:
+    """Detail card for one event."""
     verified = event["verified"]
 
     rows = [
@@ -392,12 +376,7 @@ def detail_message(
             f"announced event. Confirm at {OFFICIAL_EVENTS_URL}."
         )
 
-    extra_buttons = [
-        MenuButton(
-            "✅ In your plan" if saved else "⭐ Add to my plan",
-            {EVENT_ID_FIELD: event["id"], "action": "save_event"},
-        )
-    ]
+    extra_buttons: list[MenuButton] = []
 
     payload = build_detail_payload(
         title=event["title"],
@@ -448,8 +427,8 @@ def planner_message(
         for item in scored
     ]
     footer = [
-        MenuButton("🗓️ Another day", {"action": "plan_day"}),
-        MenuButton("📋 Whole week", {"action": "quick", "q": "show me the whole week"}),
+        MenuButton("📅 Other days", {"action": "plan_day"}),
+        MenuButton("🎯 What are you into", {"action": "quiz"}),
     ]
     payload = build_list_payload(
         items,
@@ -463,102 +442,6 @@ def planner_message(
         ),
     )
     return card_message(f"**{day} — your menu** 🧭", payload)
-
-
-def empty_plan_message() -> ChatMessage:
-    """Shown when ⭐ My plan has nothing in it yet."""
-    preamble = (
-        "**Your plan is empty so far.** ⭐\n\n"
-        "Tap any event for details, then **⭐ Add to my plan** — I'll build "
-        "you a personal Welcome Week itinerary with walking times between "
-        "your picks."
-    )
-    buttons = [
-        MenuButton(
-            "🗓️ Browse the week",
-            {"action": "quick", "q": "show me the whole week"},
-            primary=True,
-        ),
-        MenuButton("🧭 Plan a day", {"action": "plan_day"}),
-    ]
-    return menu_message(
-        preamble,
-        title="My plan ⭐",
-        subtitle="Star events to build your own itinerary",
-        body_lines=None,
-        buttons=buttons,
-        source=SOURCE,
-    )
-
-
-def my_plan_message(chosen: list[dict]) -> ChatMessage:
-    """The student's starred events as a personal itinerary.
-
-    Same honesty framing as the day planner: dates are real, times are not
-    published, so within a day this is a set of picks, not a sequence.
-    """
-    items = [
-        CardItem(
-            record_id=event["id"],
-            heading=f"{_day_label(event['date'])} · {event['title']}",
-            body=f"{_location_text(event)} · {event_time(event.get('time'))}",
-            badges=[badge(event["verified"])],
-            button_label="Details",
-        )
-        for event in chosen
-    ]
-    footer = [
-        MenuButton("🗓️ Add more", {"action": "quick", "q": "show me the whole week"}),
-        MenuButton("🗑️ Clear my plan", {"action": "clear_plan"}),
-    ]
-    payload = build_list_payload(
-        items,
-        title="Your Welcome Week plan ⭐",
-        subtitle=f"{len(chosen)} starred · in date order",
-        id_field=EVENT_ID_FIELD,
-        source=SOURCE,
-        footer_buttons=footer,
-        footnote=events_footnote(
-            any_unverified=any(not event["verified"] for event in chosen)
-        ),
-    )
-    return card_message("**Your Welcome Week plan** ⭐", payload)
-
-
-def plan_toggled_message(event: dict, *, saved: bool, total: int) -> ChatMessage:
-    """Confirmation after ⭐, carrying the next steps — same shape as clubs.
-
-    Re-sending the event's own detail card would repeat what the student is
-    looking at; offering where to go next turns the confirmation into progress.
-    """
-    if saved:
-        count = "that's your first one" if total == 1 else f"that's {total} saved"
-        text = f"⭐ Added **{event['title']}** to your plan — {count}."
-        subtitle = "Keep going — add more to your week"
-    else:
-        remaining = (
-            "your plan is empty now" if total == 0 else f"{total} still saved"
-        )
-        text = f"Removed **{event['title']}** from your plan — {remaining}."
-        subtitle = "Pick up where you left off"
-
-    buttons = [
-        MenuButton("⭐ Show me my plan", {"action": "my_plan"}, primary=True),
-        MenuButton(
-            "🗓️ Whole week", {"action": "quick", "q": "show me the whole week"}
-        ),
-        MenuButton("🧭 Plan a day", {"action": "plan_day"}),
-        MenuButton("🍕 Free food", {"action": "quick", "q": "free food this week"}),
-    ]
-    return menu_message(
-        text,
-        title="What's next? 🎪",
-        subtitle=subtitle,
-        body_lines=None,
-        buttons=buttons,
-        source=SOURCE,
-        per_row=2,
-    )
 
 
 def no_matches_message(

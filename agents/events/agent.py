@@ -30,7 +30,6 @@ from agents.events import cards
 from agents.events.cards import BACK_ACTION, EVENT_ID_FIELD
 from agents.events.service import (
     WELCOME,
-    respond_to_my_plan,
     respond_to_plan,
     respond_to_query,
     respond_to_selection,
@@ -90,12 +89,12 @@ Event recommendations for **UC Santa Cruz Slug Start / Fall Welcome Week**,
 
 ## What it does
 
-- **🎯 Interest matcher** - one tap, zero typing: pick what you're in the mood
+Two ways in, and nothing else competing with them:
+
+- **🎯 What are you into** - one tap, zero typing: pick what you're in the mood
   for (free food, meeting people, outdoors, arts, career, off campus) and see
   what fits across the whole week. Built for students who don't know what's on.
-- **Day lookup** - what's on Monday, Wednesday, Saturday, or the whole week
-- **Day planner** - *plan my Tuesday* lays out that day, confirmed events first
-- **⭐ My plan** - star events and get your own Welcome Week list back
+- **📅 Browse by day** - pick a day, see everything on it, confirmed first
 - **Remembers your college** - say *I'm at Crown* once (or tap it); event
   recommendations use it from then on
 - **College filtering** - programming for your residential college, since UCSC's
@@ -110,11 +109,9 @@ Event recommendations for **UC Santa Cruz Slug Start / Fall Welcome Week**,
 
 - *Tell me about Welcome Week* - I'll ask what you're into, then show what fits
 - *what's happening Wednesday*
-- *plan my Tuesday*
 - *I'm at Crown* — then see events for your college
 - *free food this week*
 - *outdoor stuff on Saturday*
-- *show me the whole week*
 
 ## Confirmed events
 
@@ -239,43 +236,6 @@ async def _handle_selection(
             await _send(ctx, sender, cards.day_picker_message())
         return True
 
-    if action == "save_event" and event_id:
-        event = event_by_id(event_id)
-        if event is None:
-            return False
-        now_saved = profile.toggle_saved(sender, "plan", event_id)
-        # A confirmation only — no card. The student is already looking at the
-        # detail they tapped from.
-        await _send(
-            ctx,
-            sender,
-            cards.plan_toggled_message(
-                event,
-                saved=now_saved,
-                total=len(profile.saved(sender, "plan")),
-            ),
-        )
-        return True
-
-    if action == "my_plan":
-        message, shown_ids = await respond_to_my_plan(
-            profile.saved(sender, "plan")
-        )
-        ctx.storage.set(SHOWN_IDS_KEY, json.dumps(shown_ids))
-        await _send(ctx, sender, message)
-        return True
-
-    if action == "clear_plan":
-        profile.clear_saved(sender, "plan")
-        await _send(
-            ctx,
-            sender,
-            create_text_chat(
-                "Cleared. ⭐ Star any event to start a fresh plan."
-            ),
-        )
-        return True
-
     if action == "about":
         await _send(ctx, sender, cards.about_message())
         return True
@@ -292,9 +252,7 @@ async def _handle_selection(
         return True
 
     if event_id and not action:
-        message = respond_to_selection(
-            event_id, saved=event_id in profile.saved(sender, "plan")
-        )
+        message = respond_to_selection(event_id)
         await _send(ctx, sender, message)
         return True
 

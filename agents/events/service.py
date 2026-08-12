@@ -162,18 +162,6 @@ def respond_to_plan(iso_date: str) -> tuple[ChatMessage, list[str]]:
     ]
 
 
-def respond_to_my_plan(event_ids: list[str]) -> tuple[ChatMessage, list[str]]:
-    """The student's own starred events, in date order."""
-    chosen = [event for event_id in event_ids if (event := by_id(event_id))]
-    if not chosen:
-        return cards.empty_plan_message(), []
-
-    # Chronological by date; confirmed first within a day, matching every
-    # other listing so placeholders can never lead.
-    chosen.sort(key=lambda e: (e["date"], not e["verified"]))
-    return cards.my_plan_message(chosen), [event["id"] for event in chosen]
-
-
 def respond_to_vibe(vibe_key: str) -> tuple[ChatMessage, list[str]] | None:
     """Answer an interest tap. None for an unknown key.
 
@@ -198,7 +186,7 @@ def respond_to_vibe(vibe_key: str) -> tuple[ChatMessage, list[str]] | None:
         date_note=None,
         footer_buttons=[
             MenuButton("🎯 Try another", {"action": "quiz"}),
-            MenuButton("🗓️ Whole week", {"action": "quick", "q": "show me the whole week"}),
+            MenuButton("📅 Browse by day", {"action": "plan_day"}),
         ],
     )
     return message, [item.event["id"] for item in scored]
@@ -249,11 +237,9 @@ async def respond_to_query(text: str, *, today: date) -> tuple[ChatMessage, list
     return message, [item.event["id"] for item in scored]
 
 
-def respond_to_selection(event_id: str, *, saved: bool = False) -> ChatMessage:
-    """Answer a card tap. `saved` is the student's ⭐ state for this event."""
+def respond_to_selection(event_id: str) -> ChatMessage:
+    """Answer a card tap."""
     event = by_id(event_id)
     if event is None:
         return cards.stale_selection_message()
-    return cards.detail_message(
-        event, same_day(event, exclude_id=event_id), saved=saved
-    )
+    return cards.detail_message(event, same_day(event, exclude_id=event_id))
