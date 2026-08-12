@@ -82,16 +82,26 @@ def _badge(label: str, variant: str) -> dict[str, Any]:
 
 
 def _button(button: MenuButton, source: str) -> dict[str, Any]:
+    """Render a button. `MenuButton.url` is deliberately NOT emitted.
+
+    Putting a `url` on the action stopped the whole card rendering — the same
+    silent failure an unrecognised heading level caused: valid JSON, every
+    offline gate green, no card. Confirmed against the live client on
+    2026-08-12, where a detail card carrying url buttons produced only its
+    text bubble while a card without them rendered normally in the same thread.
+
+    The field is kept on MenuButton because the selection fallback it was
+    designed with turns out to be a working answer on its own: a link button
+    sends its tap to the agent, which replies with the address. Nothing is
+    lost by dropping the url except the one hop.
+    """
     selection = dict(button.selection)
     selection.setdefault("source", source)
-    action: dict[str, Any] = {"selection": selection}
-    if button.url:
-        action["url"] = button.url
     return {
         "type": "button",
         "label": button.label,
         "primary": button.primary,
-        "action": action,
+        "action": {"selection": selection},
     }
 
 

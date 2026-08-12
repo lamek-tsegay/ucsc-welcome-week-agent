@@ -148,23 +148,19 @@ def test_mission_is_quoted_verbatim():
 
 
 def test_join_card_offers_every_published_route():
-    rendered = _rendered(cards.join_message())
-    assert "nsbe@ucsc.edu" in rendered
-    assert "instagram.com/nsbe.ucsc" in rendered
-    assert "linktr.ee" in rendered
-    assert nsbe()["meetings"]["location"] in rendered
-
-
-def test_links_card_opens_every_link_as_a_button():
-    """Six URLs in the bubble would be six preview cards, so they are buttons
-    that open them — each still naming its link for the ignored-url fallback."""
-    payload = json.loads(_card(cards.links_message()))
-    opened: dict[str, str] = {}
+    """The routes are buttons now, not URLs in the text — a URL there gets
+    unfurled into a preview card, and a url on a button stops the card
+    rendering at all. So the card names each route and the agent supplies the
+    address when one is tapped."""
+    payload = json.loads(_card(cards.join_message()))
+    asked: set[str] = set()
 
     def walk(node):
         if isinstance(node, dict):
-            if node.get("type") == "button" and node["action"].get("url"):
-                opened[node["action"]["selection"].get("link", "")] = node["action"]["url"]
+            if node.get("type") == "button":
+                selection = node["action"]["selection"]
+                if selection.get("action") == "open_link":
+                    asked.add(selection.get("link", ""))
             for value in node.values():
                 walk(value)
         elif isinstance(node, list):
@@ -172,9 +168,32 @@ def test_links_card_opens_every_link_as_a_button():
                 walk(entry)
 
     walk(payload)
-    for link in nsbe()["links"]:
-        assert opened.get(link["id"]) == link["url"], link["id"]
+    assert {"email", "instagram", "linktree"} <= asked
 
+    # The meeting details still appear, composed from one source.
+    assert nsbe()["meetings"]["location"] in _rendered(cards.join_message())
+
+
+def test_links_card_offers_every_link_as_a_button():
+    """Six URLs in the bubble would be six preview cards, so each link is a
+    button that names it; the agent replies with the address when tapped."""
+    payload = json.loads(_card(cards.links_message()))
+    asked: set[str] = set()
+
+    def walk(node):
+        if isinstance(node, dict):
+            if node.get("type") == "button":
+                selection = node["action"]["selection"]
+                if selection.get("action") == "open_link":
+                    asked.add(selection.get("link", ""))
+            for value in node.values():
+                walk(value)
+        elif isinstance(node, list):
+            for entry in node:
+                walk(entry)
+
+    walk(payload)
+    assert asked == {link["id"] for link in nsbe()["links"]}
     assert "http" not in _text(cards.links_message())
 
 

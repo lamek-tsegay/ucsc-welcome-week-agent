@@ -34,6 +34,23 @@ VALID_BADGE_VARIANTS = {"info", "success", "warning"}
 # Documented validation limit: element-tree nesting depth <= 8.
 MAX_NESTING_DEPTH = 8
 
+# Exactly the keys each element accepts. An unrecognised key is not ignored —
+# a `url` added to a button's action stopped the entire card rendering, the
+# same silent failure an invalid heading level caused. Offline gates cannot
+# see it, so the vocabulary is pinned here instead.
+ALLOWED_KEYS = {
+    "section": {"type", "title", "subtitle", "children"},
+    "group": {"type", "direction", "gap", "children"},
+    "divider": {"type"},
+    "text": {"type", "value", "style"},
+    "heading": {"type", "value", "level"},
+    "image": {"type", "src", "alt", "aspect_ratio"},
+    "badge": {"type", "label", "variant"},
+    "button": {"type", "label", "primary", "action"},
+    "list": {"type", "items"},
+}
+ALLOWED_ACTION_KEYS = {"selection"}
+
 DURING = date(2026, 9, 22)
 
 
@@ -191,57 +208,54 @@ def _button_urls(payload) -> dict[str, str]:
     return found
 
 
-def test_club_detail_links_are_buttons_not_bubble_text():
-    """Links moved onto the card as buttons that open them.
+def _selections(payload) -> list[dict]:
+    found: list[dict] = []
 
-    A URL in message text gets unfurled into a preview card by the client,
-    which is why they left the bubble. Every link button also carries a
-    selection, so a client that ignores the url sends the tap back and the
-    agent replies with the address — a tap can never do nothing.
+    def walk(node):
+        if isinstance(node, dict):
+            if node.get("type") == "button":
+                found.append(node["action"]["selection"])
+            for value in node.values():
+                walk(value)
+        elif isinstance(node, list):
+            for entry in node:
+                walk(entry)
+
+    walk(payload)
+    return found
+
+
+def test_club_detail_reaches_links_through_the_agent():
+    """Link buttons send a tap; the agent replies with the address.
+
+    They cannot carry the url themselves — putting one on a button's action
+    stopped the whole card rendering. So the round trip is the mechanism, not
+    a fallback: no URL sits in the bubble to be unfurled, and every link
+    button names which link it wants.
     """
     from agents.clubs.service import respond_to_selection
 
     message = respond_to_selection("be_swe")
     assert "http" not in _bubble(message), "a URL in the bubble unfurls a preview"
 
-    urls = _button_urls(_payload(message))
-    assert "https://sweclub.engineering.ucsc.edu/" in urls.values()
-    assert any("getinvolved.ucsc.edu" in u for u in urls.values())
-    assert any(u.startswith("mailto:") for u in urls.values())
-
-    # Every link button still round-trips if the url is ignored.
-    def walk(node, out):
-        if isinstance(node, dict):
-            if node.get("type") == "button" and node["action"].get("url"):
-                out.append(node["action"].get("selection"))
-            for value in node.values():
-                walk(value, out)
-        elif isinstance(node, list):
-            for entry in node:
-                walk(entry, out)
-
-    selections: list = []
-    walk(_payload(message), selections)
-    assert selections and all(s for s in selections), (
-        "a link button with no selection does nothing if the url is ignored"
-    )
+    actions = {sel.get("action") for sel in _selections(_payload(message))}
+    assert {"open_site", "open_directory", "open_email"} <= actions
 
     # An unverified club has no site of its own but stays reachable.
-    urls = _button_urls(_payload(respond_to_selection("c_anime")))
-    assert any("getinvolved.ucsc.edu" in u for u in urls.values())
+    actions = {sel.get("action") for sel in _selections(_payload(respond_to_selection("c_anime")))}
+    assert "open_directory" in actions
 
 
-def test_event_detail_offers_a_schedule_link_button():
+def test_event_detail_reaches_the_schedule_through_the_agent():
     """The official schedule is the link this agent owns. Maps and routing
-    belong to the navigation agent, so no map links appear here."""
+    belong to the navigation agent, so no map link appears here."""
     from agents.events.service import respond_to_selection
 
     for event_id in ("cornucopia", "choose_your_own_slugventure"):
         message = respond_to_selection(event_id)
         assert "http" not in _bubble(message), event_id
-        urls = _button_urls(_payload(message))
-        assert any("welcome.ucsc.edu" in u for u in urls.values()), event_id
-        assert not any("google.com/maps" in u for u in urls.values()), event_id
+        actions = {sel.get("action") for sel in _selections(_payload(message))}
+        assert "open_schedule" in actions, event_id
 
 
 def test_listings_carry_no_url_in_the_bubble():
@@ -299,3 +313,41 @@ def test_card_stays_within_the_nesting_limit(name, payload):
     assert depth <= MAX_NESTING_DEPTH, (
         f"{name}: nests {depth} levels, limit is {MAX_NESTING_DEPTH}"
     )
+
+
+@pytest.mark.parametrize("name,payload", ALL_CARDS, ids=[n for n, _ in ALL_CARDS])
+def test_card_carries_no_unrecognised_keys(name, payload):
+    """Every property on every element must be one the schema defines.
+
+    This is the check that would have caught `action.url`, which looked
+    harmless — valid JSON, sensible name, a plausible feature — and silently
+    took every detail card down until it was noticed in the live client.
+    """
+    violations: list[str] = []
+
+    def visit(node, path):
+        kind = node.get("type")
+        if kind in ALLOWED_KEYS:
+            extra = set(node) - ALLOWED_KEYS[kind]
+            if extra:
+                violations.append(f"{path}: {kind} has unknown key(s) {sorted(extra)}")
+        if kind == "button":
+            action = node.get("action", {})
+            extra = set(action) - ALLOWED_ACTION_KEYS
+            if extra:
+                violations.append(
+                    f"{path}: button action has unknown key(s) {sorted(extra)}"
+                )
+
+    def walk(node, path="root"):
+        if isinstance(node, dict):
+            if "type" in node:
+                visit(node, path)
+            for key, value in node.items():
+                walk(value, f"{path}.{key}")
+        elif isinstance(node, list):
+            for index, entry in enumerate(node):
+                walk(entry, f"{path}[{index}]")
+
+    walk(payload)
+    assert not violations, f"{name}:\n  " + "\n  ".join(violations)
