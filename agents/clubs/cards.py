@@ -208,7 +208,7 @@ def category_card(entry: dict, members: list[dict]) -> ChatMessage:
     ordered = sorted(members, key=lambda c: c["name"].lower())
     chips = [
         MenuButton(
-            f"{'✅ ' if club['verified'] else ''}{club['name']}",
+            f"{club['name']}{' ✅' if club['verified'] else ''}",
             {CLUB_ID_FIELD: club["id"]},
         )
         for club in ordered
@@ -362,7 +362,7 @@ def all_clubs_message(all_clubs: list[dict]) -> ChatMessage:
     items = [
         CardItem(
             record_id=club["id"],
-            heading=f"{'✅ ' if club['verified'] else ''}{_name_with_emoji(club)}",
+            heading=f"{_name_with_emoji(club)}{' ✅' if club['verified'] else ''}",
             body="",
             badges=[],
             button_label="Details",

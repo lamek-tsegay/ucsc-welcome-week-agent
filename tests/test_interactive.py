@@ -851,7 +851,7 @@ def test_category_browse_returns_the_whole_category_as_chips():
         for button in _card_buttons(payload)
         if "club_id" in button["action"]["selection"]
     ]
-    names = [chip["label"].removeprefix("✅ ") for chip in chips]
+    names = [chip["label"].removesuffix(" ✅") for chip in chips]
 
     # Alphabetical, case-insensitively — plain sorting files "iGEM" after
     # "Women in Science and Engineering".

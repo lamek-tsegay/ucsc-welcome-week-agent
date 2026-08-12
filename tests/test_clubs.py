@@ -258,10 +258,12 @@ def test_browse_all_returns_every_club_in_one_card():
 
     # Alphabetical by club name — the emoji and tick prefixes must not drive
     # the ordering, or the list reads by codepoint instead of by name.
+    # The confirmed tick trails the name rather than leading it, so every
+    # name starts at the same point instead of confirmed ones being pushed in.
     lookup = {club["name"]: club for club in clubs_data()}
     names = []
     for label in labels:
-        stripped = label.removeprefix("✅ ")
+        stripped = label.removesuffix(" ✅")
         name = next(n for n in lookup if stripped.endswith(n))
         names.append(name)
     assert names == sorted(names, key=str.lower)
