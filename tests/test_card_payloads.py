@@ -18,15 +18,21 @@ import pytest
 
 from uagents_core.contrib.protocols.chat import MetadataContent
 
-# The vocabulary the reference card implementation actually emits.
+# The element-tree schema, from the Agentverse element-tree-primitives docs
+# (read 2026-08-12) rather than inferred from one example implementation.
+# Getting a value wrong here does not degrade — the whole card silently fails
+# to render, which is how a level-4 heading once took every detail card down.
 VALID_TYPES = {
-    "badge", "button", "divider", "group", "heading", "image", "list",
-    "section", "text",
+    "badge", "button", "choice_grid", "divider", "group", "heading", "image",
+    "input", "list", "section", "text",
 }
-VALID_HEADING_LEVELS = {2, 3}
-VALID_TEXT_STYLES = {"body", "muted"}
+VALID_HEADING_LEVELS = {1, 2, 3}
+VALID_TEXT_STYLES = {"body", "muted", "emphasis"}
 VALID_DIRECTIONS = {"row", "column"}
-VALID_BADGE_VARIANTS = {"info", "warning", "success"}
+VALID_BADGE_VARIANTS = {"info", "success", "warning"}
+
+# Documented validation limit: element-tree nesting depth <= 8.
+MAX_NESTING_DEPTH = 8
 
 DURING = date(2026, 9, 22)
 
@@ -226,3 +232,27 @@ def test_listings_carry_no_url_in_the_bubble():
         assert "http" in json.dumps(_payload(message)), (
             f"{name}: lost its source pointer entirely"
         )
+
+
+def _depth(node, level: int = 0) -> int:
+    if isinstance(node, dict):
+        nested = [v for v in node.values() if isinstance(v, (dict, list))]
+        return max((_depth(v, level + 1) for v in nested), default=level)
+    if isinstance(node, list):
+        return max((_depth(v, level) for v in node), default=level)
+    return level
+
+
+@pytest.mark.parametrize("name,payload", ALL_CARDS, ids=[n for n, _ in ALL_CARDS])
+def test_card_stays_within_the_nesting_limit(name, payload):
+    """The docs cap element-tree nesting at 8 levels.
+
+    Exceeding it is the same class of failure as an unsupported property: the
+    payload is valid JSON and every other check passes, but the card does not
+    render. The list layouts sit at 6, so there are two levels of headroom —
+    worth knowing before anyone wraps rows in another group.
+    """
+    depth = _depth(payload)
+    assert depth <= MAX_NESTING_DEPTH, (
+        f"{name}: nests {depth} levels, limit is {MAX_NESTING_DEPTH}"
+    )
