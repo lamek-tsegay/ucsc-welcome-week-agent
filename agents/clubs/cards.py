@@ -280,34 +280,46 @@ def list_message(
 
 
 def detail_message(club: dict, others: list[dict]) -> ChatMessage:
-    tags = ", ".join(sorted(club.get("tags", []))) or "—"
+    """One club, and nothing about any other club.
 
+    `others` is still accepted so callers need not change, but nothing is
+    rendered from it. A "Similar" list turned a page about Slug Gaming into a
+    page that spent its last line naming three organizations a student had not
+    asked about.
+    """
     website = club.get("website")
 
     # No "Site" row: the address is on the 🌐 button, which opens it. Printing
-    # it here too is the same link twice, and the copy of it that can't be
-    # tapped.
-    rows = [
-        DetailRow("Interests", tags),
-        DetailRow("Meet them at", "Cornucopia, Tue Sept 22, East Upper Field"),
-    ]
+    # it here too is the same link twice, and the copy that can't be tapped.
+    # No "Category" row: the badge at the top of the card already is it.
+    rows: list[DetailRow] = []
+
+    aliases = [alias for alias in club.get("aliases", []) if alias]
+    if aliases:
+        rows.append(DetailRow("Also called", ", ".join(aliases)))
+
+    tags = ", ".join(sorted(club.get("tags", [])))
+    if tags:
+        rows.append(DetailRow("Interests", tags))
+
+    rows.append(DetailRow("Find them at", "Cornucopia, Tue Sept 22, East Upper Field"))
 
     # No "How to join" block either. It listed the club's site, the directory,
     # and the SOAR address — every one of which is now a button directly below
     # it, so the block was the button row written out as text.
-    blocks = []
-    if others:
-        blocks.append(
-            DetailBlock(
-                "Similar", [" · ".join(other["name"] for other in others)]
-            )
-        )
+    blocks: list[DetailBlock] = []
 
     if club["verified"]:
+        # "Confirmed on the official Baskin Engineering page" claimed more than
+        # is true: that page lists names and links only, so what it confirms is
+        # that this organization is real and where its site is — not the
+        # one-line summary above, which is ours. Saying "listed on" keeps the
+        # claim the size of the evidence, and reads like a sentence.
         footnote = (
-            "✅ Confirmed on the official Baskin Engineering page "
-            f"({club.get('source_checked', '2026')}). Meeting times and contacts "
-            "live on the club's own site, not here."
+            "✅ Listed on Baskin Engineering's student organizations page, "
+            f"checked {club.get('source_checked', '2026')}. That page carries "
+            "names and links only — what they actually do, when they meet, and "
+            "how to reach them is on their own site."
         )
     else:
         footnote = (

@@ -271,6 +271,29 @@ def _redirects(payload) -> set[str]:
     return found
 
 
+def test_club_detail_names_no_other_club():
+    """A page about one club stays about that club.
+
+    The card used to end on a "Similar" line naming three organizations the
+    student had not asked about, which is the last thing they read before the
+    buttons.
+    """
+    from agents.clubs.service import respond_to_selection
+    from common.loader import clubs
+
+    for club_id in ("be_slug_gaming", "be_swe", "c_anime"):
+        message = respond_to_selection(club_id)
+        rendered = _bubble(message) + json.dumps(_payload(message))
+        this_club = next(c for c in clubs() if c["id"] == club_id)
+
+        for other in clubs():
+            if other["id"] == club_id or other["name"] in this_club["name"]:
+                continue
+            assert other["name"] not in rendered, (
+                f"{club_id} detail card names {other['name']!r}"
+            )
+
+
 def test_club_detail_opens_links_in_one_tap():
     """A link button opens the page itself, via `action.redirect`.
 
