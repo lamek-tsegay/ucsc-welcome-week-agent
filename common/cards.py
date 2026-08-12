@@ -63,11 +63,18 @@ class MenuButton:
     `selection` is what comes back when the user taps — the same dict shape the
     list/detail buttons already use, so `parse_card_selection` handles all of
     them uniformly. `source` is injected at build time.
+
+    `url` makes the button open a link instead. It is carried on the action as
+    `url`, and the selection travels with it, so a client that does not honour
+    the link still sends the tap back to the agent rather than doing nothing —
+    the agent then replies with the link as text. That fallback is why this is
+    safe to use before the behaviour is confirmed in the live client.
     """
 
     label: str
     selection: dict[str, str]
     primary: bool = False
+    url: str | None = None
 
 
 def _badge(label: str, variant: str) -> dict[str, Any]:
@@ -77,11 +84,14 @@ def _badge(label: str, variant: str) -> dict[str, Any]:
 def _button(button: MenuButton, source: str) -> dict[str, Any]:
     selection = dict(button.selection)
     selection.setdefault("source", source)
+    action: dict[str, Any] = {"selection": selection}
+    if button.url:
+        action["url"] = button.url
     return {
         "type": "button",
         "label": button.label,
         "primary": button.primary,
-        "action": {"selection": selection},
+        "action": action,
     }
 
 
@@ -334,15 +344,33 @@ def build_detail_payload(
     return {"root": section}
 
 
+# The client clamps this to 320–800px. These cards are lists of names and
+# titles that wrap badly in a narrow drawer, so they ask for the top of that
+# range; the hint is ignored where it cannot be honoured.
+PREFERRED_WIDTH_PX = 800
+
+# Documented limit on a serialised card_payload. Nothing warns when a card
+# crosses it — it simply stops rendering — so the builder refuses instead.
+MAX_PAYLOAD_BYTES = 64 * 1024
+
+
 def card_metadata(card_payload: dict[str, Any]) -> MetadataContent:
     """Wrap a payload dict in the MetadataContent block ChatMessage carries."""
+    serialised = json.dumps(card_payload)
+    if len(serialised.encode("utf-8")) > MAX_PAYLOAD_BYTES:
+        raise ValueError(
+            f"card_payload is {len(serialised.encode('utf-8'))} bytes, over the "
+            f"{MAX_PAYLOAD_BYTES}-byte limit — it would not render. Split the "
+            "card or shorten its contents."
+        )
     return MetadataContent(
         type="metadata",
         metadata={
             "card_protocol_version": CARD_PROTOCOL_VERSION,
             "requires_card_interaction": "true",
             "card_kind": "custom",
-            "card_payload": json.dumps(card_payload),
+            "card_payload": serialised,
+            "preferred_drawer_width_px": str(PREFERRED_WIDTH_PX),
         },
     )
 

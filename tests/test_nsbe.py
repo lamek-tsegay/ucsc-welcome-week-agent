@@ -155,9 +155,34 @@ def test_join_card_offers_every_published_route():
     assert nsbe()["meetings"]["location"] in rendered
 
 
-def test_links_card_carries_every_link():
-    rendered = _rendered(cards.links_message())
+def test_links_card_opens_every_link_as_a_button():
+    """Six URLs in the bubble would be six preview cards, so they are buttons
+    that open them — each still naming its link for the ignored-url fallback."""
+    payload = json.loads(_card(cards.links_message()))
+    opened: dict[str, str] = {}
+
+    def walk(node):
+        if isinstance(node, dict):
+            if node.get("type") == "button" and node["action"].get("url"):
+                opened[node["action"]["selection"].get("link", "")] = node["action"]["url"]
+            for value in node.values():
+                walk(value)
+        elif isinstance(node, list):
+            for entry in node:
+                walk(entry)
+
+    walk(payload)
     for link in nsbe()["links"]:
+        assert opened.get(link["id"]) == link["url"], link["id"]
+
+    assert "http" not in _text(cards.links_message())
+
+
+def test_every_link_has_a_text_fallback():
+    """A client that ignores the url sends the tap instead; every link must
+    have something to say back."""
+    for link in nsbe()["links"]:
+        rendered = _text(cards.link_fallback_message(link["id"]))
         assert link["url"] in rendered, link["id"]
 
 
@@ -224,6 +249,14 @@ def test_every_card_button_leads_somewhere_real():
         walk(payload)
         assert found, builder.__name__
         for selection in found:
+            # A button either navigates to a known topic or opens a link —
+            # and a link button still carries which link, so a client that
+            # ignores the url gets the address back instead of nothing.
+            if selection.get("action") == "open_link":
+                assert selection.get("link"), (
+                    f"{builder.__name__}: link button names no link"
+                )
+                continue
             assert selection.get("topic") in known, (
                 f"{builder.__name__}: button goes to {selection.get('topic')!r}"
             )

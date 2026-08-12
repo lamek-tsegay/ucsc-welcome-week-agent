@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from agents.clubs.search import ScoredClub, category_label
+from agents.clubs.search import ScoredClub, by_id, category_label
 from common.cards import (
     CardItem,
     DetailBlock,
@@ -316,6 +316,36 @@ def detail_message(club: dict, others: list[dict]) -> ChatMessage:
             "and meeting times are omitted rather than guessed."
         )
 
+    # Link buttons rather than a link row in the bubble: a URL in message text
+    # gets unfurled into a preview card by the client, which is what pushed
+    # these links out of the bubble in the first place. Each carries its
+    # selection too, so a client that ignores the url still sends the tap back
+    # and gets the address as text.
+    link_buttons = []
+    if website:
+        link_buttons.append(
+            MenuButton(
+                "🌐 Their site",
+                {CLUB_ID_FIELD: club["id"], "action": "open_site"},
+                primary=True,
+                url=website,
+            )
+        )
+    link_buttons.append(
+        MenuButton(
+            "📂 Official directory",
+            {"action": "open_directory"},
+            url=OFFICIAL_CLUBS_URL,
+        )
+    )
+    link_buttons.append(
+        MenuButton(
+            "✉️ Email SOAR",
+            {"action": "open_email"},
+            url=f"mailto:{CLUBS_CONTACT}",
+        )
+    )
+
     payload = build_detail_payload(
         title=club["name"],
         heading=club["name"],
@@ -330,19 +360,12 @@ def detail_message(club: dict, others: list[dict]) -> ChatMessage:
         back_label="Back",
         back_action=BACK_ACTION,
         source=SOURCE,
+        extra_buttons=link_buttons,
     )
 
-    # The card carries the detail; the bubble carries the title and the
-    # tappable links, since card text is not clickable.
-    pairs = []
-    if website:
-        pairs.append(("Their site", website))
-    pairs.append(("Official directory", OFFICIAL_CLUBS_URL))
-    pairs.append(("Email SOAR", f"mailto:{CLUBS_CONTACT}"))
-
-    # Links only: the card's heading and badges already name the club and its
-    # category. These have to sit in the bubble to stay tappable.
-    return card_message(link_row(*pairs), payload)
+    # No URL in the bubble at all now: the links are buttons on the card, so
+    # nothing here for the client to unfurl into a preview box.
+    return card_message(f"**{club['name']}**", payload)
 
 
 def all_clubs_message(all_clubs: list[dict]) -> ChatMessage:
@@ -409,6 +432,29 @@ def no_matches_message(query_text: str) -> ChatMessage:
         buttons=buttons,
         source=SOURCE,
     )
+
+
+def link_fallback_message(action: str, selection: dict) -> ChatMessage:
+    """The address as text, for a client that ignored a link button.
+
+    Without this a tap on such a button would do nothing at all, which is the
+    worst outcome of the three — worse than the preview box these buttons
+    exist to avoid.
+    """
+    if action == "open_site":
+        club = by_id(selection.get(CLUB_ID_FIELD, ""))
+        website = (club or {}).get("website")
+        if website:
+            return create_text_chat(f"**{club['name']}** — {website}")
+        return create_text_chat(
+            f"That organization has no site of its own. The directory has "
+            f"more: {OFFICIAL_CLUBS_URL}"
+        )
+    if action == "open_email":
+        return create_text_chat(
+            f"SOAR supports all student organizations — email {CLUBS_CONTACT}."
+        )
+    return create_text_chat(f"The official directory: {OFFICIAL_CLUBS_URL}")
 
 
 def stale_selection_message() -> ChatMessage:

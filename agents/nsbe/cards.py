@@ -21,7 +21,7 @@ from common.loader import nsbe
 from uagents_core.contrib.protocols.chat import ChatMessage
 
 SOURCE = "nsbe_tab"
-EXTRA_FIELDS = ("topic",)
+EXTRA_FIELDS = ("topic", "link")
 
 
 def _sources() -> dict:
@@ -112,17 +112,32 @@ def _step_text(step: dict) -> str:
 def join_message() -> ChatMessage:
     steps = nsbe()["join_steps"]
     contact = nsbe()["contact"]
-    preamble = link_row(
-        ("Email them", f"mailto:{contact['email']}"),
-        ("Instagram", _link("instagram")["url"]),
-        ("All their links", _link("linktree")["url"]),
-    )
+    # Buttons that open the links, so nothing in the bubble gets unfurled.
+    chips = [
+        MenuButton(
+            "✉️ Email them",
+            {"action": "open_link", "link": "email"},
+            primary=True,
+            url=f"mailto:{contact['email']}",
+        ),
+        MenuButton(
+            "📸 Instagram",
+            {"action": "open_link", "link": "instagram"},
+            url=_link("instagram")["url"],
+        ),
+        MenuButton(
+            "🔗 All their links",
+            {"action": "open_link", "link": "linktree"},
+            url=_link("linktree")["url"],
+        ),
+    ]
     payload = build_chip_payload(
         title="How to join 🤝",
         subtitle="No membership needed to show up",
         body_lines=[_step_text(step) for step in steps],
-        chips=[],
+        chips=chips,
         source=SOURCE,
+        per_row=1,
         footer_buttons=[
             MenuButton("📅 When they meet", {"action": "topic", "topic": "meetings"}),
             MenuButton("↩️ Back", {"action": "topic", "topic": "home"}),
@@ -131,15 +146,11 @@ def join_message() -> ChatMessage:
             f"From their site and linktree, read {_checked('chapter_site')}."
         ),
     )
-    return card_message(preamble, payload)
+    return card_message("**How to join UCSC NSBE**", payload)
 
 
 def about_message() -> ChatMessage:
     chapter = nsbe()["chapter"]
-    preamble = link_row(
-        ("Chapter site", _link("site")["url"]),
-        ("National NSBE", _link("national")["url"]),
-    )
     payload = build_chip_payload(
         title="What NSBE is 🎯",
         subtitle=chapter["name"],
@@ -149,8 +160,20 @@ def about_message() -> ChatMessage:
             f"Part of {chapter['parent_organization']['name']}, and affiliated "
             f"with UCSC's {chapter['affiliation']['name']}.",
         ],
-        chips=[],
+        chips=[
+            MenuButton(
+                "🌐 Chapter site",
+                {"action": "open_link", "link": "site"},
+                url=_link("site")["url"],
+            ),
+            MenuButton(
+                "🏛️ National NSBE",
+                {"action": "open_link", "link": "national"},
+                url=_link("national")["url"],
+            ),
+        ],
         source=SOURCE,
+        per_row=1,
         footer_buttons=[
             MenuButton("📅 When they meet", {"action": "topic", "topic": "meetings"}),
             MenuButton("🤝 How to join", {"action": "topic", "topic": "join"}),
@@ -161,29 +184,52 @@ def about_message() -> ChatMessage:
             f"{_checked('chapter_site')}."
         ),
     )
-    return card_message(preamble, payload)
+    return card_message("**What NSBE is**", payload)
 
 
 def links_message() -> ChatMessage:
-    """Every link the chapter publishes, tappable in the bubble."""
+    """Every link the chapter publishes, as buttons that open them.
+
+    A link button rather than a URL in the bubble: message text gets unfurled
+    into a preview card by the client, and six links would mean six of them.
+    Each button carries its id as a selection too, so a client that ignores
+    the url still sends the tap and gets the address back as text.
+    """
     links = nsbe()["links"]
-    preamble = "\n".join(
-        f"**{item['label']}** — {item['why']}\n[{item['url']}]({item['url']})"
+    chips = [
+        MenuButton(
+            f"{item['label']}",
+            {"action": "open_link", "link": item["id"]},
+            url=item["url"],
+        )
         for item in links
-    )
+    ]
     payload = build_chip_payload(
         title="Their links 🔗",
         subtitle="Everything the chapter publishes",
         body_lines=[f"{item['label']} — {item['why']}" for item in links],
-        chips=[],
+        chips=chips,
         source=SOURCE,
         footer_buttons=[
             MenuButton("📅 When they meet", {"action": "topic", "topic": "meetings"}),
             MenuButton("↩️ Back", {"action": "topic", "topic": "home"}),
         ],
+        per_row=1,
         footnote=f"Collected from their site and linktree, read {_checked('chapter_site')}.",
     )
-    return card_message(preamble, payload)
+    return card_message("**UCSC NSBE — their links**", payload)
+
+
+def link_fallback_message(link_id: str) -> ChatMessage:
+    """The address as text, for a client that ignored a link button."""
+    if link_id == "email":
+        contact = nsbe()["contact"]
+        return create_text_chat(f"Email the chapter: {contact['email']}")
+    try:
+        item = _link(link_id)
+    except StopIteration:
+        return unknown_message()
+    return create_text_chat(f"**{item['label']}** — {item['why']}\n{item['url']}")
 
 
 def unknown_message() -> ChatMessage:

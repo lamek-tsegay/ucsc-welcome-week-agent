@@ -193,6 +193,13 @@ async def _handle_selection(
         await _send(ctx, sender, message)
         return True
 
+    # A client that honours the button's url opens it and never sends these.
+    # One that ignores it sends the tap, and the student gets the address as
+    # text rather than a button that did nothing.
+    if action in {"open_site", "open_directory", "open_email"}:
+        await _send(ctx, sender, cards.link_fallback_message(action, selection))
+        return True
+
     if action == "about":
         await _send(ctx, sender, cards.about_message())
         return True

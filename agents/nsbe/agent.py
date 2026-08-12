@@ -178,6 +178,12 @@ async def handle_message(ctx: Context, sender: str, msg: ChatMessage):
         selection = parse_card_selection(
             text, id_field="topic", extra_fields=cards.EXTRA_FIELDS
         )
+        # A client that honours the button's url opens it and never sends
+        # this; one that ignores it gets the address as text instead of a
+        # button that did nothing.
+        if selection and selection.get("action") == "open_link":
+            await _send(ctx, sender, cards.link_fallback_message(selection.get("link", "")))
+            return
         if selection and selection.get("topic"):
             ctx.logger.info(f"Card selection from {sender}: {selection}")
             try:

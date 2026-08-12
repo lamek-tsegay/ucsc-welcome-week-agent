@@ -173,32 +173,75 @@ def _bubble(message) -> str:
     )
 
 
-def test_club_detail_offers_tappable_links():
+def _button_urls(payload) -> dict[str, str]:
+    """Every button that opens a link, as {label: url}."""
+    found: dict[str, str] = {}
+
+    def walk(node):
+        if isinstance(node, dict):
+            if node.get("type") == "button" and node["action"].get("url"):
+                found[node["label"]] = node["action"]["url"]
+            for value in node.values():
+                walk(value)
+        elif isinstance(node, list):
+            for entry in node:
+                walk(entry)
+
+    walk(payload)
+    return found
+
+
+def test_club_detail_links_are_buttons_not_bubble_text():
+    """Links moved onto the card as buttons that open them.
+
+    A URL in message text gets unfurled into a preview card by the client,
+    which is why they left the bubble. Every link button also carries a
+    selection, so a client that ignores the url sends the tap back and the
+    agent replies with the address — a tap can never do nothing.
+    """
     from agents.clubs.service import respond_to_selection
 
-    bubble = _bubble(respond_to_selection("be_swe"))
-    links = MARKDOWN_LINK.findall(bubble)
-    assert links, "verified club detail has no tappable link"
-    assert "sweclub.engineering.ucsc.edu" in bubble
-    assert "getinvolved.ucsc.edu" in bubble
-    assert "mailto:soar@ucsc.edu" in bubble
+    message = respond_to_selection("be_swe")
+    assert "http" not in _bubble(message), "a URL in the bubble unfurls a preview"
 
-    # An unverified club has no site of its own, but must still be reachable.
-    bubble = _bubble(respond_to_selection("c_anime"))
-    assert MARKDOWN_LINK.search(bubble)
-    assert "getinvolved.ucsc.edu" in bubble
+    urls = _button_urls(_payload(message))
+    assert "https://sweclub.engineering.ucsc.edu/" in urls.values()
+    assert any("getinvolved.ucsc.edu" in u for u in urls.values())
+    assert any(u.startswith("mailto:") for u in urls.values())
+
+    # Every link button still round-trips if the url is ignored.
+    def walk(node, out):
+        if isinstance(node, dict):
+            if node.get("type") == "button" and node["action"].get("url"):
+                out.append(node["action"].get("selection"))
+            for value in node.values():
+                walk(value, out)
+        elif isinstance(node, list):
+            for entry in node:
+                walk(entry, out)
+
+    selections: list = []
+    walk(_payload(message), selections)
+    assert selections and all(s for s in selections), (
+        "a link button with no selection does nothing if the url is ignored"
+    )
+
+    # An unverified club has no site of its own but stays reachable.
+    urls = _button_urls(_payload(respond_to_selection("c_anime")))
+    assert any("getinvolved.ucsc.edu" in u for u in urls.values())
 
 
-def test_event_detail_offers_tappable_links():
+def test_event_detail_offers_a_schedule_link_button():
     """The official schedule is the link this agent owns. Maps and routing
     belong to the navigation agent, so no map links appear here."""
     from agents.events.service import respond_to_selection
 
     for event_id in ("cornucopia", "choose_your_own_slugventure"):
-        bubble = _bubble(respond_to_selection(event_id))
-        assert MARKDOWN_LINK.search(bubble), f"{event_id} has no tappable link"
-        assert "welcome.ucsc.edu" in bubble
-        assert "google.com/maps" not in bubble
+        message = respond_to_selection(event_id)
+        assert "http" not in _bubble(message), event_id
+        urls = _button_urls(_payload(message))
+        assert any("welcome.ucsc.edu" in u for u in urls.values()), event_id
+        assert not any("google.com/maps" in u for u in urls.values()), event_id
 
 
 def test_listings_carry_no_url_in_the_bubble():

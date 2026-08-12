@@ -236,6 +236,16 @@ async def _handle_selection(
             await _send(ctx, sender, cards.day_picker_message())
         return True
 
+    if action == "open_schedule":
+        await _send(
+            ctx,
+            sender,
+            create_text_chat(
+                f"The official Slug Start schedule: {cards.OFFICIAL_EVENTS_URL}"
+            ),
+        )
+        return True
+
     if action == "about":
         await _send(ctx, sender, cards.about_message())
         return True

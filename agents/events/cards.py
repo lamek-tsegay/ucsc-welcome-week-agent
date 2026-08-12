@@ -376,7 +376,16 @@ def detail_message(event: dict, others: list[dict]) -> ChatMessage:
             f"announced event. Confirm at {OFFICIAL_EVENTS_URL}."
         )
 
-    extra_buttons: list[MenuButton] = []
+    # A link button rather than a URL in the bubble, which the client would
+    # unfurl into a preview box. The selection travels too, so a client that
+    # ignores the url still sends the tap and gets the address back as text.
+    extra_buttons: list[MenuButton] = [
+        MenuButton(
+            "📅 Official schedule",
+            {"action": "open_schedule"},
+            url=OFFICIAL_EVENTS_URL,
+        )
+    ]
 
     payload = build_detail_payload(
         title=event["title"],
@@ -392,12 +401,9 @@ def detail_message(event: dict, others: list[dict]) -> ChatMessage:
         extra_buttons=extra_buttons,
     )
 
-    # The card carries the detail; the bubble carries the tappable links,
-    # since card text is not clickable.
-    # Links only: the card names the event and its day already.
-    return card_message(
-        link_row(("Official schedule", OFFICIAL_EVENTS_URL)), payload
-    )
+    # No URL in the bubble: the schedule link is a button on the card, so
+    # there is nothing here for the client to unfurl into a preview.
+    return card_message(f"**{event['title']}**", payload)
 
 
 def planner_message(
