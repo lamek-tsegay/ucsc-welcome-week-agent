@@ -43,7 +43,7 @@ from common.chat import (
     strip_mention,
 )
 from common.colleges import by_key, by_landmark
-from common.guard import EchoGuard
+from common.guard import EchoGuard, is_stale_replay
 from common.loader import landmark_name, landmarks
 from common.registration import register
 from common.transport import agent_kwargs
@@ -338,6 +338,15 @@ async def handle_message(ctx: Context, sender: str, msg: ChatMessage):
         text = strip_mention(item.text or "")
         if not text:
             continue
+
+        # ASI:One replays the conversation on every turn, so one tap arrives
+        # with the original question and every earlier tap behind it. Drop the
+        # ones already answered — see common/guard.is_stale_replay.
+        sequence = guard.note_inbound(sender)
+        if await is_stale_replay(guard, sender, text, sequence):
+            ctx.logger.info(f"Dropped replayed message from {sender}: {text[:60]!r}")
+            return
+        guard.mark_answered(sender, text)
 
         # "help" / "menu" / a bare greeting always re-orients, before anything
         # else can swallow it — a lost student must never hit a dead end.

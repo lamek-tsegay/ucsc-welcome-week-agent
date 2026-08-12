@@ -293,3 +293,87 @@ def test_event_time_never_invents_a_value():
     assert event_time(None) == "time not yet published"
     assert event_time("") == "time not yet published"
     assert event_time("7:00 PM") == "7:00 PM"
+
+
+# --- conversation replay ------------------------------------------------------
+# ASI:One re-sends the whole conversation on every turn: one tap arrives with
+# the original question and every earlier tap behind it. Answering all of them
+# costs several round trips per tap and delays the card actually asked for.
+
+
+def test_replay_is_dropped_when_something_newer_follows():
+    """The replayed prefix of a burst is dropped."""
+    import asyncio
+
+    from common.guard import EchoGuard, is_stale_replay
+
+    guard = EchoGuard()
+    sender = "agent1x"
+
+    async def scenario():
+        # Turn one: the student asks, and taps a button.
+        first = guard.note_inbound(sender)
+        assert not await is_stale_replay(guard, sender, "tell me about clubs", first, hold=0.05)
+        guard.mark_answered(sender, "tell me about clubs")
+
+        second = guard.note_inbound(sender)
+        assert not await is_stale_replay(guard, sender, "categories", second, hold=0.05)
+        guard.mark_answered(sender, "categories")
+
+        # Turn two: the client replays both, then delivers the new tap. The
+        # replayed pair is held; the newer arrival lands while they wait.
+        replay_a = guard.note_inbound(sender)
+        replay_b = guard.note_inbound(sender)
+        newest = guard.note_inbound(sender)
+
+        assert await is_stale_replay(guard, sender, "tell me about clubs", replay_a, hold=0.05)
+        assert await is_stale_replay(guard, sender, "categories", replay_b, hold=0.05)
+        # The message the student actually sent is new, so it never waits.
+        assert not await is_stale_replay(guard, sender, "spiritual", newest, hold=0.05)
+
+    asyncio.run(scenario())
+
+
+def test_a_deliberate_repeat_is_still_answered():
+    """The failure mode that matters: a student re-tapping the same button, or
+    re-asking the same question, must not meet silence."""
+    import asyncio
+
+    from common.guard import EchoGuard, is_stale_replay
+
+    guard = EchoGuard()
+    sender = "agent1x"
+
+    async def scenario():
+        first = guard.note_inbound(sender)
+        assert not await is_stale_replay(guard, sender, "spiritual", first, hold=0.05)
+        guard.mark_answered(sender, "spiritual")
+
+        # Same tap again, with nothing behind it. Held briefly, then answered.
+        again = guard.note_inbound(sender)
+        assert not await is_stale_replay(guard, sender, "spiritual", again, hold=0.05)
+
+    asyncio.run(scenario())
+
+
+def test_new_messages_are_never_delayed():
+    """The common path must cost nothing: an unseen message returns without
+    waiting at all."""
+    import asyncio
+    import time
+
+    from common.guard import EchoGuard, is_stale_replay
+
+    guard = EchoGuard()
+
+    async def scenario():
+        sequence = guard.note_inbound("agent1x")
+        started = time.perf_counter()
+        stale = await is_stale_replay(
+            guard, "agent1x", "something new", sequence, hold=5.0
+        )
+        elapsed = time.perf_counter() - started
+        assert not stale
+        assert elapsed < 0.05, f"new message waited {elapsed:.2f}s"
+
+    asyncio.run(scenario())
