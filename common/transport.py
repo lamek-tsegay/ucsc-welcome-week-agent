@@ -16,6 +16,7 @@ driven by a local client agent without any Agentverse account or API key — see
 
 from __future__ import annotations
 
+import asyncio
 import os
 from typing import Any
 
@@ -47,3 +48,43 @@ def agent_kwargs(*, name: str, seed: str, port: int) -> dict[str, Any]:
         base["mailbox"] = True
 
     return base
+
+
+async def deliver(ctx: Any, destination: str, message: Any, *, attempts: int = 3,
+                  base_delay: float = 0.6) -> Any:
+    """Send a message, retrying when the relay drops it.
+
+    Nothing in uagents retries a failed send: the dispenser logs one ERROR and
+    the message is gone. The live log on 2026-08-12 showed what that costs —
+    a card tap answered in milliseconds, then
+
+        Failed to deliver message to <sender>
+        @ ['https://agentverse.ai/v2/agents/proxy/submit']: ['500: Internal Server Error']
+
+    and the student watched ASI:One spin on "working on your request" for an
+    answer that had been thrown away in transit. Delivery is the only leg of
+    that round trip this side can do anything about, so a FAILED status gets
+    two more tries with a pause for a transient relay fault to clear.
+
+    Test doubles' send() returns None; only an explicit FAILED status retries.
+    """
+    from uagents_core.types import DeliveryStatus
+
+    delay = base_delay
+    status = None
+    for attempt in range(attempts):
+        status = await ctx.send(destination, message)
+        if getattr(status, "status", None) != DeliveryStatus.FAILED:
+            return status
+        if attempt + 1 < attempts:
+            ctx.logger.warning(
+                f"Delivery to {destination[:16]}… failed "
+                f"({getattr(status, 'detail', '')!r}); retrying in {delay:.1f}s"
+            )
+            await asyncio.sleep(delay)
+            delay *= 2.5
+    ctx.logger.error(
+        f"Delivery to {destination[:16]}… failed after {attempts} attempts — "
+        "the reply is lost and the client will show no answer for this turn"
+    )
+    return status

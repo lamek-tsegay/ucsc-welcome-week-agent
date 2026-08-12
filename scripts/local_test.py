@@ -261,8 +261,15 @@ async def test_navigation_echo_loop() -> None:
         len(chat_replies(ctx)) == 1,
         "navigation echo: agent replied to its own echoed output — loop risk",
     )
+    # Two defences can catch an echoed reply: the exact-match echo guard
+    # ("Suppressed inbound…") and the assistant-prose gate ("Dropped relayed
+    # assistant prose…") — a route reply is long structured prose, so the
+    # blunter gate fires first. Either one logging is the loop defence working.
     check(
-        any("Suppressed" in line for line in ctx.logger.lines),
+        any(
+            "Suppressed" in line or "assistant prose" in line
+            for line in ctx.logger.lines
+        ),
         "navigation echo: suppression was not logged",
     )
 

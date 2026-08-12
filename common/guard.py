@@ -250,3 +250,39 @@ async def is_stale_replay(
         return False
     await asyncio.sleep(hold)
     return not guard.is_newest(sender, sequence)
+
+
+# --- relayed assistant prose --------------------------------------------------
+#
+# The echo suppression above matches inbound against what *we* sent. On
+# 2026-08-12 the clubs agent's live log showed a second species the match can
+# never catch: ASI:One's orchestrator sending its *own* words in as queries —
+# first its hand-off blurb ("I've connected you with the UCSC clubs agent,
+# which has responded…"), then a full multi-section answer about UCSC clubs it
+# had generated itself, headers and all. Each got treated as a fresh student
+# question and answered, the orchestrator folded the answer into more prose,
+# and the UI sat on "working on your request" while the loop turned.
+#
+# Real queries in this system are short: a sentence, a tapped selection, a
+# club name. Assistant output is long and structured. The gate below is
+# deliberately blunt — length plus markdown structure, or an opener no student
+# would type — because the cost of a false positive is one unanswered message
+# from someone pasting an essay, while a false negative feeds the loop.
+
+_ASSISTANT_OPENERS = (
+    "i've connected you with",
+    "i have connected you with",
+    "i can help with that",
+)
+
+_STRUCTURE_MARKERS = ("\n##", "\n**", "\n- ", "\n• ", "\n1.", "**:")
+
+
+def is_assistant_prose(text: str) -> bool:
+    """True when inbound text reads as a relayed assistant turn, not a person."""
+    lowered = text.strip().lower()
+    if any(lowered.startswith(opener) for opener in _ASSISTANT_OPENERS):
+        return True
+    if len(text) < 350:
+        return False
+    return any(marker in text for marker in _STRUCTURE_MARKERS)

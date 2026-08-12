@@ -38,10 +38,10 @@ from common.chat import (
     parse_card_selection,
     strip_mention,
 )
-from common.guard import EchoGuard, is_stale_replay
+from common.guard import EchoGuard, is_assistant_prose, is_stale_replay
 from common.loader import nsbe
 from common.registration import register
-from common.transport import agent_kwargs
+from common.transport import agent_kwargs, deliver
 
 load_dotenv()
 
@@ -134,12 +134,12 @@ def _note_outbound(sender: str, message: ChatMessage) -> None:
 
 async def _send(ctx: Context, sender: str, message: ChatMessage) -> None:
     _note_outbound(sender, message)
-    await ctx.send(sender, message)
+    await deliver(ctx, sender, message)
 
 
 @chat_proto.on_message(ChatMessage)
 async def handle_message(ctx: Context, sender: str, msg: ChatMessage):
-    await ctx.send(sender, make_ack(msg))
+    await deliver(ctx, sender, make_ack(msg))
 
     if any(isinstance(item, StartSessionContent) for item in msg.content):
         await _send(ctx, sender, cards.welcome_message())
@@ -191,6 +191,15 @@ async def handle_message(ctx: Context, sender: str, msg: ChatMessage):
                 return
             except Exception:
                 ctx.logger.exception("Card action failed")
+
+        # ASI:One's orchestrator sometimes sends its own generated prose in as
+        # a query — its hand-off blurb, or a whole answer it wrote itself.
+        # Answering it hands the orchestrator more text to fold in and re-send;
+        # the observed end state is the UI stuck on "working on your request".
+        # See common/guard.is_assistant_prose for the live-log evidence.
+        if is_assistant_prose(text):
+            ctx.logger.info(f"Dropped relayed assistant prose from {sender}")
+            return
 
         reason = guard.classify(sender, text)
         if reason is not None:

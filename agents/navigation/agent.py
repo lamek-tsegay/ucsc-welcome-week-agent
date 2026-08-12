@@ -43,10 +43,10 @@ from common.chat import (
     strip_mention,
 )
 from common.colleges import by_key, by_landmark
-from common.guard import EchoGuard, is_stale_replay
+from common.guard import EchoGuard, is_assistant_prose, is_stale_replay
 from common.loader import landmark_name, landmarks
 from common.registration import register
-from common.transport import agent_kwargs
+from common.transport import agent_kwargs, deliver
 
 # "always step-free", "step free on/off", "I use a wheelchair" — a persistent
 # preference, distinct from asking for one step-free route.
@@ -206,7 +206,7 @@ def _note_outbound(sender: str, message: ChatMessage) -> None:
 async def _send(ctx: Context, sender: str, reply: NavReply) -> None:
     _remember(ctx, sender, reply)
     _note_outbound(sender, reply.message)
-    await ctx.send(sender, reply.message)
+    await deliver(ctx, sender, reply.message)
 
 
 async def _run_query(ctx: Context, sender: str, text: str) -> None:
@@ -236,13 +236,13 @@ async def _handle_selection(
     if action == "about":
         message = cards.about_message()
         _note_outbound(sender, message)
-        await ctx.send(sender, message)
+        await deliver(ctx, sender, message)
         return True
 
     if action == "links":
         message = cards.links_message()
         _note_outbound(sender, message)
-        await ctx.send(sender, message)
+        await deliver(ctx, sender, message)
         return True
 
     if action == "pref_stepfree":
@@ -250,13 +250,13 @@ async def _handle_selection(
         profile.set_accessible(sender, now_on)
         message = cards.step_free_toggled_message(now_on)
         _note_outbound(sender, message)
-        await ctx.send(sender, message)
+        await deliver(ctx, sender, message)
         return True
 
     if action == "set_home":
         message = cards.college_picker_message()
         _note_outbound(sender, message)
-        await ctx.send(sender, message)
+        await deliver(ctx, sender, message)
         return True
 
     if action == "set_college":
@@ -273,7 +273,7 @@ async def _handle_selection(
                 note="I don't know your college yet."
             )
             _note_outbound(sender, message)
-            await ctx.send(sender, message)
+            await deliver(ctx, sender, message)
             return True
         await _run_query(ctx, sender, f"what's near {landmark_name(home_id)}")
         return True
@@ -316,7 +316,7 @@ async def _handle_selection(
 @chat_proto.on_message(ChatMessage)
 async def handle_message(ctx: Context, sender: str, msg: ChatMessage):
     # Acknowledge before doing any work.
-    await ctx.send(sender, make_ack(msg))
+    await deliver(ctx, sender, make_ack(msg))
 
     if any(isinstance(item, StartSessionContent) for item in msg.content):
         home_id = _home_id(ctx, sender)
@@ -325,7 +325,7 @@ async def handle_message(ctx: Context, sender: str, msg: ChatMessage):
             step_free=profile.accessible(sender),
         )
         _note_outbound(sender, message)
-        await ctx.send(sender, message)
+        await deliver(ctx, sender, message)
         return
 
     if any(isinstance(item, EndSessionContent) for item in msg.content):
@@ -357,7 +357,7 @@ async def handle_message(ctx: Context, sender: str, msg: ChatMessage):
                 step_free=profile.accessible(sender),
             )
             _note_outbound(sender, message)
-            await ctx.send(sender, message)
+            await deliver(ctx, sender, message)
             return
 
         # Card taps bypass the guard — tapping twice is legitimate, not an echo.
@@ -372,6 +372,15 @@ async def handle_message(ctx: Context, sender: str, msg: ChatMessage):
             except Exception:
                 ctx.logger.exception("Card action failed")
 
+        # ASI:One's orchestrator sometimes sends its own generated prose in as
+        # a query — its hand-off blurb, or a whole answer it wrote itself.
+        # Answering it hands the orchestrator more text to fold in and re-send;
+        # the observed end state is the UI stuck on "working on your request".
+        # See common/guard.is_assistant_prose for the live-log evidence.
+        if is_assistant_prose(text):
+            ctx.logger.info(f"Dropped relayed assistant prose from {sender}")
+            return
+
         reason = guard.classify(sender, text)
         if reason is not None:
             ctx.logger.info(f"Suppressed inbound from {sender} ({reason})")
@@ -382,19 +391,19 @@ async def handle_message(ctx: Context, sender: str, msg: ChatMessage):
             profile.set_accessible(sender, True)
             message = cards.step_free_toggled_message(True)
             _note_outbound(sender, message)
-            await ctx.send(sender, message)
+            await deliver(ctx, sender, message)
             return
         if _STEPFREE_OFF_RE.search(text):
             profile.set_accessible(sender, False)
             message = cards.step_free_toggled_message(False)
             _note_outbound(sender, message)
-            await ctx.send(sender, message)
+            await deliver(ctx, sender, message)
             return
 
         bridge = events_pointer(text)
         if bridge:
             guard.note_outbound(sender, bridge)
-            await ctx.send(sender, create_text_chat(bridge))
+            await deliver(ctx, sender, create_text_chat(bridge))
             return
 
         ctx.logger.info(f"Navigation query from {sender}: {text!r}")
@@ -407,7 +416,7 @@ async def handle_message(ctx: Context, sender: str, msg: ChatMessage):
                 "end, like *from Porter to McHenry Library*."
             )
             guard.note_outbound(sender, fallback)
-            await ctx.send(sender, create_text_chat(fallback))
+            await deliver(ctx, sender, create_text_chat(fallback))
         return
 
 

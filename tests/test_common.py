@@ -394,3 +394,102 @@ def test_agents_handle_messages_concurrently():
 
     kwargs = agent_kwargs(name="t", seed="s", port=1)
     assert kwargs.get("handle_messages_concurrently") is True
+
+
+# --- relayed assistant prose --------------------------------------------------
+
+
+def test_orchestrator_prose_is_recognised():
+    """The two message shapes from the 2026-08-12 live log, near verbatim.
+
+    ASI:One's orchestrator sent its hand-off blurb and then a whole generated
+    answer in as user queries. Answering them fed the loop that left the UI on
+    "working on your request"."""
+    from common.guard import is_assistant_prose
+
+    handoff = (
+        "I've connected you with the UCSC clubs agent, which has responded "
+        "and is ready to help you find your community at UCSC 🐌\n\n"
+        "They're asking what you're into and have suggested a few categories "
+        "to get started:\n- **anime**\n- **something outdoorsy**\n- **pre-med**\n\n"
+        "What would make this easier for you?"
+    )
+    generated_answer = (
+        "I can help with that! UC Santa Cruz has a vibrant club scene with "
+        "over 180 student-initiated organizations. Here's what you'll find:\n\n"
+        "## Types of Clubs at UCSC\n\n**Academic & Professional** - "
+        "Subject-specific groups across various disciplines\n**Cultural** - "
+        "Organizations celebrating diverse backgrounds"
+    )
+    assert is_assistant_prose(handoff)
+    assert is_assistant_prose(generated_answer)
+
+
+def test_real_student_messages_are_not_prose():
+    from common.guard import is_assistant_prose
+
+    for text in (
+        "Hi, I would like to know about the clubs at UCSC please!",
+        "clubs about hiking",
+        "I'm into anime and also kind of want something outdoorsy, and my "
+        "roommate said there's a surf club? Also anything for pre-med",
+        '{"action": "links", "source": "clubs_tab"}',
+        "when do they meet",
+    ):
+        assert not is_assistant_prose(text), text
+
+
+# --- delivery retry -----------------------------------------------------------
+
+
+def test_deliver_retries_failed_sends():
+    """A relayed 500 costs the student the whole answer — the 2026-08-12 log
+    showed a tap answered in milliseconds and thrown away in transit. deliver()
+    retries a FAILED status; anything else (including the None a test double
+    returns) is treated as sent."""
+    import asyncio
+    import logging
+    from types import SimpleNamespace
+
+    from uagents_core.types import DeliveryStatus
+
+    from common.transport import deliver
+
+    class FlakyCtx:
+        def __init__(self, failures: int):
+            self.failures = failures
+            self.calls = 0
+            self.logger = logging.getLogger("test.deliver")
+
+        async def send(self, destination, message):
+            self.calls += 1
+            if self.calls <= self.failures:
+                return SimpleNamespace(status=DeliveryStatus.FAILED, detail="500")
+            return SimpleNamespace(status=DeliveryStatus.DELIVERED, detail="")
+
+    async def scenario():
+        # Two failures, then success: three calls, answer delivered.
+        ctx = FlakyCtx(failures=2)
+        status = await deliver(ctx, "agent1xyz", "msg", base_delay=0.0)
+        assert ctx.calls == 3
+        assert status.status == DeliveryStatus.DELIVERED
+
+        # Permanent failure: stops at `attempts`, reports the failure.
+        ctx = FlakyCtx(failures=99)
+        status = await deliver(ctx, "agent1xyz", "msg", attempts=3, base_delay=0.0)
+        assert ctx.calls == 3
+        assert status.status == DeliveryStatus.FAILED
+
+        # A test double returning None sends exactly once.
+        class QuietCtx:
+            calls = 0
+            logger = logging.getLogger("test.deliver")
+
+            async def send(self, destination, message):
+                QuietCtx.calls += 1
+                return None
+
+        await deliver(QuietCtx(), "agent1xyz", "msg", base_delay=0.0)
+        assert QuietCtx.calls == 1
+
+    asyncio.run(scenario())

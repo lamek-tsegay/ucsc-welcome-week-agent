@@ -42,9 +42,9 @@ from common.chat import (
     parse_card_selection,
     strip_mention,
 )
-from common.guard import EchoGuard, is_stale_replay
+from common.guard import EchoGuard, is_assistant_prose, is_stale_replay
 from common.registration import register
-from common.transport import agent_kwargs
+from common.transport import agent_kwargs, deliver
 
 load_dotenv()
 
@@ -152,12 +152,12 @@ async def _send_query_result(ctx: Context, sender: str, text: str) -> None:
     ctx.storage.set(LAST_QUERY_KEY, text)
     ctx.storage.set(SHOWN_IDS_KEY, json.dumps(shown_ids))
     _note_outbound(sender, message)
-    await ctx.send(sender, message)
+    await deliver(ctx, sender, message)
 
 
 async def _send(ctx: Context, sender: str, message: ChatMessage) -> None:
     _note_outbound(sender, message)
-    await ctx.send(sender, message)
+    await deliver(ctx, sender, message)
 
 
 async def _handle_selection(
@@ -227,7 +227,7 @@ async def _handle_selection(
 
 @chat_proto.on_message(ChatMessage)
 async def handle_message(ctx: Context, sender: str, msg: ChatMessage):
-    await ctx.send(sender, make_ack(msg))
+    await deliver(ctx, sender, make_ack(msg))
 
     if any(isinstance(item, StartSessionContent) for item in msg.content):
         await _send(ctx, sender, cards.welcome_message())
@@ -274,6 +274,15 @@ async def handle_message(ctx: Context, sender: str, msg: ChatMessage):
             except Exception:
                 ctx.logger.exception("Card action failed")
 
+        # ASI:One's orchestrator sometimes sends its own generated prose in as
+        # a query — its hand-off blurb, or a whole answer it wrote itself.
+        # Answering it hands the orchestrator more text to fold in and re-send;
+        # the observed end state is the UI stuck on "working on your request".
+        # See common/guard.is_assistant_prose for the live-log evidence.
+        if is_assistant_prose(text):
+            ctx.logger.info(f"Dropped relayed assistant prose from {sender}")
+            return
+
         reason = guard.classify(sender, text)
         if reason is not None:
             ctx.logger.info(f"Suppressed inbound from {sender} ({reason})")
@@ -285,7 +294,7 @@ async def handle_message(ctx: Context, sender: str, msg: ChatMessage):
         if bridged:
             answer = create_text_chat(bridged)
             _note_outbound(sender, answer)
-            await ctx.send(sender, answer)
+            await deliver(ctx, sender, answer)
             return
 
         ctx.logger.info(f"Clubs query from {sender}: {text!r}")
@@ -298,7 +307,7 @@ async def handle_message(ctx: Context, sender: str, msg: ChatMessage):
                 "*music*, *tech* — or ask *what categories are there*."
             )
             guard.note_outbound(sender, fallback)
-            await ctx.send(sender, create_text_chat(fallback))
+            await deliver(ctx, sender, create_text_chat(fallback))
         return
 
 
