@@ -367,33 +367,35 @@ def detail_message(club: dict, others: list[dict]) -> ChatMessage:
 
 
 def categories_message() -> ChatMessage:
-    lines = ["**UCSC student organization categories**", ""]
-    lines.extend(f"• {entry['label']}" for entry in club_categories())
-    lines.append("")
-    lines.append(
-        "Ask about any of these, or just tell me what you're into — "
+    """The ten categories as buttons.
+
+    The bubble deliberately does not name them: they are the card's buttons,
+    and listing them above it printed the same ten labels twice. What the
+    bubble adds instead is the thing the buttons cannot say — that plain
+    description works too.
+    """
+    preamble = (
+        "Pick a category below, or just tell me what you're into — "
         "*I like hiking and photography* works fine."
     )
-    lines.append("")
-    lines.append(clubs_disclaimer())
-
-    buttons = [
+    chips = [
         MenuButton(
             f"{CATEGORY_EMOJI.get(entry['id'], '')} {entry['label']}".strip(),
             {"action": "category", "category": entry["id"]},
         )
         for entry in club_categories()
     ]
-    buttons.append(MenuButton("🎯 Match my vibe instead", {"action": "quiz"}))
-    return menu_message(
-        "\n".join(lines),
+    payload = build_chip_payload(
         title="Browse by category 🗂️",
         subtitle="Tap one to see its organizations",
         body_lines=None,
-        buttons=buttons,
+        chips=chips,
         source=SOURCE,
+        footer_buttons=[MenuButton("🎯 Match my vibe instead", {"action": "quiz"})],
         per_row=2,
+        footnote=clubs_footnote(),
     )
+    return card_message(preamble, payload)
 
 
 def no_matches_message(query_text: str) -> ChatMessage:

@@ -221,12 +221,21 @@ def test_response_labels_every_entry_on_the_card():
         assert expected in badges, f"{club_id} missing its {expected} badge"
 
 
-def test_categories_query_lists_categories():
+def test_categories_query_offers_every_category_as_a_button():
+    """The categories are the card's buttons. Naming them in the bubble too
+    printed the same ten labels twice, so the assertion follows them onto the
+    card — every category must still be one tap away."""
+    from common.loader import club_categories
+
     message, ids = asyncio.run(respond_to_query("what categories are there"))
     assert ids == []
-    body = _text(message)
-    assert "Cultural & Identity" in body
-    assert "Games, Hobbies & Special Interest" in body
+
+    payload = _card_text(message)
+    for entry in club_categories():
+        assert entry["label"] in payload, entry["id"]
+
+    # And the bubble says the thing the buttons cannot: free text works.
+    assert "tell me what you're into" in _text(message)
 
 
 def test_no_match_response_suggests_alternatives():
