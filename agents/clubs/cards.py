@@ -229,7 +229,7 @@ def category_card(entry: dict, members: list[dict]) -> ChatMessage:
         per_row=1,
         # Chips carry no badges, so without this a card of unmarked names
         # would read as a confirmed roster.
-        footnote="✅ = confirmed on an official UCSC page. " + clubs_footnote(),
+        footnote="✅ = confirmed on an official UCSC page · " + clubs_footnote(),
     )
     return card_message("", payload)
 
@@ -258,10 +258,10 @@ def list_message(
             record_id=item.club["id"],
             heading=_name_with_emoji(item.club),
             body=item.club["description"],
-            badges=[
-                (category_label(item.club["category"]), "info"),
-                badge(item.club["verified"]),
-            ],
+            # Verification only. The category is already the emoji on the
+            # heading; naming it again in a badge cost ~70 bytes per row on
+            # cards ASI:One's orchestrator has to chew through.
+            badges=[badge(item.club["verified"])],
             button_label="Details",
         )
         for item in scored
@@ -448,44 +448,41 @@ def detail_message(club: dict, others: list[dict]) -> ChatMessage:
     return card_message(f"**{club['name']}**", payload)
 
 
-def all_clubs_message(all_clubs: list[dict]) -> ChatMessage:
-    """Every organization in one card, alphabetical, names left-aligned.
+def categories_message(all_clubs: list[dict]) -> ChatMessage:
+    """Browse lands here: ten categories, not seventy-six organizations.
 
-    A list rather than a grid of buttons, for one reason: a button centres its
-    own label and the element schema exposes no way to change that, so a
-    column of buttons puts every name at a different starting point. List
-    headings are text, which the client left-aligns — so names line up down
-    the card however long or short they are. Body and badges are left empty to
-    keep each row to a name and its button.
-
-    Sorting is on the club name only, case-insensitively, so neither the
-    category emoji nor the confirmed tick drags entries out of order.
+    This replaces a single card that listed every club alphabetically. That
+    card was honest and complete — and 23.8 KB, ten times the next-largest
+    reply in the system, and the one path that reliably left ASI:One's
+    orchestrator grinding on "working on your request". Every reply passes
+    through that orchestrator before the student sees it, so the roster is
+    now one tap deeper: each category card still lists *all* of its members
+    alphabetically, nothing truncated, at a tenth of the weight.
     """
-    ordered = sorted(all_clubs, key=lambda c: c["name"].lower())
-    items = [
-        CardItem(
-            record_id=club["id"],
-            heading=f"{_name_with_emoji(club)}{' ✅' if club['verified'] else ''}",
-            body="",
-            badges=[],
-            button_label="Details",
+    counts: dict[str, int] = {}
+    for club in all_clubs:
+        counts[club["category"]] = counts.get(club["category"], 0) + 1
+
+    chips = [
+        MenuButton(
+            f"{CATEGORY_EMOJI.get(entry['id'], '')} {entry['label']} · {counts.get(entry['id'], 0)}".strip(),
+            {"action": "category", "category": entry["id"]},
         )
-        for club in ordered
+        for entry in club_categories()
+        if counts.get(entry["id"])
     ]
-    payload = build_list_payload(
-        items,
-        title=f"All {len(ordered)} UCSC clubs 🐌",
-        subtitle="Alphabetical · tap any name for details",
-        id_field=CLUB_ID_FIELD,
+    payload = build_chip_payload(
+        title=f"All {len(all_clubs)} UCSC clubs 🐌",
+        subtitle="Pick a category — each lists every one of its organizations",
+        body_lines=None,
+        chips=chips,
         source=SOURCE,
         footer_buttons=[MenuButton("🎯 Match my vibe instead", {"action": "quiz"})],
-        footnote="✅ = confirmed on an official UCSC page. " + clubs_footnote(),
+        per_row=1,
+        footnote=clubs_footnote(),
     )
-    return card_message(
-        "Tap any organization for details, or tell me what you're into — "
-        "*I like hiking and photography* works fine.",
-        payload,
-    )
+    return card_message("", payload)
+
 
 def no_matches_message(query_text: str) -> ChatMessage:
     labels = ", ".join(entry["label"] for entry in club_categories())

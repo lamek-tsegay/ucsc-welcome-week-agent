@@ -123,7 +123,17 @@ def _button(button: MenuButton, source: str) -> dict[str, Any]:
 def _button_rows(
     buttons: list[MenuButton], source: str, *, per_row: int = 3
 ) -> list[dict[str, Any]]:
-    """Buttons chunked into row groups so long menus wrap instead of squeezing."""
+    """Buttons chunked into row groups so long menus wrap instead of squeezing.
+
+    At per_row=1 the buttons are emitted bare, no row group around each: a
+    lone button in a column already renders full width (list rows have always
+    placed their button directly among children), and the wrapper was ~60
+    bytes of payload per button. On a 35-chip category card that overhead was
+    a fifth of the entire message — weight ASI:One's orchestrator chews on
+    before the student sees anything.
+    """
+    if per_row == 1:
+        return [_button(button, source) for button in buttons]
     rows: list[dict[str, Any]] = []
     for start in range(0, len(buttons), per_row):
         rows.append(

@@ -89,7 +89,7 @@ def _every_card() -> list[tuple[str, dict]]:
     add("clubs.welcome", clubs_cards.welcome_message())
     add("clubs.interests", clubs_cards.interests_message())
     add("clubs.vibe_picker", clubs_cards.vibe_picker_message())
-    add("clubs.all_clubs", clubs_cards.all_clubs_message(list(clubs_data())))
+    add("clubs.categories_hub", clubs_cards.categories_message(list(clubs_data())))
     add("clubs.no_matches", clubs_cards.no_matches_message("zzz"))
     add("clubs.vibe_results", respond_to_vibe("creative")[0])
     add("clubs.category", respond_to_category("tech_engineering")[0])
@@ -190,6 +190,21 @@ def test_every_button_is_the_same_shade(name, payload):
 
     _walk(payload, visit)
     assert not muted, f"{name}: not bright green:\n  " + "\n  ".join(muted)
+
+
+@pytest.mark.parametrize("name,payload", ALL_CARDS, ids=[n for n, _ in ALL_CARDS])
+def test_card_stays_inside_the_weight_budget(name, payload):
+    """No reply may exceed 7 KB of card payload.
+
+    The schema's hard cap is 64 KB, but the practical limit is much lower:
+    every reply passes through ASI:One's orchestrator before the student sees
+    it, and the 23.8 KB all-clubs card was the one reply that reliably left
+    the UI stuck on "working on your request". Largest legitimate card today
+    is the 35-org engineering category at ~6.3 KB; the budget sits just above
+    it so growth is a decision, not an accident.
+    """
+    weight = len(json.dumps(payload))
+    assert weight <= 7000, f"{name} is {weight:,} bytes"
 
 
 @pytest.mark.parametrize("name,payload", ALL_CARDS, ids=[n for n, _ in ALL_CARDS])
