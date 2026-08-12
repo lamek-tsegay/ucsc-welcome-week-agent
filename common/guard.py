@@ -23,9 +23,16 @@ import time
 from dataclasses import dataclass, field
 
 # How long a message we have already answered is held to see whether a newer
-# one is right behind it. Replayed history arrives in an immediate burst, so
-# this only has to outlast the gap between messages in one delivery.
-REPLAY_HOLD_SECONDS = 1.5
+# one is right behind it.
+#
+# Deliberately tiny. Replayed history is dispatched as one batch, so the newer
+# message is already in flight — this only has to outlast the scheduling gap
+# between sibling handlers, not any human-scale delay. It was 1.5s at first,
+# which was long enough for a student re-tapping a button to notice the pause
+# on every single tap, in exchange for catching a batch that was already there
+# within milliseconds. The cost of being wrong runs one way: too short simply
+# misses a replay and answers it, as the agent did before any of this existed.
+REPLAY_HOLD_SECONDS = 0.25
 
 _NORMALISE_RE = re.compile(r"[^a-z0-9 ]+")
 _WHITESPACE_RE = re.compile(r"\s+")
