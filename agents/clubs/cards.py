@@ -183,8 +183,8 @@ def interests_message() -> ChatMessage:
 def vibe_picker_message() -> ChatMessage:
     """The same question, reached deliberately via 🎯 Match my vibe."""
     preamble = (
-        "**What's your vibe?** Tap whichever sounds most like you — no club "
-        "names needed. You can also just describe yourself in your own words."
+        "**What's your vibe?** Tap what fits, or just describe yourself in "
+        "your own words."
     )
     return _interest_card(
         preamble,
