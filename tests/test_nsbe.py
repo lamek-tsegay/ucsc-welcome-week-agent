@@ -147,20 +147,14 @@ def test_mission_is_quoted_verbatim():
     assert mission in _rendered(cards.about_message())
 
 
-def test_join_card_offers_every_published_route():
-    """The routes are buttons now, not URLs in the text — a URL there gets
-    unfurled into a preview card, and a url on a button stops the card
-    rendering at all. So the card names each route and the agent supplies the
-    address when one is tapped."""
-    payload = json.loads(_card(cards.join_message()))
-    asked: set[str] = set()
+def _redirects(payload) -> set[str]:
+    """Every address a button opens directly, via `action.redirect`."""
+    found: set[str] = set()
 
     def walk(node):
         if isinstance(node, dict):
-            if node.get("type") == "button":
-                selection = node["action"]["selection"]
-                if selection.get("action") == "open_link":
-                    asked.add(selection.get("link", ""))
+            if node.get("type") == "button" and "redirect" in node["action"]:
+                found.add(node["action"]["redirect"])
             for value in node.values():
                 walk(value)
         elif isinstance(node, list):
@@ -168,32 +162,52 @@ def test_join_card_offers_every_published_route():
                 walk(entry)
 
     walk(payload)
-    assert {"email", "instagram", "linktree"} <= asked
+    return found
+
+
+def _link_taps(payload) -> set[str]:
+    """Every link a button asks the agent for instead of opening itself."""
+    found: set[str] = set()
+
+    def walk(node):
+        if isinstance(node, dict):
+            if node.get("type") == "button":
+                selection = node["action"].get("selection", {})
+                if selection.get("action") == "open_link":
+                    found.add(selection.get("link", ""))
+            for value in node.values():
+                walk(value)
+        elif isinstance(node, list):
+            for entry in node:
+                walk(entry)
+
+    walk(payload)
+    return found
+
+
+def _url(link_id: str) -> str:
+    return next(link["url"] for link in nsbe()["links"] if link["id"] == link_id)
+
+
+def test_join_card_offers_every_published_route():
+    """The routes are buttons, not URLs in the text — a URL there gets unfurled
+    into a preview card. Instagram and the linktree open in one tap; email
+    comes back as copyable text."""
+    payload = json.loads(_card(cards.join_message()))
+
+    assert {_url("instagram"), _url("linktree")} <= _redirects(payload)
+    assert "email" in _link_taps(payload)
 
     # The meeting details still appear, composed from one source.
     assert nsbe()["meetings"]["location"] in _rendered(cards.join_message())
 
 
-def test_links_card_offers_every_link_as_a_button():
-    """Six URLs in the bubble would be six preview cards, so each link is a
-    button that names it; the agent replies with the address when tapped."""
+def test_links_card_opens_every_link_in_one_tap():
+    """Six URLs in the bubble would be six preview cards. Each is a button
+    that opens the page itself."""
     payload = json.loads(_card(cards.links_message()))
-    asked: set[str] = set()
 
-    def walk(node):
-        if isinstance(node, dict):
-            if node.get("type") == "button":
-                selection = node["action"]["selection"]
-                if selection.get("action") == "open_link":
-                    asked.add(selection.get("link", ""))
-            for value in node.values():
-                walk(value)
-        elif isinstance(node, list):
-            for entry in node:
-                walk(entry)
-
-    walk(payload)
-    assert asked == {link["id"] for link in nsbe()["links"]}
+    assert _redirects(payload) == {link["url"] for link in nsbe()["links"]}
     assert "http" not in _text(cards.links_message())
 
 
@@ -257,7 +271,7 @@ def test_every_card_button_leads_somewhere_real():
 
         def walk(node):
             if isinstance(node, dict):
-                if node.get("type") == "button":
+                if node.get("type") == "button" and "selection" in node["action"]:
                     found.append(node["action"]["selection"])
                 for value in node.values():
                     walk(value)
@@ -266,11 +280,10 @@ def test_every_card_button_leads_somewhere_real():
                     walk(entry)
 
         walk(payload)
-        assert found, builder.__name__
+        assert found or _redirects(payload), builder.__name__
         for selection in found:
-            # A button either navigates to a known topic or opens a link —
-            # and a link button still carries which link, so a client that
-            # ignores the url gets the address back instead of nothing.
+            # A button either navigates to a known topic or asks the agent for
+            # a link it does not open itself.
             if selection.get("action") == "open_link":
                 assert selection.get("link"), (
                     f"{builder.__name__}: link button names no link"

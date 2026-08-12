@@ -339,11 +339,10 @@ def detail_message(club: dict, others: list[dict]) -> ChatMessage:
         )
     )
     link_buttons.append(
-        MenuButton(
-            "✉️ Email SOAR",
-            {"action": "open_email"},
-            url=f"mailto:{CLUBS_CONTACT}",
-        )
+        # No url: redirect is documented for web pages, and a mailto that the
+        # client declines to open would be a button that does nothing. Tapping
+        # this returns the address as text, which is copyable anyway.
+        MenuButton("✉️ Email SOAR", {"action": "open_email"})
     )
 
     payload = build_detail_payload(

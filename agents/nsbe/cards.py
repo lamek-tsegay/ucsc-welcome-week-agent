@@ -114,11 +114,12 @@ def join_message() -> ChatMessage:
     contact = nsbe()["contact"]
     # Buttons that open the links, so nothing in the bubble gets unfurled.
     chips = [
+        # No url: redirect is documented for web pages, not mailto. Tapping
+        # this returns the address as text, which is what you want to copy.
         MenuButton(
             "✉️ Email them",
             {"action": "open_link", "link": "email"},
             primary=True,
-            url=f"mailto:{contact['email']}",
         ),
         MenuButton(
             "📸 Instagram",

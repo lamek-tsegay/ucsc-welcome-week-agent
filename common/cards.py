@@ -64,11 +64,12 @@ class MenuButton:
     list/detail buttons already use, so `parse_card_selection` handles all of
     them uniformly. `source` is injected at build time.
 
-    `url` makes the button open a link instead. It is carried on the action as
-    `url`, and the selection travels with it, so a client that does not honour
-    the link still sends the tap back to the agent rather than doing nothing —
-    the agent then replies with the link as text. That fallback is why this is
-    safe to use before the behaviour is confirmed in the live client.
+    `url` makes the button open the page directly. It is carried on the action
+    as `redirect`, which is the key the client actually honours.
+
+    `selection` is still required on a link button. It is what the agent
+    answers with if a client ever ignores the redirect, and the tests check
+    every one of those fallbacks resolves to a real address.
     """
 
     label: str
@@ -82,19 +83,25 @@ def _badge(label: str, variant: str) -> dict[str, Any]:
 
 
 def _button(button: MenuButton, source: str) -> dict[str, Any]:
-    """Render a button. `MenuButton.url` is deliberately NOT emitted.
+    """Render a button.
 
-    Putting a `url` on the action stopped the whole card rendering — the same
-    silent failure an unrecognised heading level caused: valid JSON, every
-    offline gate green, no card. Confirmed against the live client on
-    2026-08-12, where a detail card carrying url buttons produced only its
-    text bubble while a card without them rendered normally in the same thread.
-
-    The field is kept on MenuButton because the selection fallback it was
-    designed with turns out to be a working answer on its own: a link button
-    sends its tap to the agent, which replies with the address. Nothing is
-    lost by dropping the url except the one hop.
+    A link button carries `{"redirect": url}` and nothing else. The obvious
+    alternative — sending `redirect` and `selection` together, so a client that
+    ignores one falls back to the other — is exactly the kind of guess that
+    stopped these cards rendering before: an unrecognised key on the action is
+    a silent failure, valid JSON and every offline gate green, no card. So the
+    action carries only the one key the client documents for this, and the
+    fallback lives where it costs nothing if unused: the agent still answers
+    `open_*` selections with the address as text.
     """
+    if button.url:
+        return {
+            "type": "button",
+            "label": button.label,
+            "primary": button.primary,
+            "action": {"redirect": button.url},
+        }
+
     selection = dict(button.selection)
     selection.setdefault("source", source)
     return {

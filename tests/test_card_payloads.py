@@ -16,6 +16,7 @@ from datetime import date
 
 import pytest
 
+from common.notices import OFFICIAL_CLUBS_URL, OFFICIAL_EVENTS_URL
 from uagents_core.contrib.protocols.chat import MetadataContent
 
 # The element-tree schema, from the Agentverse element-tree-primitives docs
@@ -49,7 +50,7 @@ ALLOWED_KEYS = {
     "button": {"type", "label", "primary", "action"},
     "list": {"type", "items"},
 }
-ALLOWED_ACTION_KEYS = {"selection"}
+ALLOWED_ACTION_KEYS = {"selection", "redirect"}
 
 DURING = date(2026, 9, 22)
 
@@ -155,9 +156,18 @@ def test_card_uses_only_renderable_elements(name, payload):
         if kind == "badge" and node.get("variant") not in VALID_BADGE_VARIANTS:
             violations.append(f"{path}: badge variant {node.get('variant')!r}")
         if kind == "button":
-            selection = node.get("action", {}).get("selection")
-            if not isinstance(selection, dict) or not selection:
-                violations.append(f"{path}: button carries no selection payload")
+            action = node.get("action", {})
+            # A button either opens a page or sends a tap back — never both,
+            # and never neither.
+            if "redirect" in action:
+                if "selection" in action:
+                    violations.append(f"{path}: button mixes redirect and selection")
+                if not str(action["redirect"]).startswith("https://"):
+                    violations.append(f"{path}: redirect {action['redirect']!r} is not https")
+            else:
+                selection = action.get("selection")
+                if not isinstance(selection, dict) or not selection:
+                    violations.append(f"{path}: button carries no selection payload")
 
     _walk(payload, visit)
     assert not violations, f"{name}:\n  " + "\n  ".join(violations)
@@ -213,7 +223,7 @@ def _selections(payload) -> list[dict]:
 
     def walk(node):
         if isinstance(node, dict):
-            if node.get("type") == "button":
+            if node.get("type") == "button" and "selection" in node["action"]:
                 found.append(node["action"]["selection"])
             for value in node.values():
                 walk(value)
@@ -225,28 +235,48 @@ def _selections(payload) -> list[dict]:
     return found
 
 
-def test_club_detail_reaches_links_through_the_agent():
-    """Link buttons send a tap; the agent replies with the address.
+def _redirects(payload) -> set[str]:
+    found: set[str] = set()
 
-    They cannot carry the url themselves — putting one on a button's action
-    stopped the whole card rendering. So the round trip is the mechanism, not
-    a fallback: no URL sits in the bubble to be unfurled, and every link
-    button names which link it wants.
+    def walk(node):
+        if isinstance(node, dict):
+            if node.get("type") == "button" and "redirect" in node["action"]:
+                found.add(node["action"]["redirect"])
+            for value in node.values():
+                walk(value)
+        elif isinstance(node, list):
+            for entry in node:
+                walk(entry)
+
+    walk(payload)
+    return found
+
+
+def test_club_detail_opens_links_in_one_tap():
+    """A link button opens the page itself, via `action.redirect`.
+
+    The url never appears in the bubble, where the client would unfurl it into
+    a preview box; it lives on the button, where the tap does the whole job.
     """
     from agents.clubs.service import respond_to_selection
 
     message = respond_to_selection("be_swe")
     assert "http" not in _bubble(message), "a URL in the bubble unfurls a preview"
 
-    actions = {sel.get("action") for sel in _selections(_payload(message))}
-    assert {"open_site", "open_directory", "open_email"} <= actions
+    payload = _payload(message)
+    redirects = _redirects(payload)
+    assert OFFICIAL_CLUBS_URL in redirects, "no button opens the campus directory"
+    assert any("swe" in url.lower() for url in redirects), "no button opens the club's own site"
+
+    # Email stays a tap: redirect is documented for pages, and an address is
+    # more useful returned as copyable text anyway.
+    assert "open_email" in {sel.get("action") for sel in _selections(payload)}
 
     # An unverified club has no site of its own but stays reachable.
-    actions = {sel.get("action") for sel in _selections(_payload(respond_to_selection("c_anime")))}
-    assert "open_directory" in actions
+    assert OFFICIAL_CLUBS_URL in _redirects(_payload(respond_to_selection("c_anime")))
 
 
-def test_event_detail_reaches_the_schedule_through_the_agent():
+def test_event_detail_opens_the_schedule_in_one_tap():
     """The official schedule is the link this agent owns. Maps and routing
     belong to the navigation agent, so no map link appears here."""
     from agents.events.service import respond_to_selection
@@ -254,8 +284,7 @@ def test_event_detail_reaches_the_schedule_through_the_agent():
     for event_id in ("cornucopia", "choose_your_own_slugventure"):
         message = respond_to_selection(event_id)
         assert "http" not in _bubble(message), event_id
-        actions = {sel.get("action") for sel in _selections(_payload(message))}
-        assert "open_schedule" in actions, event_id
+        assert OFFICIAL_EVENTS_URL in _redirects(_payload(message)), event_id
 
 
 def test_listings_carry_no_url_in_the_bubble():
