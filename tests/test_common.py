@@ -377,3 +377,20 @@ def test_new_messages_are_never_delayed():
         assert elapsed < 0.05, f"new message waited {elapsed:.2f}s"
 
     asyncio.run(scenario())
+
+
+def test_agents_handle_messages_concurrently():
+    """The replay defence depends on it.
+
+    common/guard.is_stale_replay holds a message it has already answered to see
+    whether a newer one arrives behind it. uagents processes messages one at a
+    time by default, which would make the held message block the very arrival
+    it is waiting for — it would wait out the hold, conclude it was newest, and
+    answer anyway, with every other replayed message queued behind it doing the
+    same. Turning this off would not fail loudly; it would just make every tap
+    slow again.
+    """
+    from common.transport import agent_kwargs
+
+    kwargs = agent_kwargs(name="t", seed="s", port=1)
+    assert kwargs.get("handle_messages_concurrently") is True
