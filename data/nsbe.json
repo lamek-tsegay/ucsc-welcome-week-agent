@@ -1,0 +1,119 @@
+{
+ "_meta": {
+  "description": "Facts about the UC Santa Cruz chapter of the National Society of Black Engineers, for the NSBE club agent.",
+  "sources": {
+   "chapter_site": {
+    "url": "https://nsbe.engineering.ucsc.edu/",
+    "checked": "2026-08-12",
+    "note": "The chapter's own page on UCSC's engineering subdomain. Official."
+   },
+   "linktree": {
+    "url": "https://linktr.ee/eventsComingUpUCSC",
+    "checked": "2026-08-12",
+    "note": "The link hub the chapter site and Instagram both point at."
+   },
+   "instagram": {
+    "url": "https://www.instagram.com/nsbe.ucsc/",
+    "checked": "2026-08-12",
+    "note": "Linked from the chapter site. Used only to confirm the account exists and is the chapter's; post contents are not reproduced here."
+   }
+  },
+  "contact_policy": "Unlike data/clubs.json, this file DOES carry a contact address and a meeting time — because the chapter publishes both on its own official page, so they are cited rather than guessed. Every such field records where it came from and when it was read.",
+  "staleness_warning": "A meeting time published on a static page can go out of date between terms without the page changing. The agent always states when the page was read and sends students to the chapter's Instagram, which is where changes actually get announced.",
+  "not_recorded": "Board member names, officer roles, and specific event dates are deliberately absent: the chapter site publishes none of them, and Instagram post contents were not read. Inventing them would be exactly the failure the rest of this project is built to prevent."
+ },
+ "chapter": {
+  "name": "National Society of Black Engineers at UC Santa Cruz",
+  "short_name": "UCSC NSBE",
+  "mission": "to increase the number of culturally responsible Black engineers and scientists who excel academically, succeed professionally and positively impact the community.",
+  "mission_is_quote": true,
+  "mission_source": "chapter_site",
+  "about": "NSBE provides resources, opportunities, and community for students in STEM. The chapter welcomes students of all majors and ethnicities, with a particular focus on supporting Black students in STEM.",
+  "about_source": "chapter_site",
+  "parent_organization": {
+   "name": "National Society of Black Engineers",
+   "url": "https://nsbe.org/",
+   "source": "chapter_site"
+  },
+  "affiliation": {
+   "name": "Baskin School of Engineering",
+   "url": "https://undergrad.engineering.ucsc.edu/student-organizations/",
+   "source": "chapter_site"
+  }
+ },
+ "meetings": {
+  "day": "Tuesdays",
+  "time": "7:30 PM",
+  "location": "Baskin Engineering 2, Room 399",
+  "source": "chapter_site",
+  "checked": "2026-08-12",
+  "confirm_via": "instagram"
+ },
+ "contact": {
+  "email": "nsbe@ucsc.edu",
+  "source": "chapter_site"
+ },
+ "links": [
+  {
+   "id": "site",
+   "label": "Chapter website",
+   "url": "https://nsbe.engineering.ucsc.edu/",
+   "why": "The official page, on UCSC's engineering subdomain",
+   "source": "chapter_site"
+  },
+  {
+   "id": "instagram",
+   "label": "Instagram @nsbe.ucsc",
+   "url": "https://www.instagram.com/nsbe.ucsc/",
+   "why": "Where the chapter posts what's happening now",
+   "source": "chapter_site"
+  },
+  {
+   "id": "linkedin",
+   "label": "LinkedIn",
+   "url": "https://www.linkedin.com/company/ucscnsbe/",
+   "why": "Chapter page for professional networking",
+   "source": "chapter_site"
+  },
+  {
+   "id": "linktree",
+   "label": "All their links",
+   "url": "https://linktr.ee/eventsComingUpUCSC",
+   "why": "The chapter's own link hub, including the email sign-up form",
+   "source": "chapter_site"
+  },
+  {
+   "id": "resume",
+   "label": "Submit your resume",
+   "url": "https://forms.gle/BxtXyf6M3o6ztqte9",
+   "why": "The chapter's resume form, for their resume book",
+   "source": "linktree"
+  },
+  {
+   "id": "national",
+   "label": "National NSBE",
+   "url": "https://nsbe.org/",
+   "why": "The parent organization",
+   "source": "chapter_site"
+  }
+ ],
+ "join_steps": [
+  {
+   "text": "Come to a meeting — no membership needed to show up.",
+   "prepend_meeting": true,
+   "source": "chapter_site"
+  },
+  {
+   "text": "Email nsbe@ucsc.edu to get on their list.",
+   "source": "chapter_site"
+  },
+  {
+   "text": "Follow @nsbe.ucsc on Instagram — that's where meeting changes and events get announced.",
+   "source": "chapter_site"
+  },
+  {
+   "text": "Sign up for emails through their linktree, which also has a resume form.",
+   "source": "linktree"
+  }
+ ]
+}

@@ -1,4 +1,4 @@
-.PHONY: install nav events clubs test e2e check live
+.PHONY: install nav events clubs nsbe test e2e check live
 
 # Use the project venv directly so no target depends on activation.
 PY ?= .venv/bin/python

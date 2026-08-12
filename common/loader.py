@@ -81,6 +81,12 @@ def clubs_meta() -> dict[str, Any]:
     return _read("clubs.json")["_meta"]
 
 
+@lru_cache(maxsize=None)
+def nsbe() -> dict[str, Any]:
+    """Everything the NSBE chapter agent knows, including its provenance."""
+    return _read("nsbe.json")
+
+
 def landmark_name(landmark_id: str | None, fallback: str = "an unlisted location") -> str:
     """Human-readable name for a landmark id, tolerant of nulls."""
     if not landmark_id:

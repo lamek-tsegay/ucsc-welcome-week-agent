@@ -23,7 +23,7 @@ from agents.clubs.service import respond_to_query as clubs_query
 from agents.clubs.service import respond_to_selection as clubs_selection
 from agents.events.service import respond_to_query as events_query
 from agents.events.service import respond_to_selection as events_selection
-from common.loader import clubs, events, transit_meta
+from common.loader import clubs, events, nsbe, transit_meta
 import json
 
 from uagents_core.contrib.protocols.chat import MetadataContent, TextContent
@@ -308,6 +308,79 @@ async def check_rendered_clubs() -> None:
         )
 
 
+def check_nsbe_data() -> None:
+    """The club agent states a meeting time and a contact address, which the
+    clubs dataset never does. That is only defensible while every such fact is
+    published by the chapter, cited, and dated — so the gate checks exactly
+    that, and that nothing unpublished has crept in."""
+    data = nsbe()
+    known = set(data["_meta"]["sources"])
+
+    for name, source in data["_meta"]["sources"].items():
+        check(
+            source["url"].startswith("https://") and bool(source.get("checked")),
+            f"nsbe.json: source {name} lacks an https url or a read date.",
+        )
+
+    check(
+        data["meetings"].get("source") in known
+        and bool(data["meetings"].get("checked")),
+        "nsbe.json: the meeting time is stated without a cited, dated source.",
+    )
+    check(
+        data["contact"].get("source") in known,
+        "nsbe.json: the contact address is stated without a cited source.",
+    )
+    for link in data["links"]:
+        check(
+            link.get("source") in known and link["url"].startswith("https://"),
+            f"nsbe.json: link {link['id']} lacks an https url or a cited source.",
+        )
+
+    # Nothing the chapter has not published.
+    blob = json.dumps(
+        {k: v for k, v in data.items() if k != "_meta"}
+    ).lower()
+    for banned in ("president", "treasurer", "secretary", "e-board", "vice chair"):
+        check(
+            banned not in blob,
+            f"nsbe.json: contains {banned!r}, which the chapter does not publish.",
+        )
+
+
+async def check_rendered_nsbe() -> None:
+    from agents.nsbe import cards as nsbe_cards
+
+    meetings = nsbe()["meetings"]
+    rendered = text_of(nsbe_cards.meetings_message()) + card_text(
+        nsbe_cards.meetings_message()
+    )
+    check(
+        meetings["checked"] in rendered,
+        "nsbe meetings card: states a meeting time with no read date.",
+    )
+    check(
+        "instagram.com/nsbe.ucsc" in rendered,
+        "nsbe meetings card: no pointer to where changes are announced.",
+    )
+
+    # The only address anywhere is the chapter's own.
+    for builder in (
+        nsbe_cards.welcome_message,
+        nsbe_cards.meetings_message,
+        nsbe_cards.join_message,
+        nsbe_cards.about_message,
+        nsbe_cards.links_message,
+        nsbe_cards.unknown_message,
+    ):
+        body = text_of(builder()) + card_text(builder())
+        residue = body.replace("nsbe@ucsc.edu", "").replace("@nsbe.ucsc", "")
+        check(
+            "@" not in residue,
+            f"nsbe {builder.__name__}: shows an address other than the chapter's.",
+        )
+
+
 async def check_rendered_navigation() -> None:
     from agents.navigation.service import answer
 
@@ -351,9 +424,11 @@ async def main() -> int:
     check_event_data()
     check_club_data()
     check_transit_data()
+    check_nsbe_data()
     await check_rendered_events()
     await check_rendered_clubs()
     await check_rendered_navigation()
+    await check_rendered_nsbe()
 
     print(f"Honesty check: {checks} assertions across data and rendered output.")
     if failures:

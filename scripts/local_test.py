@@ -140,6 +140,7 @@ def reset_guards() -> None:
         "agents.navigation.agent",
         "agents.events.agent",
         "agents.clubs.agent",
+        "agents.nsbe.agent",
     ):
         module = __import__(module_name, fromlist=["guard"])
         module.guard.reset()
@@ -475,6 +476,54 @@ async def test_clubs_card_tap() -> None:
     )
 
 
+# --- nsbe ---------------------------------------------------------------------
+
+
+async def test_nsbe() -> None:
+    from agents.nsbe.agent import chat_proto
+
+    ctx = await converse(
+        chat_proto, [session_start(), user_message("when do they meet")]
+    )
+    assert_ack_first(ctx, "nsbe", inbound_count=2)
+
+    replies = chat_replies(ctx)
+    check(len(replies) == 2, f"nsbe: expected welcome + answer, got {len(replies)}")
+
+    welcome = text_of(replies[0])
+    check("NSBE" in welcome, "nsbe: welcome does not identify the chapter")
+
+    answer = replies[1]
+    rendered = text_of(answer) + json.dumps(card_payload(answer))
+    check("Baskin Engineering 2" in rendered, "nsbe: meeting reply omits the room")
+    check(
+        "2026-08-12" in rendered,
+        "nsbe: states a meeting time without the date the page was read",
+    )
+
+    # Asked something the chapter does not publish, it hands off rather than
+    # inventing an answer.
+    #
+    # The guard is reset first: this harness sends messages microseconds apart,
+    # which the 0.3s cooldown correctly treats as double-delivery. A student
+    # typing a second question cannot hit that window.
+    from agents.nsbe.agent import guard as nsbe_guard
+
+    nsbe_guard.reset()
+    handle = handler_for(chat_proto, "ChatMessage")
+    await handle(ctx, USER, user_message("who is the president of the chapter"))
+    latest = chat_replies(ctx)[-1]
+    body = text_of(latest) + json.dumps(card_payload(latest))
+    check(
+        "nsbe@ucsc.edu" in body,
+        "nsbe: an unpublished question did not hand off to the chapter",
+    )
+    check(
+        "president" not in body.lower().replace("presidents", ""),
+        "nsbe: answered a question about officers, which are not published",
+    )
+
+
 # --- acknowledgement handler --------------------------------------------------
 
 
@@ -484,6 +533,7 @@ async def test_ack_handler_is_registered() -> None:
         "agents.navigation.agent",
         "agents.events.agent",
         "agents.clubs.agent",
+        "agents.nsbe.agent",
     ):
         module = __import__(module_name, fromlist=["chat_proto"])
         try:
@@ -519,6 +569,7 @@ async def main() -> int:
         ("events: back button", test_events_back_button),
         ("clubs: interest listing + card", test_clubs),
         ("clubs: card tap", test_clubs_card_tap),
+        ("nsbe: meetings + refuses what isn't published", test_nsbe),
         ("all: acknowledgement handler", test_ack_handler_is_registered),
     ]
 
@@ -532,7 +583,7 @@ async def main() -> int:
         status = "ok" if len(failures) == before else "FAIL"
         print(f"  [{status}] {label}")
 
-    print(f"\nIn-process E2E: {checks} assertions across 3 agents.")
+    print(f"\nIn-process E2E: {checks} assertions across 4 agents.")
     if failures:
         print(f"\nFAILED ({len(failures)}):\n")
         for failure in failures:
