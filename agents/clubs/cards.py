@@ -116,7 +116,7 @@ def welcome_message() -> ChatMessage:
     ]
     return menu_message(
         short_welcome(),
-        title="UCSC Clubs & Societies 🎓",
+        title="UCSC Clubs & Societies 🐌",
         subtitle="Find your people — no club names required",
         body_lines=["New here? Tap 🎯 and answer one question."],
         buttons=buttons,
@@ -168,15 +168,14 @@ def interests_message() -> ChatMessage:
     # read as if it were saying everything twice. Clients that render no cards
     # still have a way through: the free-text invitation below.
     preamble = (
-        "Happy to help you find your people at UCSC! 🎓\n\n"
-        "**First — what are you into?** Tap one below, or just tell me in your "
-        "own words — *I like anime*, *something outdoorsy*, *pre-med stuff* "
-        "all work."
+        "Let's find your people at UCSC 🐌\n\n"
+        "**What are you into?** Tap one, or just say it: *anime*, "
+        "*something outdoorsy*, *pre-med*."
     )
     return _interest_card(
         preamble,
-        title="What are you into? 🎓",
-        subtitle="Tap one — I'll match you with organizations",
+        title="What are you into? 🐌",
+        subtitle="Tap one and I'll match you with organizations",
         include_categories=True,
     )
 
@@ -393,7 +392,7 @@ def all_clubs_message(all_clubs: list[dict]) -> ChatMessage:
     ]
     payload = build_list_payload(
         items,
-        title=f"All {len(ordered)} UCSC clubs 🎓",
+        title=f"All {len(ordered)} UCSC clubs 🐌",
         subtitle="Alphabetical · tap any name for details",
         id_field=CLUB_ID_FIELD,
         source=SOURCE,
@@ -425,7 +424,7 @@ def no_matches_message(query_text: str) -> ChatMessage:
     ]
     return menu_message(
         preamble,
-        title="Nothing matched — try these 🎓",
+        title="Nothing matched — try these 🐌",
         subtitle=None,
         body_lines=None,
         buttons=buttons,

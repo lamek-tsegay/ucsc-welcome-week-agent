@@ -109,7 +109,7 @@ def _heading(
         interests = ", ".join(sorted(query.tags)[:4])
         return f"**Matching {interests}** — {shown}"
     return (
-        f"**Sure — here's a taste of UCSC's organizations** 🎓 — {shown}, "
+        f"**Sure — here's a taste of UCSC's organizations** 🐌 — {shown}, "
         "one per category"
     )
 

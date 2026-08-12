@@ -65,7 +65,7 @@ DESCRIPTION = (
     "directory, plus examples across cultural, arts, sports, and more."
 )
 
-README = """# UCSC Clubs & Societies 🎓
+README = """# UCSC Clubs & Societies 🐌
 
 ![tag:innovationlab](https://img.shields.io/badge/innovationlab-3D8BD3)
 ![tag:chatprotocol](https://img.shields.io/badge/chatprotocol-3D8BD3)

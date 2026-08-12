@@ -777,7 +777,12 @@ def test_interest_cards_do_not_repeat_their_buttons_as_text(builder_name):
 
     # It still has to say what it wants and offer a way through without cards.
     assert "?" in body
-    assert "own words" in body
+    # The free-text invitation is what a card-less client falls back to, so it
+    # has to be there — but the wording is copy, not contract, so accept any
+    # phrasing of it rather than pinning one and failing on every edit.
+    assert any(
+        cue in body for cue in ("own words", "just say it", "describe yourself")
+    ), f"no invitation to type instead of tap: {body!r}"
 
 
 def test_interest_buttons_are_full_width():
