@@ -143,7 +143,6 @@ def _interest_card(
                 {"action": "quick", "q": "what categories are there"},
             )
         )
-    footer.append(MenuButton("📋 Show me all of them", {"action": "show_all"}))
 
     payload = build_chip_payload(
         title=title,
@@ -196,76 +195,40 @@ def vibe_picker_message() -> ChatMessage:
     )
 
 
-def full_roster_messages(all_clubs: list[dict]) -> list[ChatMessage]:
-    """The whole roster as one card per category, sent together.
+def category_card(entry: dict, members: list[dict]) -> ChatMessage:
+    """One category's organizations as compact name chips.
 
-    All 76 in a single card was a wall: the grouping was there in the ordering
-    but invisible, so it read as one undifferentiated mass of 76 buttons. One
-    card per category gives each group its own heading and a size the eye can
-    take in, and they arrive in the same breath so it still answers "show me
-    everything" in one go.
+    This is what "browse by category" lands on. Chips rather than rich rows,
+    so the whole category fits — Technology & Engineering has 35 and a
+    description-per-row layout would be unusable.
 
-    Names are alphabetical within each card. ✅ marks confirmed organizations
-    inline, since chips carry no badges.
+    Names sort case-insensitively: plain sorting files "iGEM" after "Women in
+    Science and Engineering", because lowercase follows uppercase in ASCII.
     """
-    by_category: dict[str, list[dict]] = {}
-    for club in all_clubs:
-        by_category.setdefault(club["category"], []).append(club)
-
-    populated = [
-        entry for entry in club_categories() if by_category.get(entry["id"])
+    ordered = sorted(members, key=lambda c: c["name"].lower())
+    chips = [
+        MenuButton(
+            f"{'✅ ' if club['verified'] else ''}{club['name']}",
+            {CLUB_ID_FIELD: club["id"]},
+        )
+        for club in ordered
     ]
-
-    messages: list[ChatMessage] = []
-    for index, entry in enumerate(populated):
-        # Case-insensitive: plain sorted() puts "iGEM" after "Women in
-        # Science", because lowercase letters follow uppercase in ASCII.
-        members = sorted(by_category[entry["id"]], key=lambda c: c["name"].lower())
-        chips = [
-            MenuButton(
-                f"{'✅ ' if club['verified'] else ''}{club['name']}",
-                {CLUB_ID_FIELD: club["id"]},
-            )
-            for club in members
-        ]
-
-        first = index == 0
-        last = index == len(populated) - 1
-
-        # The interest shortcuts ride on the last card only: repeated under
-        # every group they would outnumber the organizations.
-        footer = None
-        if last:
-            footer = [
-                MenuButton(label, {"action": "vibe_pick", "vibe": key})
-                for key, label, _, _ in VIBES
-            ]
-
-        payload = build_chip_payload(
-            title=f"{CATEGORY_EMOJI.get(entry['id'], '')} {entry['label']}".strip(),
-            subtitle=f"{len(members)} · tap any name for details",
-            body_lines=None,
-            chips=chips,
-            source=SOURCE,
-            footer_buttons=footer,
-            per_row=2,
-            # Every card repeats the caveat, not just the last. Chips carry no
-            # badges, so without it a card of unmarked names gives a reader no
-            # signal that they are examples — and any one of these cards can be
-            # the one someone screenshots or scrolls back to alone.
-            footnote="✅ = confirmed on an official UCSC page. " + clubs_footnote(),
-        )
-        # Only the first message carries a text bubble; ten identical
-        # preambles would be worse than none.
-        preamble = (
-            f"**All {len(all_clubs)} organizations**, by category 🎓"
-            if first
-            else ""
-        )
-        messages.append(card_message(preamble, payload))
-
-    return messages
-
+    payload = build_chip_payload(
+        title=f"{CATEGORY_EMOJI.get(entry['id'], '')} {entry['label']}".strip(),
+        subtitle=f"{len(ordered)} · tap any name for details",
+        body_lines=None,
+        chips=chips,
+        source=SOURCE,
+        footer_buttons=[
+            MenuButton("🗂️ Other categories", {"action": "quick", "q": "what categories are there"}),
+            MenuButton("🎯 Match my vibe", {"action": "quiz"}),
+        ],
+        per_row=2,
+        # Chips carry no badges, so without this a card of unmarked names
+        # would read as a confirmed roster.
+        footnote="✅ = confirmed on an official UCSC page. " + clubs_footnote(),
+    )
+    return card_message("", payload)
 
 def _summary_line(club: dict) -> str:
     return (

@@ -31,7 +31,6 @@ from agents.clubs.service import (
     WELCOME,
     bridge_to_navigation,
     respond_to_category,
-    respond_to_full_roster,
     respond_to_query,
     respond_to_selection,
     respond_to_vibe,
@@ -174,13 +173,6 @@ async def _handle_selection(
 
     if action == "quiz":
         await _send(ctx, sender, cards.vibe_picker_message())
-        return True
-
-    if action == "show_all":
-        messages, shown_ids = respond_to_full_roster()
-        ctx.storage.set(SHOWN_IDS_KEY, json.dumps(shown_ids))
-        for message in messages:
-            await _send(ctx, sender, message)
         return True
 
     if action == "vibe_pick":

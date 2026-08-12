@@ -42,7 +42,7 @@ def _every_card() -> list[tuple[str, dict]]:
     """One payload per card-producing path across all three agents."""
     from agents.clubs import cards as clubs_cards
     from agents.clubs.service import (
-        respond_to_full_roster,
+        respond_to_category,
         respond_to_query as clubs_query,
         respond_to_selection as clubs_selection,
         respond_to_vibe,
@@ -67,8 +67,7 @@ def _every_card() -> list[tuple[str, dict]]:
     add("clubs.categories", clubs_cards.categories_message())
     add("clubs.no_matches", clubs_cards.no_matches_message("zzz"))
     add("clubs.vibe_results", respond_to_vibe("creative")[0])
-    for index, roster_card in enumerate(respond_to_full_roster()[0]):
-        add(f"clubs.roster_{index}", roster_card)
+    add("clubs.category", respond_to_category("tech_engineering")[0])
     add("clubs.detail_unverified", clubs_selection("c_a_cappella"))
     add("clubs.detail_verified", clubs_selection("be_swe"))
     add("clubs.search_results", asyncio.run(clubs_query("clubs about hiking"))[0])
@@ -202,7 +201,7 @@ def test_listings_carry_no_url_in_the_bubble():
     the card footnote instead — readable and copyable, but not a link. Detail
     cards make the opposite trade, where tapping through is the point.
     """
-    from agents.clubs.service import respond_to_full_roster, respond_to_vibe
+    from agents.clubs.service import respond_to_category, respond_to_vibe
     from agents.events.service import (
         respond_to_my_plan,
         respond_to_plan,
@@ -212,10 +211,7 @@ def test_listings_carry_no_url_in_the_bubble():
 
     listings = [
         ("clubs vibe", respond_to_vibe("creative")[0]),
-        *(
-            (f"clubs roster card {i}", card)
-            for i, card in enumerate(respond_to_full_roster()[0])
-        ),
+        ("clubs category", respond_to_category("tech_engineering")[0]),
         ("events vibe", events_vibe("food")[0]),
         ("events listing", asyncio.run(
             events_query("show me the whole week", today=DURING))[0]),

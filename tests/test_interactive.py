@@ -808,9 +808,9 @@ def test_generic_ask_leads_with_the_interests_question(opener):
     vibes = {sel.get("vibe") for sel in selections if "vibe" in sel}
     assert vibes == {key for key, _, _, _ in VIBES}
 
-    # And an escape hatch for anyone who really does want the whole list.
+    # And a way to see everything, category by category.
     actions = {sel.get("action") for sel in selections}
-    assert "show_all" in actions
+    assert "quick" in actions
 
 
 @pytest.mark.parametrize("builder_name", ["interests_message", "vibe_picker_message"])
@@ -884,65 +884,53 @@ def test_active_interest_does_not_surface_engineering_teams():
     assert "tech_engineering" not in categories
 
 
-def test_show_all_returns_one_card_per_category():
-    """Step 2b: the roster arrives as several cards, one per category.
+def test_category_browse_returns_the_whole_category_as_chips():
+    """Browsing a category is how a student sees everything in it.
 
-    All 76 in a single card was a wall — the grouping existed in the ordering
-    but was invisible. Splitting it gives each group a heading and a readable
-    size, and they still arrive together so "show me everything" is answered
-    in one go.
+    It must not truncate: a top-N slice would hide 27 of the 35 engineering
+    organizations behind nothing at all. Chips rather than rich rows, so the
+    whole category fits.
     """
-    from common.loader import club_categories, clubs as clubs_data
-    from agents.clubs.service import respond_to_full_roster
+    from common.loader import clubs as clubs_data
+    from agents.clubs.service import respond_to_category
 
-    messages, shown_ids = respond_to_full_roster()
-    assert len(shown_ids) == len(clubs_data())
+    result = respond_to_category("tech_engineering")
+    assert result is not None
+    message, shown_ids = result
 
-    populated = {
-        club["category"] for club in clubs_data()
-    }
-    assert len(messages) == len(populated), "one card per populated category"
+    expected = [c for c in clubs_data() if c["category"] == "tech_engineering"]
+    assert len(shown_ids) == len(expected), "category browse truncated"
 
-    all_chips = []
-    for message in messages:
-        payload = payload_of(message)
-        assert payload is not None
-        chips = [
-            button
-            for button in _card_buttons(payload)
-            if "club_id" in button["action"]["selection"]
-        ]
-        assert chips, f"{payload['root']['title']}: card has no organizations"
+    payload = payload_of(message)
+    chips = [
+        button
+        for button in _card_buttons(payload)
+        if "club_id" in button["action"]["selection"]
+    ]
+    names = [chip["label"].removeprefix("✅ ") for chip in chips]
 
-        # Alphabetical within the card, case-insensitively — plain sorting
-        # would file "iGEM" after "Women in Science".
-        names = [chip["label"].removeprefix("✅ ") for chip in chips]
-        assert names == sorted(names, key=str.lower), payload["root"]["title"]
+    # Alphabetical, case-insensitively — plain sorting files "iGEM" after
+    # "Women in Science and Engineering".
+    assert names == sorted(names, key=str.lower)
+    assert set(names) == {c["name"] for c in expected}
 
-        # Chips stay small: label plus action only.
-        for chip in chips:
-            assert set(chip) == {"type", "label", "primary", "action"}
-        all_chips.extend(chips)
+    # Chips carry no badges, so the caveat has to be on every category card.
+    rendered = json.dumps(payload)
+    assert "not a live roster" in rendered
+    assert "getinvolved.ucsc.edu" in rendered
 
-    # Between them the cards cover every organization exactly once.
-    labels = [chip["label"].removeprefix("✅ ") for chip in all_chips]
-    assert sorted(labels) == sorted(club["name"] for club in clubs_data())
 
-    # Confirmed organizations are marked inline, since chips carry no badges.
-    ticked = {
-        chip["label"].removeprefix("✅ ")
-        for chip in all_chips
-        if chip["label"].startswith("✅ ")
-    }
-    assert ticked == {club["name"] for club in clubs_data() if club["verified"]}
+def test_every_category_is_browsable():
+    from common.loader import club_categories
+    from agents.clubs.service import respond_to_category
 
-    # Every card carries the caveat, not just the last: chips have no badges,
-    # so a card of unmarked names would otherwise read as a confirmed roster.
-    for message in messages:
-        rendered = json.dumps(payload_of(message))
-        assert "getinvolved.ucsc.edu" in rendered
-        assert "not a live roster" in rendered
+    for entry in club_categories():
+        result = respond_to_category(entry["id"])
+        assert result is not None, entry["id"]
+        _message, shown_ids = result
+        assert shown_ids, f"{entry['id']} browses to nothing"
 
+    assert respond_to_category("not_a_category") is None
 
 def test_specific_asks_skip_the_question_entirely():
     """A student who already said what they want must not be re-interrogated."""

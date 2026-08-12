@@ -146,25 +146,21 @@ def respond_to_vibe(vibe_key: str) -> tuple[ChatMessage, list[str]] | None:
 
 
 def respond_to_category(category_id: str) -> tuple[ChatMessage, list[str]] | None:
-    """Answer a category-browse tap. None for an unknown category."""
-    known = {entry["id"] for entry in club_categories()}
-    if category_id not in known:
-        return None
-    label = category_label(category_id)
-    scored, total = select(ClubQuery(category=category_id))
-    if not scored:
-        return cards.no_matches_message(label), []
-    count = len(scored)
-    noun = "organization" if count == 1 else "organizations"
-    shown = f"{count} {noun}" if count == total else f"top {count} of {total} {noun}"
-    footer = [
-        MenuButton("🗂️ All categories", {"action": "quick", "q": "what categories are there"}),
-        MenuButton("🎯 Match my vibe", {"action": "quiz"}),
-    ]
-    message = cards.list_message(
-        scored, heading=f"**{label}** — {shown}", footer_buttons=footer
+    """Answer a category-browse tap. None for an unknown category.
+
+    Returns every organization in the category, not a top-N slice: this is the
+    path a student takes to see everything, so truncating it would hide 27 of
+    the 35 engineering orgs behind nothing.
+    """
+    entry = next(
+        (e for e in club_categories() if e["id"] == category_id), None
     )
-    return message, [item.club["id"] for item in scored]
+    if entry is None:
+        return None
+    members = [club for club in clubs_data() if club["category"] == category_id]
+    if not members:
+        return cards.no_matches_message(category_label(category_id)), []
+    return cards.category_card(entry, members), [c["id"] for c in members]
 
 
 async def respond_to_query(text: str) -> tuple[ChatMessage, list[str]]:
@@ -192,16 +188,6 @@ async def respond_to_query(text: str) -> tuple[ChatMessage, list[str]]:
         scored, heading=_heading(query, scored, total, text)
     )
     return message, [item.club["id"] for item in scored]
-
-
-def respond_to_full_roster() -> tuple[list[ChatMessage], list[str]]:
-    """Every organization, one card per category — the escape hatch from the
-    picker. Returns several messages, sent together."""
-    all_clubs = sorted(clubs_data(), key=lambda c: (c["category"], c["name"]))
-    return (
-        cards.full_roster_messages(all_clubs),
-        [club["id"] for club in all_clubs],
-    )
 
 
 def respond_to_selection(club_id: str) -> ChatMessage:
