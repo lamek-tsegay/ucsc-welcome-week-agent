@@ -234,12 +234,18 @@ def test_browse_all_returns_every_club_in_one_card():
     assert len(shown_ids) == len(clubs_data())
 
     payload = json.loads(_card_text(message))
+    # Names are list headings, not button labels: a button centres its own
+    # label and the schema exposes no way to align it, so the names live in
+    # headings, which the client left-aligns.
     labels: list[str] = []
+    tappable: list[str] = []
 
     def walk(node):
         if isinstance(node, dict):
+            if node.get("type") == "heading" and node.get("level") == 3:
+                labels.append(node["value"])
             if node.get("type") == "button" and "club_id" in node["action"]["selection"]:
-                labels.append(node["label"])
+                tappable.append(node["action"]["selection"]["club_id"])
             for value in node.values():
                 walk(value)
         elif isinstance(node, list):
@@ -248,6 +254,7 @@ def test_browse_all_returns_every_club_in_one_card():
 
     walk(payload)
     assert len(labels) == len(clubs_data())
+    assert sorted(tappable) == sorted(club["id"] for club in clubs_data())
 
     # Alphabetical by club name — the emoji and tick prefixes must not drive
     # the ordering, or the list reads by codepoint instead of by name.

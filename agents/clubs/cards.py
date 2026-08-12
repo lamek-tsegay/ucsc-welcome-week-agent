@@ -346,32 +346,36 @@ def detail_message(club: dict, others: list[dict]) -> ChatMessage:
 
 
 def all_clubs_message(all_clubs: list[dict]) -> ChatMessage:
-    """Every organization in one card, alphabetical, one button per row.
+    """Every organization in one card, alphabetical, names left-aligned.
 
-    No category picker in front of it: that was an extra tap between the
-    student and the thing they asked for, and the category is already legible
-    from the emoji on each name.
+    A list rather than a grid of buttons, for one reason: a button centres its
+    own label and the element schema exposes no way to change that, so a
+    column of buttons puts every name at a different starting point. List
+    headings are text, which the client left-aligns — so names line up down
+    the card however long or short they are. Body and badges are left empty to
+    keep each row to a name and its button.
 
-    Sorting is case-insensitive and ignores the emoji prefix, so the list reads
-    down the alphabet the way a student scans it — plain sorting would group by
-    emoji codepoint and file "iGEM" after "Women in Science and Engineering".
+    Sorting is on the club name only, case-insensitively, so neither the
+    category emoji nor the confirmed tick drags entries out of order.
     """
     ordered = sorted(all_clubs, key=lambda c: c["name"].lower())
-    chips = [
-        MenuButton(
-            f"{'✅ ' if club['verified'] else ''}{_name_with_emoji(club)}",
-            {CLUB_ID_FIELD: club["id"]},
+    items = [
+        CardItem(
+            record_id=club["id"],
+            heading=f"{'✅ ' if club['verified'] else ''}{_name_with_emoji(club)}",
+            body="",
+            badges=[],
+            button_label="Details",
         )
         for club in ordered
     ]
-    payload = build_chip_payload(
+    payload = build_list_payload(
+        items,
         title=f"All {len(ordered)} UCSC clubs 🎓",
         subtitle="Alphabetical · tap any name for details",
-        body_lines=None,
-        chips=chips,
+        id_field=CLUB_ID_FIELD,
         source=SOURCE,
         footer_buttons=[MenuButton("🎯 Match my vibe instead", {"action": "quiz"})],
-        per_row=1,
         footnote="✅ = confirmed on an official UCSC page. " + clubs_footnote(),
     )
     return card_message(

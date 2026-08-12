@@ -210,10 +210,15 @@ def build_list_payload(
     rendered: list[dict[str, Any]] = []
 
     for item in items:
+        # Body and badges are omitted when empty rather than rendered blank,
+        # so a list can be used purely for its left alignment: button labels
+        # are centred by the client and cannot be aligned from here, so a bare
+        # heading-plus-button row is the only way to line names up.
         column: list[dict[str, Any]] = [
             {"type": "heading", "value": item.heading, "level": 3},
-            {"type": "text", "value": item.body, "style": "body"},
         ]
+        if item.body:
+            column.append({"type": "text", "value": item.body, "style": "body"})
         column.extend(_badge(label, variant) for label, variant in item.badges)
 
         rendered.append(
