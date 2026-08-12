@@ -221,22 +221,44 @@ def test_response_labels_every_entry_on_the_card():
         assert expected in badges, f"{club_id} missing its {expected} badge"
 
 
-def test_categories_query_offers_every_category_as_a_button():
-    """The categories are the card's buttons. Naming them in the bubble too
-    printed the same ten labels twice, so the assertion follows them onto the
-    card — every category must still be one tap away."""
-    from common.loader import club_categories
+def test_browse_all_returns_every_club_in_one_card():
+    """"Browse all UCSC clubs" lands on the whole list, not a picker.
 
-    message, ids = asyncio.run(respond_to_query("what categories are there"))
-    assert ids == []
+    A category picker in front of it was one tap between the student and the
+    thing they asked for, and the category is already legible from the emoji
+    on each name.
+    """
+    from common.loader import clubs as clubs_data
 
-    payload = _card_text(message)
-    for entry in club_categories():
-        assert entry["label"] in payload, entry["id"]
+    message, shown_ids = asyncio.run(respond_to_query("what categories are there"))
+    assert len(shown_ids) == len(clubs_data())
 
-    # And the bubble says the thing the buttons cannot: free text works.
-    assert "tell me what you're into" in _text(message)
+    payload = json.loads(_card_text(message))
+    labels: list[str] = []
 
+    def walk(node):
+        if isinstance(node, dict):
+            if node.get("type") == "button" and "club_id" in node["action"]["selection"]:
+                labels.append(node["label"])
+            for value in node.values():
+                walk(value)
+        elif isinstance(node, list):
+            for entry in node:
+                walk(entry)
+
+    walk(payload)
+    assert len(labels) == len(clubs_data())
+
+    # Alphabetical by club name — the emoji and tick prefixes must not drive
+    # the ordering, or the list reads by codepoint instead of by name.
+    lookup = {club["name"]: club for club in clubs_data()}
+    names = []
+    for label in labels:
+        stripped = label.removeprefix("✅ ")
+        name = next(n for n in lookup if stripped.endswith(n))
+        names.append(name)
+    assert names == sorted(names, key=str.lower)
+    assert set(names) == set(lookup)
 
 def test_no_match_response_suggests_alternatives():
     message, ids = asyncio.run(respond_to_query("quantum basket weaving underwater"))

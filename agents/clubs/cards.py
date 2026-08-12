@@ -110,7 +110,7 @@ def welcome_message() -> ChatMessage:
     """Welcome menu with the zero-typing paths up front."""
     buttons = [
         MenuButton("🎯 Match my vibe", {"action": "quiz"}, primary=True),
-        MenuButton("🗂️ Browse categories", {"action": "quick", "q": "what categories are there"}),
+        MenuButton("🗂️ Browse all UCSC clubs", {"action": "quick", "q": "what categories are there"}),
         MenuButton("🔗 Campus links", {"action": "links"}),
         MenuButton("ℹ️ About my data", {"action": "about"}),
     ]
@@ -139,7 +139,7 @@ def _interest_card(
     if include_categories:
         footer.append(
             MenuButton(
-                "🗂️ Browse by category",
+                "🗂️ Browse all UCSC clubs",
                 {"action": "quick", "q": "what categories are there"},
             )
         )
@@ -220,7 +220,7 @@ def category_card(entry: dict, members: list[dict]) -> ChatMessage:
         chips=chips,
         source=SOURCE,
         footer_buttons=[
-            MenuButton("🗂️ Other categories", {"action": "quick", "q": "what categories are there"}),
+            MenuButton("🗂️ Browse all UCSC clubs", {"action": "quick", "q": "what categories are there"}),
             MenuButton("🎯 Match my vibe", {"action": "quiz"}),
         ],
         # One per row so every button is the same width. Two to a row sized
@@ -345,40 +345,40 @@ def detail_message(club: dict, others: list[dict]) -> ChatMessage:
     return card_message(link_row(*pairs), payload)
 
 
-def categories_message() -> ChatMessage:
-    """The ten categories as buttons.
+def all_clubs_message(all_clubs: list[dict]) -> ChatMessage:
+    """Every organization in one card, alphabetical, one button per row.
 
-    The bubble deliberately does not name them: they are the card's buttons,
-    and listing them above it printed the same ten labels twice. What the
-    bubble adds instead is the thing the buttons cannot say — that plain
-    description works too.
+    No category picker in front of it: that was an extra tap between the
+    student and the thing they asked for, and the category is already legible
+    from the emoji on each name.
+
+    Sorting is case-insensitive and ignores the emoji prefix, so the list reads
+    down the alphabet the way a student scans it — plain sorting would group by
+    emoji codepoint and file "iGEM" after "Women in Science and Engineering".
     """
-    preamble = (
-        "Pick a category below, or just tell me what you're into — "
-        "*I like hiking and photography* works fine."
-    )
-    # Alphabetical by label, not the order they happen to sit in the data
-    # file: a student scanning for one category reads down the list looking
-    # for a word, and the curated order gives them nothing to scan by.
+    ordered = sorted(all_clubs, key=lambda c: c["name"].lower())
     chips = [
         MenuButton(
-            f"{CATEGORY_EMOJI.get(entry['id'], '')} {entry['label']}".strip(),
-            {"action": "category", "category": entry["id"]},
+            f"{'✅ ' if club['verified'] else ''}{_name_with_emoji(club)}",
+            {CLUB_ID_FIELD: club["id"]},
         )
-        for entry in sorted(club_categories(), key=lambda e: e["label"].lower())
+        for club in ordered
     ]
     payload = build_chip_payload(
-        title="Browse by category 🗂️",
-        subtitle="Tap one to see its organizations",
+        title=f"All {len(ordered)} UCSC clubs 🎓",
+        subtitle="Alphabetical · tap any name for details",
         body_lines=None,
         chips=chips,
         source=SOURCE,
         footer_buttons=[MenuButton("🎯 Match my vibe instead", {"action": "quiz"})],
         per_row=1,
-        footnote=clubs_footnote(),
+        footnote="✅ = confirmed on an official UCSC page. " + clubs_footnote(),
     )
-    return card_message(preamble, payload)
-
+    return card_message(
+        "Tap any organization for details, or tell me what you're into — "
+        "*I like hiking and photography* works fine.",
+        payload,
+    )
 
 def no_matches_message(query_text: str) -> ChatMessage:
     labels = ", ".join(entry["label"] for entry in club_categories())
@@ -393,7 +393,7 @@ def no_matches_message(query_text: str) -> ChatMessage:
     buttons = [
         MenuButton("🎯 Match my vibe", {"action": "quiz"}, primary=True),
         MenuButton(
-            "🗂️ Browse categories",
+            "🗂️ Browse all UCSC clubs",
             {"action": "quick", "q": "what categories are there"},
         ),
     ]

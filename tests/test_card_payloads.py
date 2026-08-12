@@ -41,6 +41,7 @@ def _payload(message) -> dict | None:
 def _every_card() -> list[tuple[str, dict]]:
     """One payload per card-producing path across all three agents."""
     from agents.clubs import cards as clubs_cards
+    from common.loader import clubs as clubs_data
     from agents.clubs.service import (
         respond_to_category,
         respond_to_query as clubs_query,
@@ -64,7 +65,7 @@ def _every_card() -> list[tuple[str, dict]]:
     add("clubs.welcome", clubs_cards.welcome_message())
     add("clubs.interests", clubs_cards.interests_message())
     add("clubs.vibe_picker", clubs_cards.vibe_picker_message())
-    add("clubs.categories", clubs_cards.categories_message())
+    add("clubs.all_clubs", clubs_cards.all_clubs_message(list(clubs_data())))
     add("clubs.no_matches", clubs_cards.no_matches_message("zzz"))
     add("clubs.vibe_results", respond_to_vibe("creative")[0])
     add("clubs.category", respond_to_category("tech_engineering")[0])
