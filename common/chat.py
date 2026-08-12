@@ -52,7 +52,7 @@ _EMBEDDED_JSON_RE = re.compile(r"\{[^{}]*\}")
 # questions, so those actions are recognised in JSON form only).
 _PROSE_ACTION_RE = re.compile(
     r"\b(back_to_\w+|set_college|set_home|route_to|reroute|plan_day"
-    r"|my_college|nearby_home|vibe_pick|meet_clubs|show_all)\b",
+    r"|my_college|nearby_home|vibe_pick|show_all)\b",
     re.IGNORECASE,
 )
 

@@ -136,7 +136,10 @@ def respond_to_vibe(vibe_key: str) -> tuple[ChatMessage, list[str]] | None:
 
     footer = [
         MenuButton("🎯 Try another vibe", {"action": "quiz"}),
-        MenuButton("🤝 How to meet them", {"action": "meet_clubs"}),
+        MenuButton(
+            "🗂️ Browse categories",
+            {"action": "quick", "q": "what categories are there"},
+        ),
     ]
     message = cards.list_message(scored, heading=heading, footer_buttons=footer)
     return message, [item.club["id"] for item in scored]

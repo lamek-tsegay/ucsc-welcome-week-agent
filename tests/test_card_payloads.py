@@ -65,7 +65,6 @@ def _every_card() -> list[tuple[str, dict]]:
     add("clubs.interests", clubs_cards.interests_message())
     add("clubs.vibe_picker", clubs_cards.vibe_picker_message())
     add("clubs.categories", clubs_cards.categories_message())
-    add("clubs.meet_clubs", clubs_cards.meet_clubs_message())
     add("clubs.no_matches", clubs_cards.no_matches_message("zzz"))
     add("clubs.vibe_results", respond_to_vibe("creative")[0])
     add("clubs.full_roster", respond_to_full_roster()[0])

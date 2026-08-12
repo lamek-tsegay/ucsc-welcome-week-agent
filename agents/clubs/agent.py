@@ -87,8 +87,6 @@ Week, **Monday Sept 21 - Saturday Sept 26**.
   matching organizations
 - **Category browsing** - ten tappable categories from cultural and identity
   groups to hobby clubs
-- **How to actually meet clubs** - a first-class guide to Cornucopia (Tue Sept
-  22), the official directory, and SOAR
 - **Name lookup** - find a specific organization
 - **Interactive cards** - tap any organization for its category, interest tags,
   and how to actually join
@@ -200,10 +198,6 @@ async def _handle_selection(
         message, shown_ids = result
         ctx.storage.set(SHOWN_IDS_KEY, json.dumps(shown_ids))
         await _send(ctx, sender, message)
-        return True
-
-    if action == "meet_clubs":
-        await _send(ctx, sender, cards.meet_clubs_message())
         return True
 
     if action == "about":

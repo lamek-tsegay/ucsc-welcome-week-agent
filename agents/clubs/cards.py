@@ -111,7 +111,6 @@ def welcome_message() -> ChatMessage:
     buttons = [
         MenuButton("🎯 Match my vibe", {"action": "quiz"}, primary=True),
         MenuButton("🗂️ Browse categories", {"action": "quick", "q": "what categories are there"}),
-        MenuButton("🤝 How to meet clubs", {"action": "meet_clubs"}),
         MenuButton("🔗 Campus links", {"action": "links"}),
         MenuButton("ℹ️ About my data", {"action": "about"}),
     ]
@@ -194,39 +193,6 @@ def vibe_picker_message() -> ChatMessage:
         title="Match my vibe 🎯",
         subtitle="One tap — I'll do the matching",
         include_categories=False,
-    )
-
-
-def meet_clubs_message() -> ChatMessage:
-    """The honest how-to-join answer, promoted to a first-class feature."""
-    preamble = (
-        "**How to actually meet clubs during Welcome Week** 🤝\n\n"
-        "1. **Go to Cornucopia** — Tuesday Sept 22 on East Upper Field. It's "
-        "the involvement festival where most organizations table in person. "
-        "One afternoon, everyone in one place.\n"
-        f"2. **Browse the official directory** — {OFFICIAL_CLUBS_URL} "
-        "(updated weekly through fall as orgs re-register).\n"
-        f"3. **Email SOAR** — {CLUBS_CONTACT}, the office that supports all "
-        "student organizations.\n\n"
-        "Tap 🎯 or tell me what you're into, and walk into Cornucopia "
-        "knowing which organizations to look for.\n\n"
-        "_For walking directions to East Upper Field, ask the **UCSC Campus "
-        "Navigation** agent._"
-    )
-    buttons = [
-        MenuButton("🎯 Match my vibe", {"action": "quiz"}, primary=True),
-        MenuButton(
-            "🗂️ Browse categories",
-            {"action": "quick", "q": "what categories are there"},
-        ),
-    ]
-    return menu_message(
-        preamble,
-        title="Meet clubs in person 🤝",
-        subtitle="Cornucopia · Tue Sept 22 · East Upper Field",
-        body_lines=None,
-        buttons=buttons,
-        source=SOURCE,
     )
 
 
