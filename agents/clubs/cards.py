@@ -441,20 +441,24 @@ def link_fallback_message(action: str, selection: dict) -> ChatMessage:
     worst outcome of the three — worse than the preview box these buttons
     exist to avoid.
     """
+    # The URL goes on its own line, alone. The client unfurls a bare link
+    # into a large tappable preview card — the behaviour that is a nuisance
+    # inside a listing is exactly what is wanted here, where opening the page
+    # is the whole point of the tap.
     if action == "open_site":
         club = by_id(selection.get(CLUB_ID_FIELD, ""))
         website = (club or {}).get("website")
         if website:
-            return create_text_chat(f"**{club['name']}** — {website}")
+            return create_text_chat(f"**{club['name']}** — tap to open:\n{website}")
         return create_text_chat(
-            f"That organization has no site of its own. The directory has "
-            f"more: {OFFICIAL_CLUBS_URL}"
+            "That organization has no site of its own. The full directory:\n"
+            + OFFICIAL_CLUBS_URL
         )
     if action == "open_email":
         return create_text_chat(
             f"SOAR supports all student organizations — email {CLUBS_CONTACT}."
         )
-    return create_text_chat(f"The official directory: {OFFICIAL_CLUBS_URL}")
+    return create_text_chat("The official directory — tap to open:\n" + OFFICIAL_CLUBS_URL)
 
 
 def stale_selection_message() -> ChatMessage:

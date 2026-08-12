@@ -229,7 +229,11 @@ def link_fallback_message(link_id: str) -> ChatMessage:
         item = _link(link_id)
     except StopIteration:
         return unknown_message()
-    return create_text_chat(f"**{item['label']}** — {item['why']}\n{item['url']}")
+    # URL alone on the last line so the client unfurls it into a large
+    # tappable preview — here that is the point, not a nuisance.
+    return create_text_chat(
+        f"**{item['label']}** — {item['why']}\n\nTap to open:\n{item['url']}"
+    )
 
 
 def unknown_message() -> ChatMessage:

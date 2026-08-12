@@ -241,7 +241,8 @@ async def _handle_selection(
             ctx,
             sender,
             create_text_chat(
-                f"The official Slug Start schedule: {cards.OFFICIAL_EVENTS_URL}"
+                "The official Slug Start schedule — tap to open:\n"
+                + cards.OFFICIAL_EVENTS_URL
             ),
         )
         return True
