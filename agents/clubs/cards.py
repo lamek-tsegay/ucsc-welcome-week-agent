@@ -309,18 +309,21 @@ def detail_message(club: dict, others: list[dict]) -> ChatMessage:
     # what it actually does. Without one there is nothing here to render and the
     # card stays the short version — the two shapes coexist while the other
     # clubs are still being read.
+    #
+    # One block, not three. The first pass rendered "What they do", "How to get
+    # involved" and "Who it's for" as separate headed sections, which tripled
+    # the payload and left the client sitting on "working on your request".
+    # Everything worth saying fits in a handful of lines under one heading; the
+    # rest of the detail is on their site, one tap away.
     blocks: list[DetailBlock] = []
     if profile:
-        if profile.get("highlights"):
-            blocks.append(DetailBlock("What they do", [
-                f"• {line}" for line in profile["highlights"]
-            ]))
-        if profile.get("how_to_join"):
-            blocks.append(DetailBlock("How to get involved", [
-                f"• {line}" for line in profile["how_to_join"]
-            ]))
+        lines = [f"• {line}" for line in profile.get("highlights", [])]
         if profile.get("who_can_join"):
-            blocks.append(DetailBlock("Who it's for", [profile["who_can_join"]]))
+            lines.append(f"• {profile['who_can_join']}")
+        if profile.get("start_here"):
+            lines.append(f"→ {profile['start_here']}")
+        if lines:
+            blocks.append(DetailBlock("What they do", lines))
 
     if profile:
         # Two sources now, and they support different things: the campus page
@@ -328,11 +331,9 @@ def detail_message(club: dict, others: list[dict]) -> ChatMessage:
         # above came from. Both dates, because they were read on different days
         # and either can go stale on its own.
         footnote = (
-            f"✅ Listed on Baskin Engineering's student organizations page "
-            f"(checked {club.get('source_checked', '2026')}). Everything above "
-            f"is from the club's own site, read {profile['checked']}. No meeting "
-            "time is published anywhere — their Discord is where they announce "
-            "what's actually on."
+            f"✅ Baskin Engineering listing ({club.get('source_checked', '2026')}) "
+            f"· their own site, read {profile['checked']}. No meeting time is "
+            f"published anywhere. Stuck? {CLUBS_CONTACT}"
         )
     elif club["verified"]:
         # "Confirmed on the official Baskin Engineering page" claimed more than
@@ -396,28 +397,33 @@ def detail_message(club: dict, others: list[dict]) -> ChatMessage:
             )
         )
 
-    link_buttons.append(
-        MenuButton(
-            "📂 Official directory",
-            {"action": "open_directory"},
-            url=OFFICIAL_CLUBS_URL,
+    # SOAR and the campus directory are the fallback for a club we can't route
+    # to directly. Once a club's own channels are on the card they are the
+    # better answer, and eight buttons was too many to read anyway — so these
+    # two step aside, and the footnote still names SOAR for anyone stuck.
+    if not (profile and profile.get("contact_email")):
+        link_buttons.append(
+            MenuButton(
+                "📂 Official directory",
+                {"action": "open_directory"},
+                url=OFFICIAL_CLUBS_URL,
+            )
         )
-    )
-    link_buttons.append(
-        MenuButton(
-            "✉️ Email SOAR",
-            {"action": "open_email"},
-            url=gmail_compose(
-                CLUBS_CONTACT,
-                subject=f"Question about {club['name']}",
-                body=(
-                    f"Hi SOAR,\n\nI'm a UCSC student interested in "
-                    f"{club['name']}. Could you point me to how to get "
-                    f"involved?\n\nThanks!"
+        link_buttons.append(
+            MenuButton(
+                "✉️ Email SOAR",
+                {"action": "open_email"},
+                url=gmail_compose(
+                    CLUBS_CONTACT,
+                    subject=f"Question about {club['name']}",
+                    body=(
+                        f"Hi SOAR,\n\nI'm a UCSC student interested in "
+                        f"{club['name']}. Could you point me to how to get "
+                        f"involved?\n\nThanks!"
+                    ),
                 ),
-            ),
+            )
         )
-    )
 
     payload = build_detail_payload(
         title=club["name"],
