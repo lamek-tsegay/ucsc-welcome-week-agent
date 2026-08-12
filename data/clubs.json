@@ -1129,20 +1129,66 @@
    "id": "be_slug_gaming",
    "name": "Slug Gaming",
    "category": "tech_engineering",
-   "description": "Gaming community.",
+   "description": "UCSC's official esports club: competitive teams, tournaments, and social gaming.",
    "tags": [
     "games",
     "gaming",
     "social",
-    "community"
+    "community",
+    "esports",
+    "competition"
    ],
-   "aliases": [],
+   "aliases": [
+    "Slug Esports"
+   ],
    "contact": null,
    "meeting_info": null,
    "verified": true,
    "source": "https://undergrad.engineering.ucsc.edu/student-organizations/",
    "source_checked": "2026-08-09",
-   "website": "https://sluggaming.club/"
+   "website": "https://sluggaming.club/",
+   "profile": {
+    "summary": "Slug Gaming is UC Santa Cruz’s official esports club, home to competitive teams, passionate gamers, and a thriving campus community. We organize tournaments, social events, and mentorship programs to unite students through gaming and competition.",
+    "summary_is_quote": true,
+    "mission": "To unite gamers at UCSC and beyond, fostering community, competition, and personal growth through esports and gaming events.",
+    "mission_is_quote": true,
+    "highlights": [
+     "Competitive teams in Apex Legends, League of Legends, Overwatch, Rocket League and Valorant, at varsity and junior varsity level",
+     "Viewing parties, collegiate tournaments, and social gaming in-houses",
+     "A mentorship program where experienced players help newer ones",
+     "Free swag and merch giveaways, announced on their Discord"
+    ],
+    "highlights_are_quotes": false,
+    "who_can_join": "Open to all students, consistent with the UC Nondiscrimination Statement. You do not have to compete — social gaming and viewing parties are open to anyone.",
+    "who_can_join_is_quote": false,
+    "how_to_join": [
+     "Join their Discord — events, giveaways and tryout announcements go there first",
+     "Turn up to a viewing party, tournament or social gaming night",
+     "For a competitive team, watch for tryout application forms on their site, Discord and social media; tryouts run during or shortly before the school year"
+    ],
+    "how_to_join_are_quotes": false,
+    "links": [
+     {
+      "id": "discord",
+      "label": "💬 Discord",
+      "url": "https://discord.gg/gnXWGrxmqQ"
+     },
+     {
+      "id": "instagram",
+      "label": "📸 Instagram",
+      "url": "https://www.instagram.com/sluggamingucsc/"
+     },
+     {
+      "id": "twitch",
+      "label": "🎮 Twitch",
+      "url": "https://www.twitch.tv/slugesports"
+     }
+    ],
+    "contact_email": "ucscesportsclub@gmail.com",
+    "source": "https://sluggaming.club/",
+    "checked": "2026-08-12",
+    "not_recorded": "The club's site publishes no meeting day, time or room, so none is recorded here. Officer names and their personal handles are on the site but are deliberately not stored: they change every year and they are individual students' details, not the club's. Discord is where the club announces what is actually happening."
+   }
   },
   {
    "id": "be_slug_linux",

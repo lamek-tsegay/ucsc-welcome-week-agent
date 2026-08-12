@@ -53,7 +53,7 @@ SOURCE = "clubs_tab"
 BACK_ACTION = "back_to_clubs"
 
 # Selection keys this agent's buttons carry beyond the club id.
-EXTRA_FIELDS = ("vibe", "category", "q")
+EXTRA_FIELDS = ("vibe", "category", "q", "link")
 
 # The vibe matcher: six moods a brand-new student can pick without knowing any
 # club names. Tags must exist in data/clubs.json — a test enforces that every
@@ -288,6 +288,7 @@ def detail_message(club: dict, others: list[dict]) -> ChatMessage:
     asked about.
     """
     website = club.get("website")
+    profile = club.get("profile")
 
     # No "Site" row: the address is on the 🌐 button, which opens it. Printing
     # it here too is the same link twice, and the copy that can't be tapped.
@@ -304,12 +305,36 @@ def detail_message(club: dict, others: list[dict]) -> ChatMessage:
 
     rows.append(DetailRow("Find them at", "Cornucopia, Tue Sept 22, East Upper Field"))
 
-    # No "How to join" block either. It listed the club's site, the directory,
-    # and the SOAR address — every one of which is now a button directly below
-    # it, so the block was the button row written out as text.
+    # A club with a profile has been read from its own site, so the card can say
+    # what it actually does. Without one there is nothing here to render and the
+    # card stays the short version — the two shapes coexist while the other
+    # clubs are still being read.
     blocks: list[DetailBlock] = []
+    if profile:
+        if profile.get("highlights"):
+            blocks.append(DetailBlock("What they do", [
+                f"• {line}" for line in profile["highlights"]
+            ]))
+        if profile.get("how_to_join"):
+            blocks.append(DetailBlock("How to get involved", [
+                f"• {line}" for line in profile["how_to_join"]
+            ]))
+        if profile.get("who_can_join"):
+            blocks.append(DetailBlock("Who it's for", [profile["who_can_join"]]))
 
-    if club["verified"]:
+    if profile:
+        # Two sources now, and they support different things: the campus page
+        # confirms the organization is real, its own site is where everything
+        # above came from. Both dates, because they were read on different days
+        # and either can go stale on its own.
+        footnote = (
+            f"✅ Listed on Baskin Engineering's student organizations page "
+            f"(checked {club.get('source_checked', '2026')}). Everything above "
+            f"is from the club's own site, read {profile['checked']}. No meeting "
+            "time is published anywhere — their Discord is where they announce "
+            "what's actually on."
+        )
+    elif club["verified"]:
         # "Confirmed on the official Baskin Engineering page" claimed more than
         # is true: that page lists names and links only, so what it confirms is
         # that this organization is real and where its site is — not the
@@ -342,6 +367,35 @@ def detail_message(club: dict, others: list[dict]) -> ChatMessage:
                 url=website,
             )
         )
+
+    # The club's own channels come before ours. A student who wants Slug Gaming
+    # wants their Discord, not SOAR's inbox.
+    for link in (profile or {}).get("links", []):
+        link_buttons.append(
+            MenuButton(
+                link["label"],
+                {CLUB_ID_FIELD: club["id"], "action": "open_club_link",
+                 "link": link["id"]},
+                url=link["url"],
+            )
+        )
+
+    if profile and profile.get("contact_email"):
+        link_buttons.append(
+            MenuButton(
+                "✉️ Email them",
+                {CLUB_ID_FIELD: club["id"], "action": "open_club_email"},
+                url=gmail_compose(
+                    profile["contact_email"],
+                    subject=f"Interested in {club['name']}",
+                    body=(
+                        f"Hi,\n\nI'm a UCSC student interested in "
+                        f"{club['name']}. How do I get involved?\n\nThanks!"
+                    ),
+                ),
+            )
+        )
+
     link_buttons.append(
         MenuButton(
             "📂 Official directory",
@@ -368,7 +422,8 @@ def detail_message(club: dict, others: list[dict]) -> ChatMessage:
     payload = build_detail_payload(
         title=club["name"],
         heading=None,  # the card title is already the club's name
-        body=club["description"],
+        # The club's own words when they've been read; ours otherwise.
+        body=(profile or {}).get("summary") or club["description"],
         badges=[
             (category_label(club["category"]), "info"),
             badge(club["verified"]),
@@ -473,6 +528,20 @@ def link_fallback_message(action: str, selection: dict) -> ChatMessage:
             "That organization has no site of its own. The full directory:\n"
             + OFFICIAL_CLUBS_URL
         )
+    if action == "open_club_link":
+        club = by_id(selection.get(CLUB_ID_FIELD, ""))
+        wanted = selection.get("link", "")
+        for link in (club or {}).get("profile", {}).get("links", []):
+            if link["id"] == wanted:
+                return create_text_chat(
+                    f"**{club['name']}** on {link['label']} — tap to open:\n{link['url']}"
+                )
+        return create_text_chat("The official directory:\n" + OFFICIAL_CLUBS_URL)
+    if action == "open_club_email":
+        club = by_id(selection.get(CLUB_ID_FIELD, ""))
+        email = (club or {}).get("profile", {}).get("contact_email")
+        if email:
+            return create_text_chat(f"Email **{club['name']}** at {email}.")
     if action == "open_email":
         return create_text_chat(
             f"SOAR supports all student organizations — email {CLUBS_CONTACT}."

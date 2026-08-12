@@ -16,6 +16,7 @@ actually reads carries the right labelling, not just that the flags are set.
 from __future__ import annotations
 
 import asyncio
+import re
 import sys
 from datetime import date
 
@@ -299,13 +300,49 @@ async def check_rendered_clubs() -> None:
             "soar@ucsc.edu" in detail,
             f"club detail {club['id']}: no official contact route offered.",
         )
-        # The only email address anywhere should be the official SOAR one.
-        residue = detail.replace("soar@ucsc.edu", "")
+        # SOAR's address is always allowed. A club's own address is allowed too,
+        # but only the one its profile records — which exists only because that
+        # club's own site was read and cited, the same standard the NSBE agent
+        # meets. Any other address on the card is a guess.
+        allowed = {"soar@ucsc.edu"}
+        profile = club.get("profile")
+        if profile and profile.get("contact_email"):
+            check(
+                bool(profile.get("source")) and bool(profile.get("checked")),
+                f"clubs.json: {club['id']} profile states a contact address "
+                "without recording where it came from and when it was read.",
+            )
+            allowed.add(profile["contact_email"])
+
+        residue = detail
+        for address in allowed:
+            residue = residue.replace(address, "")
         check(
             "@" not in residue,
-            f"club detail {club['id']}: contains an email address other than the "
-            "official SOAR contact.",
+            f"club detail {club['id']}: contains an email address that is "
+            "neither SOAR's nor one read from the club's own site.",
         )
+
+        # Everything a profile asserts is only as good as its citation.
+        if profile:
+            check(
+                profile.get("source", "").startswith("https://")
+                and re.fullmatch(r"\d{4}-\d{2}-\d{2}", profile.get("checked", "")),
+                f"clubs.json: {club['id']} profile needs an https source and an "
+                "ISO read date.",
+            )
+            check(
+                profile["source"] in detail or profile["checked"] in detail,
+                f"club detail {club['id']}: renders profile content without "
+                "saying when it was read.",
+            )
+            for field in ("summary", "mission", "who_can_join"):
+                if profile.get(field):
+                    check(
+                        isinstance(profile.get(f"{field}_is_quote"), bool),
+                        f"clubs.json: {club['id']} profile {field!r} does not "
+                        "record whether it is the club's wording or ours.",
+                    )
 
 
 def check_nsbe_data() -> None:
