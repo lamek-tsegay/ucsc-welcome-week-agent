@@ -16,7 +16,7 @@ from __future__ import annotations
 
 from common.cards import MenuButton, build_chip_payload, card_message, menu_message
 from common.chat import create_text_chat
-from common.links import link_row
+from common.links import gmail_compose, link_row
 from common.loader import nsbe
 from uagents_core.contrib.protocols.chat import ChatMessage
 
@@ -47,9 +47,9 @@ def _instagram_note() -> str:
 
 def welcome_message() -> ChatMessage:
     chapter = nsbe()["chapter"]
+    # The card subtitle already says what NSBE stands for, so this doesn't.
     preamble = (
-        f"Hey! 👋 I'm the **{chapter['short_name']}** agent — the UC Santa Cruz "
-        "chapter of the National Society of Black Engineers.\n\n"
+        f"Hey! 👋 I'm the **{chapter['short_name']}** agent.\n\n"
         f"{chapter['about']}\n\n"
         "What would you like to know?"
     )
@@ -75,8 +75,8 @@ def meetings_message() -> ChatMessage:
     preamble = (
         f"**{meetings['day']} at {meetings['time']}**\n"
         f"{meetings['location']}\n\n"
-        "Anyone can turn up — you don't need to be a member, and the chapter "
-        "welcomes all majors and ethnicities.\n\n" + _instagram_note()
+        "Anyone can turn up: no membership needed, all majors and "
+        "ethnicities welcome.\n\n" + _instagram_note()
     )
     buttons = [
         MenuButton("🤝 How to join", {"action": "topic", "topic": "join"}, primary=True),
@@ -114,12 +114,22 @@ def join_message() -> ChatMessage:
     contact = nsbe()["contact"]
     # Buttons that open the links, so nothing in the bubble gets unfurled.
     chips = [
-        # No url: redirect is documented for web pages, not mailto. Tapping
-        # this returns the address as text, which is what you want to copy.
+        # Email opens Gmail pre-addressed with a first line written, the same
+        # pattern as the clubs cards. The address is the chapter's own,
+        # published and cited; a client that ignores the redirect still gets
+        # it back as text via the open_link fallback.
         MenuButton(
             "✉️ Email them",
             {"action": "open_link", "link": "email"},
             primary=True,
+            url=gmail_compose(
+                contact["email"],
+                subject="Interested in NSBE at UCSC",
+                body=(
+                    "Hi,\n\nI'm a UCSC student interested in NSBE. "
+                    "How do I get involved?\n\nThanks!"
+                ),
+            ),
         ),
         MenuButton(
             "📸 Instagram",

@@ -78,6 +78,7 @@ def _every_card() -> list[tuple[str, dict]]:
         respond_to_selection as events_selection,
     )
     from agents.navigation import cards as nav_cards
+    from agents.nsbe import cards as nsbe_cards
 
     found: list[tuple[str, object, dict]] = []
 
@@ -103,6 +104,13 @@ def _every_card() -> list[tuple[str, dict]]:
     add("events.listing", asyncio.run(events_query("show me the whole week", today=DURING))[0])
     add("events.detail_confirmed", events_selection("cornucopia"))
     add("events.detail_placeholder", events_selection("ph_porter_arts_night"))
+
+    add("nsbe.welcome", nsbe_cards.welcome_message())
+    add("nsbe.meetings", nsbe_cards.meetings_message())
+    add("nsbe.join", nsbe_cards.join_message())
+    add("nsbe.about", nsbe_cards.about_message())
+    add("nsbe.links", nsbe_cards.links_message())
+    add("nsbe.unknown", nsbe_cards.unknown_message())
 
     add("nav.welcome", nav_cards.welcome_message(None))
     add("nav.welcome_with_home", nav_cards.welcome_message("Porter College"))
@@ -149,8 +157,8 @@ def test_no_reply_is_metadata_only(name, message, payload):
 def test_the_audit_covers_every_agent():
     """A card path added without a case here would go unchecked."""
     names = {name.split(".")[0] for name, _ in ALL_CARDS}
-    assert names == {"clubs", "events", "nav"}
-    assert len(ALL_CARDS) >= 20
+    assert names == {"clubs", "events", "nav", "nsbe"}
+    assert len(ALL_CARDS) >= 25
 
 
 @pytest.mark.parametrize("name,payload", ALL_CARDS, ids=[n for n, _ in ALL_CARDS])

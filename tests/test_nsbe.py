@@ -191,12 +191,15 @@ def _url(link_id: str) -> str:
 
 def test_join_card_offers_every_published_route():
     """The routes are buttons, not URLs in the text — a URL there gets unfurled
-    into a preview card. Instagram and the linktree open in one tap; email
-    comes back as copyable text."""
+    into a preview card. Instagram and the linktree open in one tap, and email
+    opens Gmail pre-addressed to the chapter's own published address."""
     payload = json.loads(_card(cards.join_message()))
+    redirects = _redirects(payload)
 
-    assert {_url("instagram"), _url("linktree")} <= _redirects(payload)
-    assert "email" in _link_taps(payload)
+    assert {_url("instagram"), _url("linktree")} <= redirects
+    compose = [url for url in redirects if "mail.google.com" in url]
+    assert compose, "no button opens a pre-addressed email"
+    assert f"to={nsbe()['contact']['email']}" in compose[0], compose[0]
 
     # The meeting details still appear, composed from one source.
     assert nsbe()["meetings"]["location"] in _rendered(cards.join_message())
