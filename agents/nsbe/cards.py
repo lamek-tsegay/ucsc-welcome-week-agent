@@ -220,8 +220,9 @@ def links_message() -> ChatMessage:
         body_lines=[f"{item['label']} — {item['why']}" for item in links],
         chips=chips,
         source=SOURCE,
+        # Back only. Meetings is on the welcome card this returns to — a
+        # "When they meet" here was the same route offered twice.
         footer_buttons=[
-            MenuButton("📅 When they meet", {"action": "topic", "topic": "meetings"}),
             MenuButton("↩️ Back", {"action": "topic", "topic": "home"}),
         ],
         per_row=1,
