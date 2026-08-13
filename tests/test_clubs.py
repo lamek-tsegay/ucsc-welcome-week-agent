@@ -221,34 +221,31 @@ def test_response_labels_every_entry_on_the_card():
         assert expected in badges, f"{club_id} missing its {expected} badge"
 
 
-def test_browse_all_lands_on_the_category_hub():
-    """"Browse all UCSC clubs" lands on ten categories, each one tap from
-    every one of its members.
+def test_browse_all_returns_every_club_in_one_card():
+    """"Browse all UCSC clubs" lands on the whole list, not a picker.
 
-    This reverses an earlier decision, deliberately. The single all-clubs
-    card was complete and alphabetical — and at 23.8 KB it was ten times the
-    next-largest reply in the system, and the one reply that reliably left
-    ASI:One's orchestrator stuck on "working on your request". The roster is
-    intact one level down: the hub must cover every category, the counts must
-    sum to every club, and each category card still lists all of its members
-    (test_category_browse_returns_the_whole_category pins that).
+    A category picker in front of it was one tap between the student and the
+    thing they asked for, and the category is already legible from the emoji
+    on each name.
     """
     from common.loader import clubs as clubs_data
 
     message, shown_ids = asyncio.run(respond_to_query("what categories are there"))
-    assert shown_ids == []  # nothing is "shown" yet — the hub is navigation
+    assert len(shown_ids) == len(clubs_data())
 
     payload = json.loads(_card_text(message))
-    assert len(json.dumps(payload)) < 3000, "the hub must stay light"
-
-    picks: list[tuple[str, str]] = []  # (category id, label)
+    # Names are list headings, not button labels: a button centres its own
+    # label and the schema exposes no way to align it, so the names live in
+    # headings, which the client left-aligns.
+    labels: list[str] = []
+    tappable: list[str] = []
 
     def walk(node):
         if isinstance(node, dict):
-            if node.get("type") == "button":
-                selection = node["action"]["selection"]
-                if selection.get("action") == "category":
-                    picks.append((selection["category"], node["label"]))
+            if node.get("type") == "heading" and node.get("level") == 3:
+                labels.append(node["value"])
+            if node.get("type") == "button" and "club_id" in node["action"]["selection"]:
+                tappable.append(node["action"]["selection"]["club_id"])
             for value in node.values():
                 walk(value)
         elif isinstance(node, list):
@@ -256,18 +253,21 @@ def test_browse_all_lands_on_the_category_hub():
                 walk(entry)
 
     walk(payload)
+    assert len(labels) == len(clubs_data())
+    assert sorted(tappable) == sorted(club["id"] for club in clubs_data())
 
-    populated = {club["category"] for club in clubs_data()}
-    assert {category for category, _ in picks} == populated
-
-    # Every club is accounted for in the counts on the labels.
-    total = 0
-    for category, label in picks:
-        count = int(label.rsplit("·", 1)[1].strip())
-        assert count == sum(1 for c in clubs_data() if c["category"] == category)
-        total += count
-    assert total == len(clubs_data())
-
+    # Alphabetical by club name — the emoji and tick prefixes must not drive
+    # the ordering, or the list reads by codepoint instead of by name.
+    # The confirmed tick trails the name rather than leading it, so every
+    # name starts at the same point instead of confirmed ones being pushed in.
+    lookup = {club["name"]: club for club in clubs_data()}
+    names = []
+    for label in labels:
+        stripped = label.removesuffix(" ✅")
+        name = next(n for n in lookup if stripped.endswith(n))
+        names.append(name)
+    assert names == sorted(names, key=str.lower)
+    assert set(names) == set(lookup)
 
 def test_no_match_response_suggests_alternatives():
     message, ids = asyncio.run(respond_to_query("quantum basket weaving underwater"))

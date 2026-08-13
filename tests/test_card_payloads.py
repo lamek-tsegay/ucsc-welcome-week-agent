@@ -89,7 +89,7 @@ def _every_card() -> list[tuple[str, dict]]:
     add("clubs.welcome", clubs_cards.welcome_message())
     add("clubs.interests", clubs_cards.interests_message())
     add("clubs.vibe_picker", clubs_cards.vibe_picker_message())
-    add("clubs.categories_hub", clubs_cards.categories_message(list(clubs_data())))
+    add("clubs.all_clubs", clubs_cards.all_clubs_message(list(clubs_data())))
     add("clubs.no_matches", clubs_cards.no_matches_message("zzz"))
     add("clubs.vibe_results", respond_to_vibe("creative")[0])
     add("clubs.category", respond_to_category("tech_engineering")[0])
@@ -224,8 +224,15 @@ def test_card_stays_inside_the_weight_budget(name, payload):
     is the 35-org engineering category at ~6.3 KB; the budget sits just above
     it so growth is a decision, not an accident.
     """
+    # One deliberate exemption: the full alphabetized catalog. It cannot be
+    # both complete and small — 76 tappable rows are ~24 KB — and keeping it
+    # complete on one card is an explicit product decision (2026-08-12),
+    # made after the hang it was once blamed for traced to a missing text
+    # bubble instead. The card's own hard ceiling still applies via
+    # MAX_PAYLOAD_BYTES; everything else stays on the 7 KB budget.
+    cap = 26000 if name == "clubs.all_clubs" else 7000
     weight = len(json.dumps(payload))
-    assert weight <= 7000, f"{name} is {weight:,} bytes"
+    assert weight <= cap, f"{name} is {weight:,} bytes"
 
 
 @pytest.mark.parametrize("name,payload", ALL_CARDS, ids=[n for n, _ in ALL_CARDS])

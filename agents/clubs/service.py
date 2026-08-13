@@ -166,11 +166,14 @@ def respond_to_category(category_id: str) -> tuple[ChatMessage, list[str]] | Non
 async def respond_to_query(text: str) -> tuple[ChatMessage, list[str]]:
     """Answer a free-text clubs query."""
     if _CATEGORIES_RE.search(text or ""):
-        # Browse lands on the category hub. It replaced a single all-clubs
-        # card whose 23.8 KB reliably stalled ASI:One's orchestrator — see
-        # cards.categories_message. Nothing is hidden: every category card
-        # still lists all of its members.
-        return cards.categories_message(list(clubs_data())), []
+        # Browse lands on the whole alphabetized catalog, one card. A category
+        # hub stood here briefly while chasing a client hang; the hang was the
+        # missing text bubble, not this card's size, and the hub was one tap
+        # between the student and what they asked for.
+        return (
+            cards.all_clubs_message(list(clubs_data())),
+            [club["id"] for club in clubs_data()],
+        )
 
     query = build_query(text)
 

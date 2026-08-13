@@ -450,6 +450,261 @@ def detail_message(club: dict, others: list[dict]) -> ChatMessage:
     return card_message(f"**{club['name']}**", payload)
 
 
+def all_clubs_message(all_clubs: list[dict]) -> ChatMessage:
+    """Every organization on one card, alphabetical, names left-aligned.
+
+    A list rather than a grid of buttons, for one reason: a button centres its
+    own label and the element schema exposes no way to change that, so a
+    column of buttons puts every name at a different starting point. List
+    headings are text, which the client left-aligns — so names line up down
+    the card however long or short they are. Body and badges are left empty to
+    keep each row to a name and its button.
+
+    Sorting is on the club name only, case-insensitively, so neither the
+    category emoji nor the confirmed tick drags entries out of order.
+
+    This card briefly became a ten-category hub while chasing a client hang.
+    The hang turned out to be the missing text bubble, not the size — this
+    card rendered live for days before the hub existed — so the catalog is
+    back by explicit request, with the bubble it always needs.
+    """
+    ordered = sorted(all_clubs, key=lambda c: c["name"].lower())
+    items = [
+        CardItem(
+            record_id=club["id"],
+            heading=f"{_name_with_emoji(club)}{' ✅' if club['verified'] else ''}",
+            body="",
+            badges=[],
+            button_label="Details",
+        )
+        for club in ordered
+    ]
+    payload = build_list_payload(
+        items,
+        title=f"All {len(ordered)} UCSC clubs 🐌",
+        subtitle="Alphabetical · tap any name for details",
+        id_field=CLUB_ID_FIELD,
+        source=SOURCE,
+        footer_buttons=[MenuButton("🎯 Match my vibe instead", {"action": "quiz"})],
+        footnote="✅ = confirmed on an official UCSC page · " + clubs_footnote(),
+    )
+    return card_message(
+        f"**All {len(ordered)} organizations, A to Z** — tap any name for details.",
+        payload,
+    )
+
+
+def _summary_line(club: dict) -> str:
+    return (
+        f"• {marker(club['verified'])}**{_name_with_emoji(club)}** — "
+        f"{category_label(club['category'])}"
+    )
+
+
+def list_message(
+    scored: list[ScoredClub],
+    *,
+    heading: str,
+    footer_buttons: list[MenuButton] | None = None,
+) -> ChatMessage:
+    # The bubble carries the heading as plain text, deliberately with no URL
+    # in it: the chat client unfurls any link it finds into a preview card, and
+    # on a listing that box is pure noise. The directory URL still rides on the
+    # card footnote, readable and copyable; detail cards keep the tappable
+    # version, where acting on it is the point.
+    preamble = heading
+
+    items = [
+        CardItem(
+            record_id=item.club["id"],
+            heading=_name_with_emoji(item.club),
+            body=item.club["description"],
+            # Verification only. The category is already the emoji on the
+            # heading; naming it again in a badge cost ~70 bytes per row on
+            # cards ASI:One's orchestrator has to chew through.
+            badges=[badge(item.club["verified"])],
+            button_label="Details",
+        )
+        for item in scored
+    ]
+
+    payload = build_list_payload(
+        items,
+        title=heading.replace("**", ""),
+        subtitle="Tap an organization for details",
+        id_field=CLUB_ID_FIELD,
+        source=SOURCE,
+        footer_buttons=footer_buttons,
+        footnote=clubs_footnote(),
+    )
+    return card_message(preamble, payload)
+
+
+def detail_message(club: dict, others: list[dict]) -> ChatMessage:
+    """One club, and nothing about any other club.
+
+    `others` is still accepted so callers need not change, but nothing is
+    rendered from it. A "Similar" list turned a page about Slug Gaming into a
+    page that spent its last line naming three organizations a student had not
+    asked about.
+    """
+    website = club.get("website")
+    profile = club.get("profile")
+
+    # No "Site" row: the address is on the 🌐 button, which opens it. Printing
+    # it here too is the same link twice, and the copy that can't be tapped.
+    # No "Category" row: the badge at the top of the card already is it.
+    rows: list[DetailRow] = []
+
+    aliases = [alias for alias in club.get("aliases", []) if alias]
+    if aliases:
+        rows.append(DetailRow("Also called", ", ".join(aliases)))
+
+    tags = ", ".join(sorted(club.get("tags", [])))
+    if tags:
+        rows.append(DetailRow("Interests", tags))
+
+    rows.append(DetailRow("Find them at", "Cornucopia, Tue Sept 22, East Upper Field"))
+
+    # A club with a profile has been read from its own site, so the card can say
+    # what it actually does. Without one there is nothing here to render and the
+    # card stays the short version — the two shapes coexist while the other
+    # clubs are still being read.
+    #
+    # One block, not three. The first pass rendered "What they do", "How to get
+    # involved" and "Who it's for" as separate headed sections, which tripled
+    # the payload and left the client sitting on "working on your request".
+    # Everything worth saying fits in a handful of lines under one heading; the
+    # rest of the detail is on their site, one tap away.
+    blocks: list[DetailBlock] = []
+    if profile:
+        lines = [f"• {line}" for line in profile.get("highlights", [])]
+        if profile.get("who_can_join"):
+            lines.append(f"• {profile['who_can_join']}")
+        if profile.get("start_here"):
+            lines.append(f"→ {profile['start_here']}")
+        if lines:
+            blocks.append(DetailBlock("What they do", lines))
+
+    if profile:
+        # Two sources now, and they support different things: the campus page
+        # confirms the organization is real, its own site is where everything
+        # above came from. Both dates, because they were read on different days
+        # and either can go stale on its own.
+        footnote = (
+            f"✅ Baskin Engineering listing ({club.get('source_checked', '2026')}) "
+            f"· their own site, read {profile['checked']}. No meeting time is "
+            f"published anywhere. Stuck? {CLUBS_CONTACT}"
+        )
+    elif club["verified"]:
+        # "Confirmed on the official Baskin Engineering page" claimed more than
+        # is true: that page lists names and links only, so what it confirms is
+        # that this organization is real and where its site is — not the
+        # one-line summary above, which is ours. Saying "listed on" keeps the
+        # claim the size of the evidence, and reads like a sentence.
+        footnote = (
+            "✅ Listed on Baskin Engineering's student organizations page, "
+            f"checked {club.get('source_checked', '2026')}. What they do, when "
+            "they meet, and how to reach them live on their own site. "
+            f"Questions? {CLUBS_CONTACT}"
+        )
+    else:
+        footnote = (
+            "⚠️ Representative example, not a live roster entry. Contact details "
+            "and meeting times are omitted rather than guessed. "
+            f"Questions? {CLUBS_CONTACT}"
+        )
+
+    # Link buttons rather than a link row in the bubble: a URL in message text
+    # gets unfurled into a preview card by the client, which is what pushed
+    # these links out of the bubble in the first place. Each carries its
+    # selection too, so a client that ignores the url still sends the tap back
+    # and gets the address as text.
+    link_buttons = []
+    if website:
+        link_buttons.append(
+            MenuButton(
+                "🌐 Their site",
+                {CLUB_ID_FIELD: club["id"], "action": "open_site"},
+                primary=True,
+                url=website,
+            )
+        )
+
+    # The club's own channels come before ours. A student who wants Slug Gaming
+    # wants their Discord, not SOAR's inbox.
+    for link in (profile or {}).get("links", []):
+        link_buttons.append(
+            MenuButton(
+                link["label"],
+                {CLUB_ID_FIELD: club["id"], "action": "open_club_link",
+                 "link": link["id"]},
+                url=link["url"],
+            )
+        )
+
+    # No directory button: the footnote already names the directory era, and
+    # the button was one more thing on every card. Email earns its place
+    # instead — it opens Gmail pre-addressed, with a subject and first line
+    # already written, which a footnote address cannot do. The club's own
+    # address when its site publishes one; SOAR, who advise every org, when
+    # it doesn't.
+    if profile and profile.get("contact_email"):
+        link_buttons.append(
+            MenuButton(
+                "✉️ Email them",
+                {CLUB_ID_FIELD: club["id"], "action": "open_club_email"},
+                url=gmail_compose(
+                    profile["contact_email"],
+                    subject=f"Interested in {club['name']}",
+                    body=(
+                        f"Hi,\n\nI'm a UCSC student interested in "
+                        f"{club['name']}. How do I get involved?\n\nThanks!"
+                    ),
+                ),
+            )
+        )
+    else:
+        link_buttons.append(
+            MenuButton(
+                "✉️ Email SOAR",
+                {"action": "open_email"},
+                url=gmail_compose(
+                    CLUBS_CONTACT,
+                    subject=f"Question about {club['name']}",
+                    body=(
+                        f"Hi SOAR,\n\nI'm a UCSC student interested in "
+                        f"{club['name']}. Could you point me to how to get "
+                        f"involved?\n\nThanks!"
+                    ),
+                ),
+            )
+        )
+
+
+    payload = build_detail_payload(
+        title=club["name"],
+        heading=None,  # the card title is already the club's name
+        # The club's own words when they've been read; ours otherwise.
+        body=(profile or {}).get("summary") or club["description"],
+        badges=[
+            (category_label(club["category"]), "info"),
+            badge(club["verified"]),
+        ],
+        rows=rows,
+        blocks=blocks,
+        footnote=footnote,
+        back_label="Back",
+        back_action=BACK_ACTION,
+        source=SOURCE,
+        extra_buttons=link_buttons,
+    )
+
+    # No URL in the bubble at all now: the links are buttons on the card, so
+    # nothing here for the client to unfurl into a preview box.
+    return card_message(f"**{club['name']}**", payload)
+
+
 def categories_message(all_clubs: list[dict]) -> ChatMessage:
     """Browse lands here: ten categories, not seventy-six organizations.
 
