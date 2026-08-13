@@ -79,12 +79,12 @@ def _every_card() -> list[tuple[str, dict]]:
     )
     from agents.navigation import cards as nav_cards
 
-    found: list[tuple[str, dict]] = []
+    found: list[tuple[str, object, dict]] = []
 
     def add(name, message):
         payload = _payload(message)
         if payload is not None:
-            found.append((name, payload))
+            found.append((name, message, payload))
 
     add("clubs.welcome", clubs_cards.welcome_message())
     add("clubs.interests", clubs_cards.interests_message())
@@ -122,7 +122,28 @@ def _walk(node, visit, path="root"):
             _walk(entry, visit, f"{path}[{index}]")
 
 
-ALL_CARDS = _every_card()
+ALL_MESSAGES = _every_card()
+ALL_CARDS = [(name, payload) for name, _, payload in ALL_MESSAGES]
+
+
+@pytest.mark.parametrize(
+    "name,message,payload", ALL_MESSAGES, ids=[n for n, _, _ in ALL_MESSAGES]
+)
+def test_no_reply_is_metadata_only(name, message, payload):
+    """Every card rides with at least one line of text.
+
+    Proven live on 2026-08-12: the browse hub was the one reply in the system
+    sent as bare MetadataContent, and the one reply that hung the client — the
+    log showed DELIVERED in 733ms while the UI spun on "working on your
+    request" indefinitely. ASI:One's orchestrator narrates the agent's text;
+    a reply with none gives it nothing to finish on.
+    """
+    from uagents_core.contrib.protocols.chat import TextContent
+
+    bubble = "".join(
+        item.text for item in message.content if isinstance(item, TextContent)
+    )
+    assert bubble.strip(), f"{name} sends a card with no text bubble"
 
 
 def test_the_audit_covers_every_agent():
@@ -322,17 +343,18 @@ def test_club_detail_opens_links_in_one_tap():
 
     payload = _payload(message)
     redirects = _redirects(payload)
-    assert OFFICIAL_CLUBS_URL in redirects, "no button opens the campus directory"
     assert any("swe" in url.lower() for url in redirects), "no button opens the club's own site"
 
-    # The email button opens Gmail already addressed to SOAR, so sending is one
-    # more tap rather than a copy-paste into whatever mail app exists.
+    # Email opens Gmail pre-addressed to SOAR; there is no directory button —
+    # the footnote covers the caveat, and email is the action worth a button.
+    assert OFFICIAL_CLUBS_URL not in redirects, "the directory button came back"
     compose = [url for url in redirects if "mail.google.com" in url]
     assert compose, "no button opens a pre-addressed email"
     assert f"to={CLUBS_CONTACT}" in compose[0], compose[0]
 
-    # An unverified club has no site of its own but stays reachable.
-    assert OFFICIAL_CLUBS_URL in _redirects(_payload(respond_to_selection("c_anime")))
+    # An unverified club has no site of its own but stays reachable — by email.
+    anime = _redirects(_payload(respond_to_selection("c_anime")))
+    assert any("mail.google.com" in url for url in anime)
 
 
 def test_event_detail_opens_the_schedule_in_one_tap():

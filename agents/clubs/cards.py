@@ -231,7 +231,13 @@ def category_card(entry: dict, members: list[dict]) -> ChatMessage:
         # would read as a confirmed roster.
         footnote="✅ = confirmed on an official UCSC page · " + clubs_footnote(),
     )
-    return card_message("", payload)
+    # Never metadata-only: ASI:One's orchestrator narrates the agent's *text*,
+    # and a reply with no text left it spinning on "working on your request" —
+    # proven live on 2026-08-12, where this exact reply logged DELIVERED in
+    # 733ms and the spinner never resolved. One line is enough.
+    return card_message(
+        f"Here's **{entry['label']}** — tap any name.", payload
+    )
 
 def _summary_line(club: dict) -> str:
     return (
@@ -343,14 +349,15 @@ def detail_message(club: dict, others: list[dict]) -> ChatMessage:
         # claim the size of the evidence, and reads like a sentence.
         footnote = (
             "✅ Listed on Baskin Engineering's student organizations page, "
-            f"checked {club.get('source_checked', '2026')}. That page carries "
-            "names and links only — what they actually do, when they meet, and "
-            "how to reach them is on their own site."
+            f"checked {club.get('source_checked', '2026')}. What they do, when "
+            "they meet, and how to reach them live on their own site. "
+            f"Questions? {CLUBS_CONTACT}"
         )
     else:
         footnote = (
             "⚠️ Representative example, not a live roster entry. Contact details "
-            "and meeting times are omitted rather than guessed."
+            "and meeting times are omitted rather than guessed. "
+            f"Questions? {CLUBS_CONTACT}"
         )
 
     # Link buttons rather than a link row in the bubble: a URL in message text
@@ -381,6 +388,12 @@ def detail_message(club: dict, others: list[dict]) -> ChatMessage:
             )
         )
 
+    # No directory button: the footnote already names the directory era, and
+    # the button was one more thing on every card. Email earns its place
+    # instead — it opens Gmail pre-addressed, with a subject and first line
+    # already written, which a footnote address cannot do. The club's own
+    # address when its site publishes one; SOAR, who advise every org, when
+    # it doesn't.
     if profile and profile.get("contact_email"):
         link_buttons.append(
             MenuButton(
@@ -396,19 +409,7 @@ def detail_message(club: dict, others: list[dict]) -> ChatMessage:
                 ),
             )
         )
-
-    # SOAR and the campus directory are the fallback for a club we can't route
-    # to directly. Once a club's own channels are on the card they are the
-    # better answer, and eight buttons was too many to read anyway — so these
-    # two step aside, and the footnote still names SOAR for anyone stuck.
-    if not (profile and profile.get("contact_email")):
-        link_buttons.append(
-            MenuButton(
-                "📂 Official directory",
-                {"action": "open_directory"},
-                url=OFFICIAL_CLUBS_URL,
-            )
-        )
+    else:
         link_buttons.append(
             MenuButton(
                 "✉️ Email SOAR",
@@ -424,6 +425,7 @@ def detail_message(club: dict, others: list[dict]) -> ChatMessage:
                 ),
             )
         )
+
 
     payload = build_detail_payload(
         title=club["name"],
@@ -481,7 +483,11 @@ def categories_message(all_clubs: list[dict]) -> ChatMessage:
         per_row=1,
         footnote=clubs_footnote(),
     )
-    return card_message("", payload)
+    # Never metadata-only — see category_card for the live evidence.
+    return card_message(
+        f"**{len(all_clubs)} organizations** in {len(chips)} categories — tap one.",
+        payload,
+    )
 
 
 def no_matches_message(query_text: str) -> ChatMessage:
