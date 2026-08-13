@@ -294,12 +294,12 @@ def test_selection_detail_for_confirmed_event():
     rendered = _text(message) + _card_text(message)
     assert "Cornucopia" in rendered
     assert "East Upper Field" in rendered
-    # The confirmed event itself must carry no placeholder warning. Other events
-    # listed under "Also on <day>" are legitimately labelled unofficial, so
-    # the check is scoped to this event's own copy.
-    own_copy = rendered.split("Also on")[0]
-    assert "Placeholder example" not in own_copy
-    assert "unofficial" not in own_copy.lower()
+    # The card is about this event alone now (the "Also on <day>" sibling
+    # block is gone), so the whole rendered reply must be free of placeholder
+    # language for a confirmed event.
+    assert "Also on" not in rendered, "the sibling-events block came back"
+    assert "Placeholder example" not in rendered
+    assert "unofficial" not in rendered.lower()
 
 
 def test_selection_detail_warns_on_placeholder():

@@ -100,9 +100,9 @@ def interests_message() -> ChatMessage:
     move is the question; the whole week stays one tap away.
     """
     preamble = (
-        "Welcome to Slug Start! 🎪 Six days, Sept 21–26.\n\n"
-        "**What are you in the mood for?** Tap one below, or just ask me — "
-        "*what's on Wednesday*, *free food Friday*, *plan my Tuesday* all work."
+        "Welcome to Slug Start 🎪 Six days, Sept 21–26.\n\n"
+        "**What are you in the mood for?** Tap one, or just ask: "
+        "*what's on Wednesday*, *free food Friday*."
     )
     footer = [MenuButton("📅 Browse by day", {"action": "plan_day"})]
     payload = build_chip_payload(
@@ -120,8 +120,8 @@ def interests_message() -> ChatMessage:
 def vibe_picker_message() -> ChatMessage:
     """The same question, reached deliberately from a button."""
     preamble = (
-        "**What are you in the mood for?** Tap whichever fits — or just "
-        "describe it in your own words."
+        "**What are you in the mood for?** Tap what fits, or just say it in "
+        "your own words."
     )
     footer = [MenuButton("📅 Browse by day", {"action": "plan_day"})]
     payload = build_chip_payload(
@@ -161,7 +161,7 @@ def welcome() -> str:
 def short_welcome(college_name: str | None) -> str:
     """Two sentences, not a wall of text. The long version lives behind ℹ️."""
     hello = (
-        f"Hey! 👋 I'm your **Welcome Week events** guide — Sept 21–26, "
+        "Hey! 👋 I'm your **Welcome Week events** guide, Sept 21–26, "
         "all six days."
     )
     if college_name:
@@ -339,7 +339,14 @@ def list_message(
 
 
 def detail_message(event: dict, others: list[dict]) -> ChatMessage:
-    """Detail card for one event."""
+    """Detail card for one event, and nothing about any other event.
+
+    `others` is still accepted so callers need not change, but nothing is
+    rendered from it. The "Also on <day>" block was this card's version of
+    the clubs "Similar" list: a page about Cornucopia spending its last line
+    naming events the student had not asked about. The day view is one Back
+    tap away and does that job properly.
+    """
     verified = event["verified"]
 
     rows = [
@@ -349,26 +356,20 @@ def detail_message(event: dict, others: list[dict]) -> ChatMessage:
         DetailRow("Who", _scope_text(event)),
     ]
 
-    blocks = []
-    if others:
-        blocks.append(
-            DetailBlock(
-                f"Also on {_day_label(event['date'])}",
-                [
-                    " · ".join(
-                        f"{marker(other['verified'])}{other['title']}"
-                        for other in others
-                    )
-                ],
-            )
-        )
+    blocks: list[DetailBlock] = []
 
     if verified:
-        footnote = f"Date confirmed: {OFFICIAL_EVENTS_URL}"
-        if not event.get("time"):
+        # Sized to the evidence, like the clubs footnote: the official page
+        # confirms the date; times it has mostly not published.
+        if event.get("time"):
             footnote = (
-                "Date confirmed on the official page, which has not published a "
-                f"time yet. Check {OFFICIAL_EVENTS_URL} closer to the day."
+                "✅ Date confirmed on the official Welcome Week page: "
+                f"{OFFICIAL_EVENTS_URL}"
+            )
+        else:
+            footnote = (
+                "✅ Date confirmed on the official Welcome Week page; no time "
+                f"published yet. Check {OFFICIAL_EVENTS_URL} closer to the day."
             )
     else:
         footnote = (
@@ -389,7 +390,7 @@ def detail_message(event: dict, others: list[dict]) -> ChatMessage:
 
     payload = build_detail_payload(
         title=event["title"],
-        heading=event["title"],
+        heading=None,  # the card title is already the event's title
         body=event["description"],
         badges=[badge(verified)],
         rows=rows,

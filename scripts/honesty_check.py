@@ -221,10 +221,9 @@ async def check_rendered_events() -> None:
         detail = text_of(message) + card_text(message)
         if event["verified"]:
             check(
-                # Split before the "Also on <day>" block: that section lists
-                # sibling events, which may legitimately be placeholders. Only
-                # this event's own copy is under test.
-                "Placeholder example" not in detail.split("Also on")[0],
+                # The card is about this event alone — no sibling block — so
+                # the whole reply must be free of placeholder language.
+                "Placeholder example" not in detail,
                 f"event detail {event['id']}: confirmed event is labelled a "
                 "placeholder.",
             )
