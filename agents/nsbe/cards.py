@@ -37,11 +37,16 @@ def _link(link_id: str) -> dict:
 
 
 def _instagram_note() -> str:
-    """The line that keeps a published fact from being read as a promise."""
+    """The line that keeps a published fact from being read as a promise.
+
+    Instagram is named, not linked: a URL in the bubble gets unfurled into a
+    preview box under the card (seen live 2026-08-12). The 📸 button carries
+    the actual link.
+    """
     return (
-        f"_From their site, read {_checked('chapter_site')}. Meeting details can "
-        f"change between terms without the page changing — "
-        f"[Instagram]({_link('instagram')['url']}) is where they announce it._"
+        f"_From their site, read {_checked('chapter_site')}. Meeting details "
+        "can change between terms without the page changing; changes are "
+        "announced on their Instagram (📸 below)._"
     )
 
 
@@ -80,6 +85,11 @@ def meetings_message() -> ChatMessage:
     )
     buttons = [
         MenuButton("🤝 How to join", {"action": "topic", "topic": "join"}, primary=True),
+        MenuButton(
+            "📸 Instagram",
+            {"action": "open_link", "link": "instagram"},
+            url=_link("instagram")["url"],
+        ),
         MenuButton("🔗 Their links", {"action": "topic", "topic": "links"}),
         MenuButton("↩️ Back", {"action": "topic", "topic": "home"}),
     ]
