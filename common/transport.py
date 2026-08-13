@@ -18,6 +18,7 @@ from __future__ import annotations
 
 import asyncio
 import os
+import time
 from typing import Any
 
 
@@ -72,9 +73,20 @@ async def deliver(ctx: Any, destination: str, message: Any, *, attempts: int = 3
 
     delay = base_delay
     status = None
+    started = time.monotonic()
     for attempt in range(attempts):
         status = await ctx.send(destination, message)
         if getattr(status, "status", None) != DeliveryStatus.FAILED:
+            # Success is logged too. When the client hangs, the question is
+            # always "did the reply leave this process or not" — a silent
+            # success is indistinguishable from a hang in the log, and on
+            # 2026-08-12 that ambiguity cost a debugging round trip.
+            elapsed_ms = (time.monotonic() - started) * 1000
+            ctx.logger.info(
+                f"Reply {getattr(status, 'status', 'sent')} "
+                f"to {destination[:16]}… in {elapsed_ms:.0f}ms"
+                + (f" (attempt {attempt + 1})" if attempt else "")
+            )
             return status
         if attempt + 1 < attempts:
             ctx.logger.warning(
