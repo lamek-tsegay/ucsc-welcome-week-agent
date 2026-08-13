@@ -138,7 +138,27 @@ def test_meeting_details_never_appear_without_their_read_date():
     assert meetings["time"] in rendered
     assert meetings["location"] in rendered
     assert meetings["checked"] in rendered, "no read date alongside the meeting time"
-    assert "instagram.com/nsbe.ucsc" in rendered, "no pointer to where changes appear"
+
+    # The reply still points at where changes are announced — by name, with
+    # the URL one tap away behind 🔗 Their links. A dedicated Instagram button
+    # beside that one was the same destination twice, removed by request.
+    assert "Instagram" in rendered, "no pointer to where changes appear"
+    payload = json.loads(_card(cards.meetings_message()))
+    topics = set()
+
+    def walk(node):
+        if isinstance(node, dict):
+            selection = node.get("action", {}).get("selection", {}) if node.get("type") == "button" else {}
+            if selection.get("topic"):
+                topics.add(selection["topic"])
+            for value in node.values():
+                walk(value)
+        elif isinstance(node, list):
+            for entry in node:
+                walk(entry)
+
+    walk(payload)
+    assert "links" in topics, "no route to the links card from meetings"
 
 
 def test_mission_is_quoted_verbatim():
@@ -191,12 +211,14 @@ def _url(link_id: str) -> str:
 
 def test_join_card_offers_every_published_route():
     """The routes are buttons, not URLs in the text — a URL there gets unfurled
-    into a preview card. Instagram and the linktree open in one tap, and email
-    opens Gmail pre-addressed to the chapter's own published address."""
+    into a preview card. The linktree opens in one tap and carries Instagram
+    and everything else, which is why there is no separate Instagram button;
+    email opens Gmail pre-addressed to the chapter's own published address."""
     payload = json.loads(_card(cards.join_message()))
     redirects = _redirects(payload)
 
-    assert {_url("instagram"), _url("linktree")} <= redirects
+    assert _url("linktree") in redirects
+    assert _url("instagram") not in redirects, "the redundant Instagram button is back"
     compose = [url for url in redirects if "mail.google.com" in url]
     assert compose, "no button opens a pre-addressed email"
     assert f"to={nsbe()['contact']['email']}" in compose[0], compose[0]

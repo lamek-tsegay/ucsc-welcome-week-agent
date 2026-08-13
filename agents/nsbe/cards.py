@@ -46,7 +46,7 @@ def _instagram_note() -> str:
     return (
         f"_From their site, read {_checked('chapter_site')}. Meeting details "
         "can change between terms without the page changing; changes are "
-        "announced on their Instagram (📸 below)._"
+        "announced on their Instagram, under 🔗 Their links._"
     )
 
 
@@ -84,11 +84,6 @@ def meetings_message() -> ChatMessage:
     )
     buttons = [
         MenuButton("🤝 How to join", {"action": "topic", "topic": "join"}, primary=True),
-        MenuButton(
-            "📸 Instagram",
-            {"action": "open_link", "link": "instagram"},
-            url=_link("instagram")["url"],
-        ),
         MenuButton("🔗 Their links", {"action": "topic", "topic": "links"}),
         MenuButton("↩️ Back", {"action": "topic", "topic": "home"}),
     ]
@@ -139,11 +134,6 @@ def join_message() -> ChatMessage:
                     "How do I get involved?\n\nThanks!"
                 ),
             ),
-        ),
-        MenuButton(
-            "📸 Instagram",
-            {"action": "open_link", "link": "instagram"},
-            url=_link("instagram")["url"],
         ),
         MenuButton(
             "🔗 All their links",

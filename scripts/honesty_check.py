@@ -396,7 +396,10 @@ async def check_rendered_nsbe() -> None:
         "nsbe meetings card: states a meeting time with no read date.",
     )
     check(
-        "instagram.com/nsbe.ucsc" in rendered,
+        # Named, not linked: the URL lives one tap away behind 🔗 Their links.
+        # A dedicated Instagram button beside that one was the same
+        # destination twice, removed by request 2026-08-12.
+        "Instagram" in rendered,
         "nsbe meetings card: no pointer to where changes are announced.",
     )
 
