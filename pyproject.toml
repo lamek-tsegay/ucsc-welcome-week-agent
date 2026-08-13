@@ -1,0 +1,20 @@
+[project]
+name = "ucsc-welcome-week"
+version = "1.0.0"
+description = "UCSC Welcome Week agent suite - events, clubs, navigation, and the NSBE chapter - with tappable ASI:One cards, driven by a swappable campus pack."
+requires-python = ">=3.12"
+dependencies = [
+  "uagents==0.23.6",
+  "uagents-core==0.4.0",
+  "python-dotenv>=1.0",
+  "openai>=1.40",
+  "pyyaml>=6.0",
+]
+
+[dependency-groups]
+dev = [
+  "pytest>=8.0",
+]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
