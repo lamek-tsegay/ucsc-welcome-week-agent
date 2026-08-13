@@ -1,5 +1,12 @@
 # UCSC Welcome Week Agents
 
+> **This repo is now the integration home.** Each agent also ships as its own
+> standalone repo in the innovation-lab per-agent shape, with the same seeds
+> (so addresses persist) and its own scoped gates:
+> `../ucsc-clubs-agent` · `../ucsc-events-agent` · `../ucsc-navigation-agent`
+> · `../ucsc-nsbe-agent` · `../usc-clubs`. The full cross-agent test suite
+> continues to live and run here.
+
 Three independent [uAgents](https://github.com/fetchai/uAgents) for **UC Santa Cruz
 Slug Start / Fall Welcome Week**, Monday **Sept 21** – Saturday **Sept 26, 2026**.
 Each runs locally, registers with [Agentverse](https://agentverse.ai) over a

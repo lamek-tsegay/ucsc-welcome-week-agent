@@ -15,7 +15,11 @@ from agents.clubs.search import (
     select,
     similar,
 )
-from agents.navigation.service import answer_sibling_query
+try:  # The navigation agent ships separately; without it, nav-shaped
+    # questions fall through to normal search instead of an inline answer.
+    from agents.navigation.service import answer_sibling_query
+except ImportError:  # standalone clubs deployment
+    answer_sibling_query = None
 from agents_shared import asi1
 from agents_shared.cards import MenuButton
 from agents_shared.loader import club_categories, clubs as clubs_data
@@ -32,6 +36,8 @@ OWN_DOMAIN_RE = re.compile(
 
 async def bridge_to_navigation(text: str) -> str | None:
     """Answer a navigation-shaped question typed at this agent, or None."""
+    if answer_sibling_query is None:
+        return None
     return await answer_sibling_query(text, own_domain=OWN_DOMAIN_RE)
 
 _CATEGORIES_RE = re.compile(

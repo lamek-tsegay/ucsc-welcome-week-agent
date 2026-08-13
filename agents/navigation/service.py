@@ -362,7 +362,11 @@ def events_pointer(text: str) -> str | None:
         return None
     if parse_patterns(text).kind != KIND_UNKNOWN:
         return None
-    from agents.events.recommend import EventQuery, select
+    try:  # The events agent ships separately; without it, event-name
+        # destinations simply don't resolve and the caller says so.
+        from agents.events.recommend import EventQuery, select
+    except ImportError:  # standalone navigation deployment
+        return None
 
     confirmed, _ = select(EventQuery(), limit=3)
     teaser = "\n".join(
