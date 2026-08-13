@@ -69,6 +69,17 @@ def test_links_are_all_https():
         assert link["url"].startswith("https://"), link["id"]
 
 
+def test_links_are_grouped_sensibly():
+    """Social media adjacent, websites adjacent, the linktree last.
+
+    The links card renders in data order, so the grouping lives in the data.
+    The linktree closes the list because it contains everything above it —
+    a catch-all in the middle read as just another link.
+    """
+    order = [link["id"] for link in nsbe()["links"]]
+    assert order == ["instagram", "linkedin", "site", "national", "resume", "linktree"]
+
+
 def test_no_officer_names_or_event_dates_anywhere():
     """The chapter publishes neither. Inventing them is the failure this whole
     project is built to prevent, and a club agent is where the temptation is

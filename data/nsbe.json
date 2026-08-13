@@ -55,13 +55,6 @@
  },
  "links": [
   {
-   "id": "site",
-   "label": "Chapter website",
-   "url": "https://nsbe.engineering.ucsc.edu/",
-   "why": "The official page, on UCSC's engineering subdomain",
-   "source": "chapter_site"
-  },
-  {
    "id": "instagram",
    "label": "Instagram @nsbe.ucsc",
    "url": "https://www.instagram.com/nsbe.ucsc/",
@@ -76,10 +69,17 @@
    "source": "chapter_site"
   },
   {
-   "id": "linktree",
-   "label": "All their links",
-   "url": "https://linktr.ee/eventsComingUpUCSC",
-   "why": "The chapter's own link hub, including the email sign-up form",
+   "id": "site",
+   "label": "Chapter website",
+   "url": "https://nsbe.engineering.ucsc.edu/",
+   "why": "The official page, on UCSC's engineering subdomain",
+   "source": "chapter_site"
+  },
+  {
+   "id": "national",
+   "label": "National NSBE",
+   "url": "https://nsbe.org/",
+   "why": "The parent organization",
    "source": "chapter_site"
   },
   {
@@ -90,10 +90,10 @@
    "source": "linktree"
   },
   {
-   "id": "national",
-   "label": "National NSBE",
-   "url": "https://nsbe.org/",
-   "why": "The parent organization",
+   "id": "linktree",
+   "label": "All their links",
+   "url": "https://linktr.ee/eventsComingUpUCSC",
+   "why": "The chapter's own link hub, including the email sign-up form",
    "source": "chapter_site"
   }
  ],
