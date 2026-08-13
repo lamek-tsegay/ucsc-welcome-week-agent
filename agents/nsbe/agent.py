@@ -32,16 +32,16 @@ from uagents_core.contrib.protocols.chat import (
 
 from agents.nsbe import cards
 from agents.nsbe.service import respond_to_query, respond_to_topic
-from common.chat import (
+from agents_shared.chat import (
     is_menu_request,
     make_ack,
     parse_card_selection,
     strip_mention,
 )
-from common.guard import EchoGuard, is_assistant_prose, is_stale_replay
-from common.loader import nsbe
-from common.registration import register
-from common.transport import agent_kwargs, deliver
+from agents_shared.guard import EchoGuard, is_assistant_prose, is_stale_replay
+from agents_shared.loader import nsbe
+from agents_shared.registration import register
+from agents_shared.transport import agent_kwargs, deliver
 
 load_dotenv()
 

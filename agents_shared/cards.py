@@ -26,7 +26,7 @@ from uagents_core.contrib.protocols.chat import (
     TextContent,
 )
 
-from common.chat import utc_now
+from agents_shared.chat import utc_now
 
 CARD_PROTOCOL_VERSION = "1"
 

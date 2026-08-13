@@ -1,0 +1,83 @@
+# Campus pack identity — set CAMPUS_ID to point at another pack under campuses/
+id: ucsc
+school: "UC Santa Cruz"
+short: "UCSC"
+mascot_emoji: "🐌"
+
+# The campus facts every agent leans on. Each carries its own provenance so a
+# future pack (or a new year's data) changes here, never in code.
+official:
+  events_label: "Slug Start / Fall Welcome Week"
+  events_url: "https://welcome.ucsc.edu/slug-life/fall-welcome-week/"
+  clubs_directory_label: "official directory"
+  clubs_directory_url: "https://getinvolved.ucsc.edu/student-organizations/join/"
+  engineering_orgs_url: "https://undergrad.engineering.ucsc.edu/student-organizations/"
+  clubs_contact: "soar@ucsc.edu"
+  transit_url: "https://scmtd.com"
+
+# Where organizations table in person during Welcome Week. Rendered on club
+# detail cards and footnotes; sourced from the official Slug Start schedule.
+fair:
+  name: "Cornucopia"
+  when: "Tue Sept 22"
+  where: "East Upper Field"
+  line: "Cornucopia, Tue Sept 22, East Upper Field"
+
+# The clubs vibe matcher. Tags must exist in data/clubs.json — a test
+# enforces that every vibe matches at least one organization. New clubs with
+# new tags mean extending these lists, not editing code.
+clubs_vibes:
+  - key: creative
+    label: "🎨 Creative & artsy"
+    blurb: "making things"
+    tags: [arts, music, theater, art, writing, performance, creative, media]
+  # "competition" is deliberately absent from `active`: in this data it tags
+  # robotics, rocketry, and competitive programming far more than anything
+  # athletic, so including it surfaced Formula Slug under Active & outdoors.
+  - key: active
+    label: "🏃 Active & outdoors"
+    blurb: "moving and exploring"
+    tags: [sports, fitness, outdoors, hiking, climbing, surfing, cycling]
+  - key: curious
+    label: "🧠 Curious & academic"
+    blurb: "ideas and career"
+    tags: [academic, research, science, debate, career, leadership, tech, engineering, programming]
+  - key: chill
+    label: "🎮 Chill & playful"
+    blurb: "games and hanging out"
+    tags: [games, gaming, social, food]
+  - key: global
+    label: "🌍 Cultural & global"
+    blurb: "community and identity"
+    tags: [cultural, identity, international, community]
+  - key: impact
+    label: "💪 Service & impact"
+    blurb: "helping and advocacy"
+    tags: [service, advocacy, support]
+
+# The events vibe matcher — same contract against data/events.json.
+events_vibes:
+  - key: food
+    label: "🍕 Free food"
+    blurb: "meals and snacks"
+    tags: [food]
+  - key: social
+    label: "🎉 Meet people"
+    blurb: "socials and traditions"
+    tags: [social, orgs, tradition, festival]
+  - key: active
+    label: "🌲 Outdoors & active"
+    blurb: "moving around campus"
+    tags: [outdoors, sports, recreation]
+  - key: arts
+    label: "🎨 Arts & music"
+    blurb: "performances and making things"
+    tags: [arts, music, photo]
+  - key: career
+    label: "💼 Career & academic"
+    blurb: "jobs and getting set up"
+    tags: [academic, career, jobs, tech]
+  - key: explore
+    label: "🚌 Off campus"
+    blurb: "the town and the coast"
+    tags: [offcampus, tour, exploration]

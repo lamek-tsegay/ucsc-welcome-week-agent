@@ -18,7 +18,7 @@ from agents.clubs.search import (
     similar,
 )
 from agents.clubs.service import respond_to_query, respond_to_selection
-from common.loader import clubs
+from agents_shared.loader import clubs
 from uagents_core.contrib.protocols.chat import MetadataContent, TextContent
 
 
@@ -228,7 +228,7 @@ def test_browse_all_returns_every_club_in_one_card():
     thing they asked for, and the category is already legible from the emoji
     on each name.
     """
-    from common.loader import clubs as clubs_data
+    from agents_shared.loader import clubs as clubs_data
 
     message, shown_ids = asyncio.run(respond_to_query("what categories are there"))
     assert len(shown_ids) == len(clubs_data())
@@ -339,7 +339,7 @@ def test_named_lookup_outranks_approximate_flag():
 
 
 def test_long_query_is_truncated_in_approximate_heading():
-    from common.notices import approximate_match_heading
+    from agents_shared.notices import approximate_match_heading
 
     heading = approximate_match_heading("x" * 200, 3, "organizations")
     assert "..." in heading

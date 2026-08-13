@@ -17,9 +17,9 @@ from agents.events.recommend import (
     weekday_name,
     window_dates,
 )
-from common import asi1
-from common.cards import MenuButton
-from common.notices import approximate_match_heading
+from agents_shared import asi1
+from agents_shared.cards import MenuButton
+from agents_shared.notices import approximate_match_heading
 from uagents_core.contrib.protocols.chat import ChatMessage
 
 # "plan my tuesday", "plan tuesday", "itinerary for wednesday", "plan my day"

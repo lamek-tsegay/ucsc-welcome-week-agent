@@ -5,7 +5,7 @@ from __future__ import annotations
 from datetime import date
 
 from agents.events.recommend import ScoredEvent, weekday_name, window_dates
-from common.cards import (
+from agents_shared.cards import (
     CardItem,
     DetailBlock,
     DetailRow,
@@ -16,11 +16,11 @@ from common.cards import (
     card_message,
     menu_message,
 )
-from common.chat import create_text_chat
-from common.colleges import COLLEGES
-from common.links import essentials_text, link_row
-from common.loader import events_window, landmark_name
-from common.notices import (
+from agents_shared.chat import create_text_chat
+from agents_shared.colleges import COLLEGES
+from agents_shared.links import essentials_text, link_row
+from agents_shared.loader import campus, events_window, landmark_name
+from agents_shared.notices import (
     OFFICIAL_EVENTS_URL,
     badge,
     event_time,
@@ -62,33 +62,21 @@ BACK_ACTION = "back_to_events"
 # Selection keys this agent's buttons carry beyond the event id.
 EXTRA_FIELDS = ("college", "date", "q", "vibe")
 
-# Six ways into the week, for a student who doesn't know what's on. Mirrors the
-# clubs agent's vibe matcher: nobody can pick from a schedule they've never
-# seen, but everyone can say what they're in the mood for. Every tag here
-# exists in data/events.json — a test enforces that each interest matches at
-# least one event, so no option can dead-end.
-VIBES: list[tuple[str, str, str, set[str]]] = [
-    ("food", "🍕 Free food", "meals and snacks", {"food"}),
-    ("social", "🎉 Meet people", "socials and traditions",
-     {"social", "orgs", "tradition", "festival"}),
-    ("active", "🌲 Outdoors & active", "moving around campus",
-     {"outdoors", "sports", "recreation"}),
-    ("arts", "🎨 Arts & music", "performances and making things",
-     {"arts", "music", "photo"}),
-    ("career", "💼 Career & academic", "jobs and getting set up",
-     {"academic", "career", "jobs", "tech"}),
-    ("explore", "🚌 Off campus", "the town and the coast",
-     {"offcampus", "tour", "exploration"}),
-]
-
-VIBE_TAGS = {key: tags for key, _, _, tags in VIBES}
-VIBE_LABELS = {key: label for key, label, _, _ in VIBES}
+# The events vibe matcher lives in the campus pack (campus.yaml
+# `events_vibes:`) — same contract as clubs: every tag must exist in the
+# pack's events data, and a test enforces that no vibe can dead-end.
+VIBE_TAGS: dict[str, set[str]] = {
+    entry["key"]: set(entry["tags"]) for entry in campus()["events_vibes"]
+}
+VIBE_LABELS: dict[str, str] = {
+    entry["key"]: entry["label"] for entry in campus()["events_vibes"]
+}
 
 
 def _interest_buttons() -> list[MenuButton]:
     return [
-        MenuButton(label, {"action": "vibe_pick", "vibe": key})
-        for key, label, _, _ in VIBES
+        MenuButton(entry["label"], {"action": "vibe_pick", "vibe": entry["key"]})
+        for entry in campus()["events_vibes"]
     ]
 
 

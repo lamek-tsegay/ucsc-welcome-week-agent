@@ -31,7 +31,7 @@ import tempfile as _tempfile
 
 os.environ["UCSC_PROFILE_PATH"] = os.path.join(_tempfile.mkdtemp(), "profiles.json")
 
-from common import asi1 as _asi1
+from agents_shared import asi1 as _asi1
 
 _asi1.is_enabled = lambda: False  # type: ignore[assignment]
 

@@ -24,7 +24,7 @@ from agents.clubs.service import respond_to_query as clubs_query
 from agents.clubs.service import respond_to_selection as clubs_selection
 from agents.events.service import respond_to_query as events_query
 from agents.events.service import respond_to_selection as events_selection
-from common.loader import clubs, events, nsbe, transit_meta
+from agents_shared.loader import clubs, events, nsbe, transit_meta
 import json
 
 from uagents_core.contrib.protocols.chat import MetadataContent, TextContent

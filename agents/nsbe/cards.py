@@ -14,10 +14,10 @@ so it never appears without that caveat.
 
 from __future__ import annotations
 
-from common.cards import MenuButton, build_chip_payload, card_message, menu_message
-from common.chat import create_text_chat
-from common.links import gmail_compose, link_row
-from common.loader import nsbe
+from agents_shared.cards import MenuButton, build_chip_payload, card_message, menu_message
+from agents_shared.chat import create_text_chat
+from agents_shared.links import gmail_compose, link_row
+from agents_shared.loader import nsbe
 from uagents_core.contrib.protocols.chat import ChatMessage
 
 SOURCE = "nsbe_tab"

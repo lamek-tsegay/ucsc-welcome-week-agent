@@ -11,10 +11,10 @@ import json
 
 import pytest
 
-from common.cards import MenuButton, build_menu_payload
-from common.chat import parse_card_selection
-from common.colleges import COLLEGES, by_key, by_name, parse_home_declaration
-from common.loader import landmarks
+from agents_shared.cards import MenuButton, build_menu_payload
+from agents_shared.chat import parse_card_selection
+from agents_shared.colleges import COLLEGES, by_key, by_name, parse_home_declaration
+from agents_shared.loader import landmarks
 from uagents_core.contrib.protocols.chat import MetadataContent, TextContent
 
 
@@ -373,8 +373,8 @@ def test_events_still_point_at_the_navigation_agent():
 # --- events: interest matcher -------------------------------------------------
 
 
-@pytest.mark.parametrize("key", [k for k, _, _, _ in __import__(
-    "agents.events.cards", fromlist=["VIBES"]).VIBES])
+@pytest.mark.parametrize("key", sorted(__import__(
+    "agents.events.cards", fromlist=["VIBE_TAGS"]).VIBE_TAGS))
 def test_every_event_interest_matches_something(key):
     """An interest that dead-ends would be a broken button."""
     result = events_vibe(key)
@@ -388,7 +388,7 @@ def test_unknown_event_interest_is_rejected():
 
 
 def test_general_ask_leads_with_the_interests_question():
-    from agents.events.cards import VIBES
+    from agents.events.cards import VIBE_TAGS
     from agents.events.service import respond_to_query as events_query
 
     message, shown_ids = asyncio.run(
@@ -398,7 +398,7 @@ def test_general_ask_leads_with_the_interests_question():
     payload = payload_of(message)
     assert payload is not None
     vibes = {sel.get("vibe") for sel in selections_of(payload) if "vibe" in sel}
-    assert vibes == {key for key, _, _, _ in VIBES}
+    assert vibes == set(VIBE_TAGS)
 
 
 def test_specific_event_asks_skip_the_question():
@@ -411,11 +411,11 @@ def test_specific_event_asks_skip_the_question():
 
 # --- clubs: vibe matcher ------------------------------------------------------
 
-from agents.clubs.cards import VIBES, vibe_picker_message, welcome_message
+from agents.clubs.cards import VIBE_TAGS, vibe_picker_message, welcome_message
 from agents.clubs.service import respond_to_category, respond_to_vibe
 
 
-@pytest.mark.parametrize("vibe_key", [key for key, _, _, _ in VIBES])
+@pytest.mark.parametrize("vibe_key", sorted(VIBE_TAGS))
 def test_every_vibe_matches_at_least_one_org(vibe_key):
     """The quiz can never dead-end: each mood maps to real tags in the data."""
     result = respond_to_vibe(vibe_key)
@@ -454,7 +454,7 @@ def test_category_browse_by_id():
 def test_vibe_picker_offers_every_vibe():
     payload = payload_of(vibe_picker_message())
     vibes = {sel.get("vibe") for sel in selections_of(payload) if "vibe" in sel}
-    assert vibes == {key for key, _, _, _ in VIBES}
+    assert vibes == set(VIBE_TAGS)
 
 
 def test_clubs_welcome_leads_with_the_quiz():
@@ -465,7 +465,7 @@ def test_clubs_welcome_leads_with_the_quiz():
 
 # --- shared profile -----------------------------------------------------------
 
-from common import profile
+from agents_shared import profile
 
 
 def test_profile_roundtrip_and_sharing():
@@ -527,7 +527,7 @@ def test_unpublished_venue_event_does_not_resolve():
 
 # --- recovery: help / menu / a bare greeting ---------------------------------
 
-from common.chat import is_menu_request
+from agents_shared.chat import is_menu_request
 
 
 @pytest.mark.parametrize(
@@ -554,17 +554,18 @@ def test_event_tag_emoji_never_wrong():
 
 
 def test_every_club_category_has_an_emoji():
-    from agents.clubs.cards import CATEGORY_EMOJI
-    from common.loader import club_categories
+    """The emoji rides on the category in the pack's data now, so a new
+    category cannot arrive without one."""
+    from agents_shared.loader import club_categories
 
     for entry in club_categories():
-        assert entry["id"] in CATEGORY_EMOJI, entry["id"]
+        assert entry.get("emoji"), entry["id"]
 
 
 # --- maps and links -----------------------------------------------------------
 
-from common.maps import pin_url, walking_url, PIN_CAVEAT
-from common.links import ESSENTIALS, essentials_text
+from agents_shared.maps import pin_url, walking_url, PIN_CAVEAT
+from agents_shared.links import ESSENTIALS, essentials_text
 
 
 def test_pin_url_built_from_real_coordinates():
@@ -674,7 +675,7 @@ def test_nav_welcome_keeps_sibling_references():
 # conversational filler ("tell") wasn't stopworded, which disabled the
 # no-keywords spread fallback.
 
-from common.chat import strip_mention
+from agents_shared.chat import strip_mention
 
 
 @pytest.mark.parametrize(
@@ -744,7 +745,7 @@ def test_generic_ask_leads_with_the_interests_question(opener):
     This also covers the original bug report ("@ucsc-clubs Hi tell me what
     clubs are at UCSC" got a no-match reply) — every phrasing must land here.
     """
-    from agents.clubs.cards import VIBES
+    from agents.clubs.cards import VIBE_TAGS
     from agents.clubs.service import respond_to_query
 
     message, shown_ids = asyncio.run(respond_to_query(opener))
@@ -761,7 +762,7 @@ def test_generic_ask_leads_with_the_interests_question(opener):
 
     # Every interest is one tap away.
     vibes = {sel.get("vibe") for sel in selections if "vibe" in sel}
-    assert vibes == {key for key, _, _, _ in VIBES}
+    assert vibes == set(VIBE_TAGS)
 
     # And a way to see everything, category by category.
     actions = {sel.get("action") for sel in selections}
@@ -781,10 +782,12 @@ def test_interest_cards_do_not_repeat_their_buttons_as_text(builder_name):
     message = getattr(cards, builder_name)()
     body = text_of(message)
 
-    for _key, label, blurb, _tags in cards.VIBES:
-        name = label.split(" ", 1)[1]  # drop the emoji
+    from agents_shared.loader import campus
+
+    for entry in campus()["clubs_vibes"]:
+        name = entry["label"].split(" ", 1)[1]  # drop the emoji
         assert name not in body, f"text bubble repeats the {name!r} button"
-        assert blurb not in body, f"text bubble repeats the {name!r} blurb"
+        assert entry["blurb"] not in body, f"text bubble repeats the {name!r} blurb"
 
     # The question itself is the card's title, so it is not asked here too.
     # What the bubble still owes a card-less client is the free-text way in —
@@ -806,7 +809,7 @@ def test_interest_buttons_are_full_width():
         if child.get("direction") == "row"
     ]
     # Six interest rows of one, then the secondary actions share a row.
-    interest_rows = rows[: len(cards.VIBES)]
+    interest_rows = rows[: len(cards.VIBE_TAGS)]
     assert all(len(row["children"]) == 1 for row in interest_rows)
 
 
@@ -850,7 +853,7 @@ def test_category_browse_returns_the_whole_category_as_chips():
     organizations behind nothing at all. Chips rather than rich rows, so the
     whole category fits.
     """
-    from common.loader import clubs as clubs_data
+    from agents_shared.loader import clubs as clubs_data
     from agents.clubs.service import respond_to_category
 
     result = respond_to_category("tech_engineering")
@@ -880,7 +883,7 @@ def test_category_browse_returns_the_whole_category_as_chips():
 
 
 def test_every_category_is_browsable():
-    from common.loader import club_categories
+    from agents_shared.loader import club_categories
     from agents.clubs.service import respond_to_category
 
     for entry in club_categories():

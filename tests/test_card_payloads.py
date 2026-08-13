@@ -16,7 +16,7 @@ from datetime import date
 
 import pytest
 
-from common.notices import CLUBS_CONTACT, OFFICIAL_CLUBS_URL, OFFICIAL_EVENTS_URL
+from agents_shared.notices import CLUBS_CONTACT, OFFICIAL_CLUBS_URL, OFFICIAL_EVENTS_URL
 from uagents_core.contrib.protocols.chat import MetadataContent
 
 # The element-tree schema, from the Agentverse element-tree-primitives docs
@@ -65,7 +65,7 @@ def _payload(message) -> dict | None:
 def _every_card() -> list[tuple[str, dict]]:
     """One payload per card-producing path across all three agents."""
     from agents.clubs import cards as clubs_cards
-    from common.loader import clubs as clubs_data
+    from agents_shared.loader import clubs as clubs_data
     from agents.clubs.service import (
         respond_to_category,
         respond_to_query as clubs_query,
@@ -360,7 +360,7 @@ def test_club_detail_names_no_other_club():
     buttons.
     """
     from agents.clubs.service import respond_to_selection
-    from common.loader import clubs
+    from agents_shared.loader import clubs
 
     for club_id in ("be_slug_gaming", "be_swe", "c_anime"):
         message = respond_to_selection(club_id)

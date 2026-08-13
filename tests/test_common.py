@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import json
 
-from common.cards import (
+from agents_shared.cards import (
     CardItem,
     DetailRow,
     build_detail_payload,
@@ -12,9 +12,9 @@ from common.cards import (
     card_message,
     card_metadata,
 )
-from common.chat import create_text_chat, parse_card_selection
-from common.guard import EchoGuard, normalise
-from common.notices import badge, event_time, marker
+from agents_shared.chat import create_text_chat, parse_card_selection
+from agents_shared.guard import EchoGuard, normalise
+from agents_shared.notices import badge, event_time, marker
 from uagents_core.contrib.protocols.chat import (
     EndSessionContent,
     MetadataContent,
@@ -305,7 +305,7 @@ def test_replay_is_dropped_when_something_newer_follows():
     """The replayed prefix of a burst is dropped."""
     import asyncio
 
-    from common.guard import EchoGuard, is_stale_replay
+    from agents_shared.guard import EchoGuard, is_stale_replay
 
     guard = EchoGuard()
     sender = "agent1x"
@@ -339,7 +339,7 @@ def test_a_deliberate_repeat_is_still_answered():
     re-asking the same question, must not meet silence."""
     import asyncio
 
-    from common.guard import EchoGuard, is_stale_replay
+    from agents_shared.guard import EchoGuard, is_stale_replay
 
     guard = EchoGuard()
     sender = "agent1x"
@@ -362,7 +362,7 @@ def test_new_messages_are_never_delayed():
     import asyncio
     import time
 
-    from common.guard import EchoGuard, is_stale_replay
+    from agents_shared.guard import EchoGuard, is_stale_replay
 
     guard = EchoGuard()
 
@@ -390,7 +390,7 @@ def test_agents_handle_messages_concurrently():
     same. Turning this off would not fail loudly; it would just make every tap
     slow again.
     """
-    from common.transport import agent_kwargs
+    from agents_shared.transport import agent_kwargs
 
     kwargs = agent_kwargs(name="t", seed="s", port=1)
     assert kwargs.get("handle_messages_concurrently") is True
@@ -405,7 +405,7 @@ def test_orchestrator_prose_is_recognised():
     ASI:One's orchestrator sent its hand-off blurb and then a whole generated
     answer in as user queries. Answering them fed the loop that left the UI on
     "working on your request"."""
-    from common.guard import is_assistant_prose
+    from agents_shared.guard import is_assistant_prose
 
     handoff = (
         "I've connected you with the UCSC clubs agent, which has responded "
@@ -426,7 +426,7 @@ def test_orchestrator_prose_is_recognised():
 
 
 def test_real_student_messages_are_not_prose():
-    from common.guard import is_assistant_prose
+    from agents_shared.guard import is_assistant_prose
 
     for text in (
         "Hi, I would like to know about the clubs at UCSC please!",
@@ -453,7 +453,7 @@ def test_deliver_retries_failed_sends():
 
     from uagents_core.types import DeliveryStatus
 
-    from common.transport import deliver
+    from agents_shared.transport import deliver
 
     class FlakyCtx:
         def __init__(self, failures: int):

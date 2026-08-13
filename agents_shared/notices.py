@@ -14,13 +14,21 @@ labelling cannot drift apart between them.
 
 from __future__ import annotations
 
-from common.cards import BADGE_SUCCESS, BADGE_WARNING
+from agents_shared.cards import BADGE_SUCCESS, BADGE_WARNING
+from agents_shared.loader import campus
 
-OFFICIAL_EVENTS_URL = "https://welcome.ucsc.edu/slug-life/fall-welcome-week/"
-OFFICIAL_CLUBS_URL = "https://getinvolved.ucsc.edu/student-organizations/join/"
-ENGINEERING_ORGS_URL = "https://undergrad.engineering.ucsc.edu/student-organizations/"
-CLUBS_CONTACT = "soar@ucsc.edu"
-TRANSIT_URL = "https://scmtd.com"
+# Campus facts come from the pack (campuses/<CAMPUS_ID>/campus.yaml). Kept as
+# module-level names because every call site treats them as constants; they
+# are resolved once per process from whichever pack is active.
+_OFFICIAL = campus()["official"]
+OFFICIAL_EVENTS_URL = _OFFICIAL["events_url"]
+OFFICIAL_CLUBS_URL = _OFFICIAL["clubs_directory_url"]
+ENGINEERING_ORGS_URL = _OFFICIAL["engineering_orgs_url"]
+CLUBS_CONTACT = _OFFICIAL["clubs_contact"]
+TRANSIT_URL = _OFFICIAL["transit_url"]
+
+FAIR = campus()["fair"]
+FAIR_LINE = FAIR["line"]
 
 UNVERIFIED_LABEL = "Unofficial"
 VERIFIED_LABEL = "Confirmed"
@@ -70,7 +78,7 @@ def clubs_footnote() -> str:
     """
     return (
         f"Examples, not a live roster · full directory: {OFFICIAL_CLUBS_URL} "
-        f"· {CLUBS_CONTACT} · meet them at Cornucopia, Tue Sept 22"
+        f"· {CLUBS_CONTACT} · meet them at {FAIR['name']}, {FAIR['when']}"
     )
 
 
@@ -90,7 +98,7 @@ def clubs_disclaimer() -> str:
         f"weekly through fall. Confirm at {OFFICIAL_CLUBS_URL} "
         f"or email {CLUBS_CONTACT}. Contact details and meeting times are "
         "deliberately omitted here rather than guessed.\n\n"
-        "In person, Cornucopia (Tue Sept 22, East Upper Field) is where most "
+        f"In person, {FAIR['name']} ({FAIR['when']}, {FAIR['where']}) is where most "
         "organizations table."
     )
 

@@ -15,7 +15,7 @@ from __future__ import annotations
 import heapq
 from dataclasses import dataclass, field
 
-from common.loader import landmarks, transit_routes, walk_edges
+from agents_shared.loader import landmarks, transit_routes, walk_edges
 
 
 @dataclass(frozen=True)

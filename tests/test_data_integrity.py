@@ -8,7 +8,7 @@ from __future__ import annotations
 
 import pytest
 
-from common.loader import (
+from agents_shared.loader import (
     club_categories,
     clubs,
     events,

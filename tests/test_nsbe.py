@@ -15,7 +15,7 @@ import pytest
 
 from agents.nsbe import cards
 from agents.nsbe.service import detect_topic, respond_to_query, respond_to_topic
-from common.loader import nsbe
+from agents_shared.loader import nsbe
 from uagents_core.contrib.protocols.chat import MetadataContent, TextContent
 
 

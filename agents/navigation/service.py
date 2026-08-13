@@ -42,9 +42,9 @@ from agents.navigation.router import (
     nearby,
     should_offer_transit,
 )
-from common.chat import create_text_chat
-from common.colleges import by_key, parse_home_declaration
-from common.loader import landmarks
+from agents_shared.chat import create_text_chat
+from agents_shared.colleges import by_key, parse_home_declaration
+from agents_shared.loader import landmarks
 from uagents_core.contrib.protocols.chat import ChatMessage
 
 WELCOME = render.WELCOME

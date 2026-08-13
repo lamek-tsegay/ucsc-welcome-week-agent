@@ -13,7 +13,7 @@ the student's own Google Maps app or browser.
 
 from __future__ import annotations
 
-from common.loader import landmarks
+from agents_shared.loader import landmarks
 
 PIN_CAVEAT = "_Map pins are approximate — my coordinates are hand-estimated._"
 

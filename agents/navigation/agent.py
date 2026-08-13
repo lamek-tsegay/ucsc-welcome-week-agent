@@ -34,19 +34,19 @@ from agents.navigation.service import (
 )
 import re
 
-from common import profile
-from common.chat import (
+from agents_shared import profile
+from agents_shared.chat import (
     create_text_chat,
     is_menu_request,
     make_ack,
     parse_card_selection,
     strip_mention,
 )
-from common.colleges import by_key, by_landmark
-from common.guard import EchoGuard, is_assistant_prose, is_stale_replay
-from common.loader import landmark_name, landmarks
-from common.registration import register
-from common.transport import agent_kwargs, deliver
+from agents_shared.colleges import by_key, by_landmark
+from agents_shared.guard import EchoGuard, is_assistant_prose, is_stale_replay
+from agents_shared.loader import landmark_name, landmarks
+from agents_shared.registration import register
+from agents_shared.transport import agent_kwargs, deliver
 
 # "always step-free", "step free on/off", "I use a wheelchair" — a persistent
 # preference, distinct from asking for one step-free route.
@@ -163,7 +163,7 @@ def _home_id(ctx: Context, sender: str) -> str | None:
         return override
     college_name = profile.college(sender)
     if college_name:
-        from common.colleges import by_name
+        from agents_shared.colleges import by_name
 
         college = by_name(college_name)
         if college:

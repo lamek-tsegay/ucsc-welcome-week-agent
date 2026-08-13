@@ -15,7 +15,7 @@ import difflib
 import re
 from dataclasses import dataclass
 
-from common.loader import events, landmarks
+from agents_shared.loader import events, landmarks
 
 _PUNCT_RE = re.compile(r"[^a-z0-9 &/]+")
 _WS_RE = re.compile(r"\s+")

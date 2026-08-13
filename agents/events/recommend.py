@@ -16,7 +16,7 @@ import re
 from dataclasses import dataclass, field
 from datetime import date, timedelta
 
-from common.loader import events, events_window
+from agents_shared.loader import events, events_window
 
 COLLEGES = [
     "Cowell",

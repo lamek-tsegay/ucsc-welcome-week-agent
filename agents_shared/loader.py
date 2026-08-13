@@ -10,15 +10,42 @@ Files are read once and cached, since none of them change while an agent runs.
 from __future__ import annotations
 
 import json
+import os
 from functools import lru_cache
 from pathlib import Path
+
+import yaml
 from typing import Any
 
-DATA_DIR = Path(__file__).resolve().parent.parent / "data"
+ROOT = Path(__file__).resolve().parent.parent
+CAMPUSES_DIR = ROOT / "campuses"
+
+
+def campus_id() -> str:
+    """Which campus pack under campuses/ to serve. One codebase, many packs."""
+    return os.getenv("CAMPUS_ID", "ucsc")
+
+
+def pack_dir() -> Path:
+    return CAMPUSES_DIR / campus_id()
+
+
+@lru_cache(maxsize=None)
+def _campus_yaml(pack: str) -> dict[str, Any]:
+    with open(CAMPUSES_DIR / pack / "campus.yaml", encoding="utf-8") as handle:
+        return yaml.safe_load(handle)
+
+
+def campus() -> dict[str, Any]:
+    """campus.yaml for the active pack: identity, copy, official links, vibes."""
+    return _campus_yaml(campus_id())
+
+
+DATA_DIR = pack_dir() / "data"
 
 
 def _read(filename: str) -> dict[str, Any]:
-    path = DATA_DIR / filename
+    path = pack_dir() / "data" / filename
     with path.open(encoding="utf-8") as handle:
         return json.load(handle)
 

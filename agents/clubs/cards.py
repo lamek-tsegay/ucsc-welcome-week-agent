@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from agents.clubs.search import ScoredClub, by_id, category_label
-from common.cards import (
+from agents_shared.cards import (
     CardItem,
     DetailBlock,
     DetailRow,
@@ -14,13 +14,14 @@ from common.cards import (
     card_message,
     menu_message,
 )
-from common.chat import create_text_chat
-from common.links import essentials_text, gmail_compose, link_row
-from common.loader import club_categories
-from common.notices import (
+from agents_shared.chat import create_text_chat
+from agents_shared.links import essentials_text, gmail_compose, link_row
+from agents_shared.loader import club_categories, campus
+from agents_shared.notices import (
     CLUBS_CONTACT,
     ENGINEERING_ORGS_URL,
     OFFICIAL_CLUBS_URL,
+    FAIR_LINE,
     badge,
     clubs_disclaimer,
     clubs_footnote,
@@ -28,23 +29,16 @@ from common.notices import (
 )
 from uagents_core.contrib.protocols.chat import ChatMessage
 
-# One emoji per category — visual anchors only, applied uniformly.
-CATEGORY_EMOJI = {
-    "cultural_identity": "🌍",
-    "academic_professional": "📚",
-    "arts_performance": "🎭",
-    "media_publication": "📰",
-    "sports_recreation": "🏅",
-    "service_advocacy": "🤝",
-    "tech_engineering": "💻",
-    "spiritual": "🕊️",
-    "greek": "🏛️",
-    "special_interest": "🎲",
-}
+def _category_emoji() -> dict[str, str]:
+    """Emoji per category, read from the pack's category list — a new
+    category added in data brings its emoji with it, no code change."""
+    return {
+        entry["id"]: entry.get("emoji", "") for entry in club_categories()
+    }
 
 
 def _name_with_emoji(club: dict) -> str:
-    emoji = CATEGORY_EMOJI.get(club.get("category", ""), "")
+    emoji = _category_emoji().get(club.get("category", ""), "")
     return f"{emoji} {club['name']}".strip()
 
 
@@ -55,23 +49,15 @@ BACK_ACTION = "back_to_clubs"
 # Selection keys this agent's buttons carry beyond the club id.
 EXTRA_FIELDS = ("vibe", "category", "q", "link")
 
-# The vibe matcher: six moods a brand-new student can pick without knowing any
-# club names. Tags must exist in data/clubs.json — a test enforces that every
-# vibe matches at least one organization, so the quiz can never dead-end.
-VIBES: list[tuple[str, str, str, set[str]]] = [
-    ("creative", "🎨 Creative & artsy", "making things", {"arts", "music", "theater", "art", "writing", "performance", "creative", "media"}),
-    # "competition" is deliberately absent: in this data it tags robotics,
-    # rocketry, and competitive programming far more than anything athletic,
-    # so including it surfaced Formula Slug under "Active & outdoors".
-    ("active", "🏃 Active & outdoors", "moving and exploring", {"sports", "fitness", "outdoors", "hiking", "climbing", "surfing", "cycling"}),
-    ("curious", "🧠 Curious & academic", "ideas and career", {"academic", "research", "science", "debate", "career", "leadership", "tech", "engineering", "programming"}),
-    ("chill", "🎮 Chill & playful", "games and hanging out", {"games", "gaming", "social", "food"}),
-    ("global", "🌍 Cultural & global", "community and identity", {"cultural", "identity", "international", "community"}),
-    ("impact", "💪 Service & impact", "helping and advocacy", {"service", "advocacy", "support"}),
-]
-
-VIBE_TAGS = {key: tags for key, _, _, tags in VIBES}
-VIBE_LABELS = {key: label for key, label, _, _ in VIBES}
+# The vibe matcher lives in the campus pack (campus.yaml `clubs_vibes:`), so
+# new clubs with new tags mean extending config, not code. A test enforces
+# that every vibe matches at least one organization in the pack's roster.
+VIBE_TAGS: dict[str, set[str]] = {
+    entry["key"]: set(entry["tags"]) for entry in campus()["clubs_vibes"]
+}
+VIBE_LABELS: dict[str, str] = {
+    entry["key"]: entry["label"] for entry in campus()["clubs_vibes"]
+}
 
 
 def welcome() -> str:
@@ -126,8 +112,8 @@ def welcome_message() -> ChatMessage:
 
 def _interest_buttons() -> list[MenuButton]:
     return [
-        MenuButton(label, {"action": "vibe_pick", "vibe": key})
-        for key, label, _, _ in VIBES
+        MenuButton(entry["label"], {"action": "vibe_pick", "vibe": entry["key"]})
+        for entry in campus()["clubs_vibes"]
     ]
 
 
@@ -215,7 +201,7 @@ def category_card(entry: dict, members: list[dict]) -> ChatMessage:
         for club in ordered
     ]
     payload = build_chip_payload(
-        title=f"{CATEGORY_EMOJI.get(entry['id'], '')} {entry['label']}".strip(),
+        title=f"{_category_emoji().get(entry['id'], '')} {entry['label']}".strip(),
         subtitle=f"{len(ordered)} · tap any name for details",
         body_lines=None,
         chips=chips,
@@ -309,7 +295,7 @@ def detail_message(club: dict, others: list[dict]) -> ChatMessage:
     if tags:
         rows.append(DetailRow("Interests", tags))
 
-    rows.append(DetailRow("Find them at", "Cornucopia, Tue Sept 22, East Upper Field"))
+    rows.append(DetailRow("Find them at", FAIR_LINE))
 
     # A club with a profile has been read from its own site, so the card can say
     # what it actually does. Without one there is nothing here to render and the
@@ -562,7 +548,7 @@ def detail_message(club: dict, others: list[dict]) -> ChatMessage:
     if tags:
         rows.append(DetailRow("Interests", tags))
 
-    rows.append(DetailRow("Find them at", "Cornucopia, Tue Sept 22, East Upper Field"))
+    rows.append(DetailRow("Find them at", FAIR_LINE))
 
     # A club with a profile has been read from its own site, so the card can say
     # what it actually does. Without one there is nothing here to render and the
@@ -721,7 +707,7 @@ def categories_message(all_clubs: list[dict]) -> ChatMessage:
 
     chips = [
         MenuButton(
-            f"{CATEGORY_EMOJI.get(entry['id'], '')} {entry['label']} · {counts.get(entry['id'], 0)}".strip(),
+            f"{_category_emoji().get(entry['id'], '')} {entry['label']} · {counts.get(entry['id'], 0)}".strip(),
             {"action": "category", "category": entry["id"]},
         )
         for entry in club_categories()

@@ -35,16 +35,16 @@ from agents.clubs.service import (
     respond_to_selection,
     respond_to_vibe,
 )
-from common.chat import (
+from agents_shared.chat import (
     create_text_chat,
     is_menu_request,
     make_ack,
     parse_card_selection,
     strip_mention,
 )
-from common.guard import EchoGuard, is_assistant_prose, is_stale_replay
-from common.registration import register
-from common.transport import agent_kwargs, deliver
+from agents_shared.guard import EchoGuard, is_assistant_prose, is_stale_replay
+from agents_shared.registration import register
+from agents_shared.transport import agent_kwargs, deliver
 
 load_dotenv()
 

@@ -36,19 +36,19 @@ from agents.events.service import (
     respond_to_vibe,
 )
 from agents.events.recommend import by_id as event_by_id, detect_college
-from common import profile
-from common.chat import (
+from agents_shared import profile
+from agents_shared.chat import (
     create_text_chat,
     is_menu_request,
     make_ack,
     parse_card_selection,
     strip_mention,
 )
-from common.colleges import by_key, parse_home_declaration
-from common.guard import EchoGuard, is_assistant_prose, is_stale_replay
-from common.loader import events_window
-from common.registration import register
-from common.transport import agent_kwargs, deliver
+from agents_shared.colleges import by_key, parse_home_declaration
+from agents_shared.guard import EchoGuard, is_assistant_prose, is_stale_replay
+from agents_shared.loader import events_window
+from agents_shared.registration import register
+from agents_shared.transport import agent_kwargs, deliver
 
 load_dotenv()
 
@@ -356,7 +356,7 @@ async def handle_message(ctx: Context, sender: str, msg: ChatMessage):
                 return
 
         if _HUNGRY_RE.search(text):
-            from common.links import dining_link_line
+            from agents_shared.links import dining_link_line
 
             await _send(
                 ctx,

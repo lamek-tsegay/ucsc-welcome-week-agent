@@ -19,16 +19,16 @@ Selections this module emits (all JSON, all with source="nav_tab"):
 from __future__ import annotations
 
 from agents.navigation.router import Constraints, Route
-from common.cards import (
+from agents_shared.cards import (
     CardItem,
     MenuButton,
     build_list_payload,
     card_message,
     menu_message,
 )
-from common.colleges import COLLEGES
-from common.chat import create_text_chat
-from common.links import essentials_text
+from agents_shared.colleges import COLLEGES
+from agents_shared.chat import create_text_chat
+from agents_shared.links import essentials_text
 from uagents_core.contrib.protocols.chat import ChatMessage
 
 SOURCE = "nav_tab"

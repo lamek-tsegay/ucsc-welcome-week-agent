@@ -16,10 +16,10 @@ from agents.clubs.search import (
     similar,
 )
 from agents.navigation.service import answer_sibling_query
-from common import asi1
-from common.cards import MenuButton
-from common.loader import club_categories, clubs as clubs_data
-from common.notices import approximate_match_heading
+from agents_shared import asi1
+from agents_shared.cards import MenuButton
+from agents_shared.loader import club_categories, clubs as clubs_data
+from agents_shared.notices import approximate_match_heading
 from uagents_core.contrib.protocols.chat import ChatMessage
 
 WELCOME = cards.welcome()

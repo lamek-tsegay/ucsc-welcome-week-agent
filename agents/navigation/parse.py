@@ -14,7 +14,7 @@ from dataclasses import dataclass
 
 from agents.navigation.resolve import Match, resolve
 from agents.navigation.router import Constraints
-from common import asi1
+from agents_shared import asi1
 
 KIND_ROUTE = "route"
 KIND_LOCATE = "locate"

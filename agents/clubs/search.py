@@ -16,7 +16,7 @@ import difflib
 import re
 from dataclasses import dataclass, field
 
-from common.loader import club_categories, clubs
+from agents_shared.loader import club_categories, clubs
 
 # Free-text interest words -> club tags. Deliberately broader than the events
 # equivalent, since "I'm into X" phrasing varies more for organizations.

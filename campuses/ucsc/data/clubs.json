@@ -14,43 +14,53 @@
  "categories": [
   {
    "id": "cultural_identity",
-   "label": "Cultural & Identity"
+   "label": "Cultural & Identity",
+   "emoji": "🌍"
   },
   {
    "id": "academic_professional",
-   "label": "Academic & Professional"
+   "label": "Academic & Professional",
+   "emoji": "📚"
   },
   {
    "id": "arts_performance",
-   "label": "Arts & Performance"
+   "label": "Arts & Performance",
+   "emoji": "🎭"
   },
   {
    "id": "media_publication",
-   "label": "Media & Publications"
+   "label": "Media & Publications",
+   "emoji": "📰"
   },
   {
    "id": "sports_recreation",
-   "label": "Sports & Recreation"
+   "label": "Sports & Recreation",
+   "emoji": "🏅"
   },
   {
    "id": "service_advocacy",
-   "label": "Service & Advocacy"
+   "label": "Service & Advocacy",
+   "emoji": "🤝"
   },
   {
    "id": "tech_engineering",
-   "label": "Technology & Engineering"
+   "label": "Technology & Engineering",
+   "emoji": "💻"
   },
   {
    "id": "spiritual",
-   "label": "Spiritual & Religious"
+   "label": "Spiritual & Religious",
+   "emoji": "🕊️"
   },
   {
    "id": "greek",
-   "label": "Fraternity & Sorority Life"
+   "label": "Fraternity & Sorority Life",
+   "emoji": "🏛️"
   },
   {
    "id": "special_interest",
-   "label": "Games, Hobbies & Special Interest"
+   "label": "Games, Hobbies & Special Interest",
+   "emoji": "🎲"
   }
  ],
  "clubs": [

@@ -37,7 +37,7 @@ def _disable_asi1(monkeypatch):
 
     # common.asi1 caches its client across calls, so clearing the env var alone
     # is not enough once something has already built one.
-    from common import asi1
+    from agents_shared import asi1
 
     monkeypatch.setattr(asi1, "_client", None, raising=False)
     monkeypatch.setattr(asi1, "_client_attempted", False, raising=False)

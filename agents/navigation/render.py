@@ -11,14 +11,14 @@ from __future__ import annotations
 
 from agents.navigation.parse import NavIntent
 from agents.navigation.router import Constraints, Route, TransitOption
-from common.links import (
+from agents_shared.links import (
     accessibility_link_line,
     dining_link_line,
     transit_link_lines,
 )
-from common.loader import landmark_name, landmarks
-from common.maps import PIN_CAVEAT, pin_line, walking_line
-from common.notices import route_estimate_note, transit_disclaimer
+from agents_shared.loader import landmark_name, landmarks
+from agents_shared.maps import PIN_CAVEAT, pin_line, walking_line
+from agents_shared.notices import route_estimate_note, transit_disclaimer
 
 WELCOME = (
     "Hi — I'm the **UCSC Campus Navigation** agent for Slug Start "

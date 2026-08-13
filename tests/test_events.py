@@ -220,7 +220,7 @@ def test_no_matches_returns_empty():
 
 def test_confirmed_events_never_have_an_invented_time():
     """The official page publishes no times, so confirmed times must be null."""
-    from common.loader import events
+    from agents_shared.loader import events
 
     for event in events():
         if event["verified"]:
