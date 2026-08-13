@@ -137,6 +137,36 @@ ALL_CARDS = [(name, payload) for name, _, payload in ALL_MESSAGES]
 @pytest.mark.parametrize(
     "name,message,payload", ALL_MESSAGES, ids=[n for n, _, _ in ALL_MESSAGES]
 )
+def test_the_bubble_never_repeats_the_card_title(name, message, payload):
+    """The bubble says only what the card doesn't.
+
+    A detail card titled "Cycling & Mountain Biking Club" under a bubble
+    saying the same thing prints the name twice a line apart; the NSBE
+    meetings bubble restated the day, time, and room its own card carried.
+    Both were reported by a live user. Paired with
+    test_no_reply_is_metadata_only, the rule is: never empty, never an echo.
+    """
+    import re as _re
+    from uagents_core.contrib.protocols.chat import TextContent
+
+    bubble = "\n".join(
+        item.text for item in message.content if isinstance(item, TextContent)
+    )
+    title = payload["root"].get("title", "")
+    if not bubble.strip() or not title:
+        return
+
+    def normalise(value: str) -> str:
+        return _re.sub(r"[^a-z0-9 ]", "", value.lower()).strip()
+
+    assert normalise(title) not in normalise(bubble), (
+        f"{name}: bubble repeats the card title {title!r}\n  bubble: {bubble!r}"
+    )
+
+
+@pytest.mark.parametrize(
+    "name,message,payload", ALL_MESSAGES, ids=[n for n, _, _ in ALL_MESSAGES]
+)
 def test_no_reply_is_metadata_only(name, message, payload):
     """Every card rides with at least one line of text.
 

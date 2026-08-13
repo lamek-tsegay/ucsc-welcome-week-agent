@@ -99,10 +99,12 @@ def interests_message() -> ChatMessage:
     from cold, but anyone can say what they're in the mood for. So the opening
     move is the question; the whole week stays one tap away.
     """
+    # The card title asks the question; the bubble adds the dates and that
+    # typing works.
     preamble = (
         "Welcome to Slug Start 🎪 Six days, Sept 21–26.\n\n"
-        "**What are you in the mood for?** Tap one, or just ask: "
-        "*what's on Wednesday*, *free food Friday*."
+        "Tap one below, or just ask: *what's on Wednesday*, "
+        "*free food Friday*."
     )
     footer = [MenuButton("📅 Browse by day", {"action": "plan_day"})]
     payload = build_chip_payload(
@@ -304,13 +306,10 @@ def list_message(
     """
     any_unverified = any(not item.event["verified"] for item in scored)
 
-    lines: list[str] = []
-    if date_note:
-        lines.append(f"ℹ️ {date_note}\n")
-    # No URL in the bubble: the client unfurls any link into a preview box,
-    # which on a listing is noise. The schedule link stays on the card footnote.
-    lines.append(heading)
-    preamble = "\n".join(lines)
+    # The heading is the card's own title, so the bubble carries only what
+    # the card cannot: the date note when there is one, and otherwise a line
+    # so the reply is never bare metadata — the shape that hangs the client.
+    preamble = f"ℹ️ {date_note}" if date_note else "Here's what's on:"
 
     items = [
         CardItem(
@@ -402,9 +401,8 @@ def detail_message(event: dict, others: list[dict]) -> ChatMessage:
         extra_buttons=extra_buttons,
     )
 
-    # No URL in the bubble: the schedule link is a button on the card, so
-    # there is nothing here for the client to unfurl into a preview.
-    return card_message(f"**{event['title']}**", payload)
+    # The card title is the event's title; the bubble doesn't repeat it.
+    return card_message("Here's what's published:", payload)
 
 
 def planner_message(
@@ -451,7 +449,8 @@ def planner_message(
             any_unverified=any(not item.event["verified"] for item in scored)
         ),
     )
-    return card_message(f"**{day} — your menu** 🧭", payload)
+    # Day and framing are the card's title and subtitle already.
+    return card_message("Pick what sounds good:", payload)
 
 
 def no_matches_message(

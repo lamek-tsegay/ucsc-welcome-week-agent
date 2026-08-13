@@ -52,11 +52,10 @@ def _instagram_note() -> str:
 
 def welcome_message() -> ChatMessage:
     chapter = nsbe()["chapter"]
-    # The card subtitle already says what NSBE stands for, so this doesn't.
+    # The card names the chapter twice over (title and subtitle), so the
+    # greeting doesn't do it a third time.
     preamble = (
-        f"Hey! 👋 I'm the **{chapter['short_name']}** agent.\n\n"
-        f"{chapter['about']}\n\n"
-        "What would you like to know?"
+        f"Hey! 👋\n\n{chapter['about']}\n\nWhat would you like to know?"
     )
     buttons = [
         MenuButton("📅 When they meet", {"action": "topic", "topic": "meetings"}, primary=True),
@@ -77,9 +76,9 @@ def welcome_message() -> ChatMessage:
 
 def meetings_message() -> ChatMessage:
     meetings = nsbe()["meetings"]
+    # Day, time, and room are the card's subtitle and body — the bubble says
+    # only what the card doesn't: who's welcome, and how fresh this is.
     preamble = (
-        f"**{meetings['day']} at {meetings['time']}**\n"
-        f"{meetings['location']}\n\n"
         "Anyone can turn up: no membership needed, all majors and "
         "ethnicities welcome.\n\n" + _instagram_note()
     )
@@ -167,7 +166,7 @@ def join_message() -> ChatMessage:
             f"From their site and linktree, read {_checked('chapter_site')}."
         ),
     )
-    return card_message("**How to join UCSC NSBE**", payload)
+    return card_message("Here's how, from their own pages:", payload)
 
 
 def about_message() -> ChatMessage:
@@ -205,7 +204,7 @@ def about_message() -> ChatMessage:
             f"{_checked('chapter_site')}."
         ),
     )
-    return card_message("**What NSBE is**", payload)
+    return card_message("In their own words:", payload)
 
 
 def links_message() -> ChatMessage:
@@ -238,7 +237,7 @@ def links_message() -> ChatMessage:
         per_row=1,
         footnote=f"Collected from their site and linktree, read {_checked('chapter_site')}.",
     )
-    return card_message("**UCSC NSBE — their links**", payload)
+    return card_message("Each button opens the page:", payload)
 
 
 def link_fallback_message(link_id: str) -> ChatMessage:
@@ -267,9 +266,9 @@ def unknown_message() -> ChatMessage:
     """
     contact = nsbe()["contact"]
     preamble = (
-        "I only know what UCSC NSBE publishes on their own pages — when they "
-        "meet, what the chapter is, and how to reach them.\n\n"
-        f"For anything else — officers, event dates, dues — ask them directly: "
+        "I only know what the chapter publishes on its own pages: when they "
+        "meet, what it is, and how to reach them.\n\n"
+        f"For anything else (officers, event dates, dues) go straight to the source: "
         + link_row(
             ("Email", f"mailto:{contact['email']}"),
             ("Instagram", _link("instagram")["url"]),

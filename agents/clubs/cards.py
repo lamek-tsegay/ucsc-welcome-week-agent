@@ -167,10 +167,12 @@ def interests_message() -> ChatMessage:
     # The options live only on the card — listing them here too made the agent
     # read as if it were saying everything twice. Clients that render no cards
     # still have a way through: the free-text invitation below.
+    # The card title asks the question; the bubble only adds what the card
+    # can't say — that typing works too.
     preamble = (
         "Let's find your people at UCSC 🐌\n\n"
-        "**What are you into?** Tap one, or just say it: *anime*, "
-        "*something outdoorsy*, *pre-med*."
+        "Tap one below, or just say it: *anime*, *something outdoorsy*, "
+        "*pre-med*."
     )
     return _interest_card(
         preamble,
@@ -235,9 +237,8 @@ def category_card(entry: dict, members: list[dict]) -> ChatMessage:
     # and a reply with no text left it spinning on "working on your request" —
     # proven live on 2026-08-12, where this exact reply logged DELIVERED in
     # 733ms and the spinner never resolved. One line is enough.
-    return card_message(
-        f"Here's **{entry['label']}** — tap any name.", payload
-    )
+    # The category's name is the card title; the bubble adds the ordering.
+    return card_message("Every one I have, A to Z:", payload)
 
 def _summary_line(club: dict) -> str:
     return (
@@ -252,12 +253,11 @@ def list_message(
     heading: str,
     footer_buttons: list[MenuButton] | None = None,
 ) -> ChatMessage:
-    # The bubble carries the heading as plain text, deliberately with no URL
-    # in it: the chat client unfurls any link it finds into a preview card, and
-    # on a listing that box is pure noise. The directory URL still rides on the
-    # card footnote, readable and copyable; detail cards keep the tappable
-    # version, where acting on it is the point.
-    preamble = heading
+    # The heading is the card's own title, so the bubble doesn't repeat it.
+    # It still says something — a reply with no text hangs the client — just
+    # nothing the card already says. No URL here either: the client unfurls
+    # any link in message text into a preview box.
+    preamble = "Here's what matched:"
 
     items = [
         CardItem(
@@ -445,9 +445,10 @@ def detail_message(club: dict, others: list[dict]) -> ChatMessage:
         extra_buttons=link_buttons,
     )
 
-    # No URL in the bubble at all now: the links are buttons on the card, so
-    # nothing here for the client to unfurl into a preview box.
-    return card_message(f"**{club['name']}**", payload)
+    # The card title is the club's name, so the bubble doesn't repeat it —
+    # but it is never empty either: a reply with no text at all is the shape
+    # that hung the client (see categories in git history / the hub era).
+    return card_message("Here's what I have on them:", payload)
 
 
 def all_clubs_message(all_clubs: list[dict]) -> ChatMessage:
@@ -488,10 +489,8 @@ def all_clubs_message(all_clubs: list[dict]) -> ChatMessage:
         footer_buttons=[MenuButton("🎯 Match my vibe instead", {"action": "quiz"})],
         footnote="✅ = confirmed on an official UCSC page · " + clubs_footnote(),
     )
-    return card_message(
-        f"**All {len(ordered)} organizations, A to Z** — tap any name for details.",
-        payload,
-    )
+    # The count and the A-to-Z both live on the card title and subtitle.
+    return card_message("The whole catalog:", payload)
 
 
 def _summary_line(club: dict) -> str:
@@ -507,12 +506,11 @@ def list_message(
     heading: str,
     footer_buttons: list[MenuButton] | None = None,
 ) -> ChatMessage:
-    # The bubble carries the heading as plain text, deliberately with no URL
-    # in it: the chat client unfurls any link it finds into a preview card, and
-    # on a listing that box is pure noise. The directory URL still rides on the
-    # card footnote, readable and copyable; detail cards keep the tappable
-    # version, where acting on it is the point.
-    preamble = heading
+    # The heading is the card's own title, so the bubble doesn't repeat it.
+    # It still says something — a reply with no text hangs the client — just
+    # nothing the card already says. No URL here either: the client unfurls
+    # any link in message text into a preview box.
+    preamble = "Here's what matched:"
 
     items = [
         CardItem(
@@ -700,9 +698,10 @@ def detail_message(club: dict, others: list[dict]) -> ChatMessage:
         extra_buttons=link_buttons,
     )
 
-    # No URL in the bubble at all now: the links are buttons on the card, so
-    # nothing here for the client to unfurl into a preview box.
-    return card_message(f"**{club['name']}**", payload)
+    # The card title is the club's name, so the bubble doesn't repeat it —
+    # but it is never empty either: a reply with no text at all is the shape
+    # that hung the client (see categories in git history / the hub era).
+    return card_message("Here's what I have on them:", payload)
 
 
 def categories_message(all_clubs: list[dict]) -> ChatMessage:

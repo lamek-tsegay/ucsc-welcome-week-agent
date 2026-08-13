@@ -31,6 +31,17 @@ def text_of(message) -> str:
     )
 
 
+def rendered_of(message) -> str:
+    """Bubble plus card — what the student actually sees, in one string.
+
+    Content moves between the two as cards absorb what text used to carry, so
+    a test that pins which half a phrase lands in breaks on every layout
+    change without catching a real defect.
+    """
+    payload = payload_of(message)
+    return text_of(message) + (json.dumps(payload) if payload else "")
+
+
 def selections_of(payload: dict) -> list[dict]:
     """Every button selection in a card payload, in document order."""
     found: list[dict] = []
@@ -651,7 +662,7 @@ def test_short_welcomes_keep_a_data_honesty_line():
 def test_nav_welcome_keeps_sibling_references():
     from agents.navigation.cards import welcome_message
 
-    body = text_of(welcome_message(None))
+    body = rendered_of(welcome_message(None))
     assert "Campus Navigation" in body
     assert "Events" in body and "Clubs" in body
 
@@ -741,8 +752,8 @@ def test_generic_ask_leads_with_the_interests_question(opener):
     # No clubs listed yet — this reply is the question, not the answer.
     assert shown_ids == []
 
-    body = text_of(message)
-    assert "what are you into" in body.lower()
+    # The question is the card's title now, not the bubble's opening line.
+    assert "what are you into" in rendered_of(message).lower()
 
     payload = payload_of(message)
     assert payload is not None
@@ -775,11 +786,10 @@ def test_interest_cards_do_not_repeat_their_buttons_as_text(builder_name):
         assert name not in body, f"text bubble repeats the {name!r} button"
         assert blurb not in body, f"text bubble repeats the {name!r} blurb"
 
-    # It still has to say what it wants and offer a way through without cards.
-    assert "?" in body
-    # The free-text invitation is what a card-less client falls back to, so it
-    # has to be there — but the wording is copy, not contract, so accept any
-    # phrasing of it rather than pinning one and failing on every edit.
+    # The question itself is the card's title, so it is not asked here too.
+    # What the bubble still owes a card-less client is the free-text way in —
+    # but the wording is copy, not contract, so accept any phrasing of it
+    # rather than pinning one and failing on every edit.
     assert any(
         cue in body for cue in ("own words", "just say it", "describe yourself")
     ), f"no invitation to type instead of tap: {body!r}"
