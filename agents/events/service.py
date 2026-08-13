@@ -233,6 +233,12 @@ async def respond_to_query(text: str, *, today: date) -> tuple[ChatMessage, list
         scored,
         heading=_heading(query, scored, total, text),
         date_note=query.date_note,
+        # A typed query has no card to go back to, but a listing with no
+        # buttons below the results was a dead end all the same.
+        footer_buttons=[
+            MenuButton("🎯 What are you into", {"action": "quiz"}),
+            MenuButton("📅 Browse by day", {"action": "plan_day"}),
+        ],
     )
     return message, [item.event["id"] for item in scored]
 

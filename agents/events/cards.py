@@ -433,8 +433,11 @@ def planner_message(
         )
         for item in scored
     ]
+    # Back leads to the day picker this listing came from. It used to say
+    # "📅 Other days", which is the same destination wearing a label nobody
+    # read as the way back.
     footer = [
-        MenuButton("📅 Other days", {"action": "plan_day"}),
+        MenuButton("↩️ Back", {"action": "plan_day"}),
         MenuButton("🎯 What are you into", {"action": "quiz"}),
     ]
     payload = build_list_payload(
